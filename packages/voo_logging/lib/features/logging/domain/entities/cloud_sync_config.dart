@@ -126,9 +126,8 @@ class CloudSyncConfig {
   bool get isValid => enabled && endpoint != null && endpoint!.isNotEmpty && apiKey != null && apiKey!.isNotEmpty;
 
   /// Returns the full endpoint URL for log ingestion.
-  /// Uses VooDevStackAPI's batch endpoint format.
-  /// Expects endpoint to already include '/api' base path (e.g., 'http://localhost:5001/api').
-  String? get logEndpoint => endpoint != null ? '$endpoint/v1/logs/batch' : null;
+  /// Uses standardized telemetry endpoint format.
+  String? get logEndpoint => endpoint != null ? '$endpoint/api/v1/telemetry/logs' : null;
 
   CloudSyncConfig copyWith({
     bool? enabled,

@@ -1,39 +1,27 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:voo_core/voo_core.dart';
 
 /// Configuration for cloud sync of performance metrics.
 @immutable
-class PerformanceCloudSyncConfig {
-  final bool enabled;
-  final String? endpoint;
-  final String? apiKey;
-  final String? projectId;
-  final int batchSize;
-  final Duration batchInterval;
-  final int maxRetries;
-  final Duration timeout;
-  final int maxQueueSize;
-
+class PerformanceCloudSyncConfig extends BaseSyncConfig {
   const PerformanceCloudSyncConfig({
-    this.enabled = false,
-    this.endpoint,
-    this.apiKey,
-    this.projectId,
-    this.batchSize = 50,
-    this.batchInterval = const Duration(seconds: 30),
-    this.maxRetries = 3,
-    this.timeout = const Duration(seconds: 10),
-    this.maxQueueSize = 1000,
+    super.enabled = false,
+    super.endpoint,
+    super.apiKey,
+    super.projectId,
+    super.batchSize = 50,
+    super.batchInterval = const Duration(seconds: 30),
+    super.maxRetries = 3,
+    super.timeout = const Duration(seconds: 10),
+    super.maxQueueSize = 1000,
   });
 
-  bool get isValid =>
-      enabled && endpoint != null && endpoint!.isNotEmpty && apiKey != null && apiKey!.isNotEmpty;
-
-  String? get metricsEndpoint => endpoint != null ? '$endpoint/api/telemetry/performance' : null;
+  /// Returns the full endpoint URL for performance metrics ingestion.
+  String? get metricsEndpoint =>
+      endpoint != null ? '$endpoint/api/v1/telemetry/performance' : null;
 
   factory PerformanceCloudSyncConfig.production({
     required String endpoint,
@@ -162,149 +150,70 @@ class NetworkMetricData {
 }
 
 /// Service for syncing performance metrics to a cloud backend.
-class PerformanceCloudSyncService {
-  final PerformanceCloudSyncConfig config;
-  final http.Client _client;
+///
+/// Extends [BaseSyncService] from voo_core to reuse common batching,
+/// retry, and HTTP logic. Handles both performance metrics and network metrics.
+class PerformanceCloudSyncService
+    extends BaseSyncService<PerformanceMetricData> {
+  final PerformanceCloudSyncConfig _perfConfig;
 
-  final Queue<PerformanceMetricData> _pendingMetrics = Queue();
+  /// Separate queue for network metrics.
   final Queue<NetworkMetricData> _pendingNetworkMetrics = Queue();
-  Timer? _batchTimer;
-  bool _isSyncing = false;
-
-  void Function(String error)? onError;
 
   PerformanceCloudSyncService({
-    required this.config,
+    required PerformanceCloudSyncConfig config,
     http.Client? client,
-  }) : _client = client ?? http.Client();
+  })  : _perfConfig = config,
+        super(
+          config: config,
+          serviceName: 'PerformanceCloudSync',
+          client: client,
+        );
 
-  void initialize() {
-    if (!config.isValid) {
-      debugPrint('PerformanceCloudSync: Invalid configuration, sync disabled');
-      return;
-    }
-    _startBatchTimer();
-    debugPrint('PerformanceCloudSync: Initialized with endpoint ${config.endpoint}');
-  }
+  @override
+  String get endpoint => _perfConfig.metricsEndpoint ?? '';
 
+  /// Queue a performance metric for syncing.
   void queueMetric(PerformanceMetricData metric) {
-    if (!config.enabled || !config.isValid) return;
-
-    _pendingMetrics.add(metric);
-    while (_pendingMetrics.length > config.maxQueueSize) {
-      _pendingMetrics.removeFirst();
-    }
-
-    if (_pendingMetrics.length >= config.batchSize) {
-      _flushNow();
-    }
+    queueItem(metric);
   }
 
+  /// Queue a network metric for syncing.
   void queueNetworkMetric(NetworkMetricData metric) {
-    if (!config.enabled || !config.isValid) return;
+    if (!_perfConfig.enabled || !_perfConfig.isValid) return;
 
     _pendingNetworkMetrics.add(metric);
-    while (_pendingNetworkMetrics.length > config.maxQueueSize) {
+    while (_pendingNetworkMetrics.length > _perfConfig.maxQueueSize) {
       _pendingNetworkMetrics.removeFirst();
     }
 
-    if (_pendingNetworkMetrics.length >= config.batchSize) {
-      _flushNow();
+    if (_pendingNetworkMetrics.length >= _perfConfig.batchSize) {
+      flush();
     }
   }
 
-  Future<bool> flush() async => _flushNow();
+  @override
+  int get pendingCount => super.pendingCount + _pendingNetworkMetrics.length;
 
-  int get pendingCount => _pendingMetrics.length + _pendingNetworkMetrics.length;
-
-  void _startBatchTimer() {
-    _batchTimer?.cancel();
-    _batchTimer = Timer.periodic(config.batchInterval, (_) => _flushNow());
-  }
-
-  Future<bool> _flushNow() async {
-    if (_isSyncing || !config.isValid) return false;
-
-    final metricsToSync = <PerformanceMetricData>[];
+  @override
+  Map<String, dynamic> formatPayload(List<PerformanceMetricData> metrics) {
+    // Extract network metrics to include in payload
     final networkMetricsToSync = <NetworkMetricData>[];
-
-    final count = config.batchSize;
-    for (var i = 0; i < count && _pendingMetrics.isNotEmpty; i++) {
-      metricsToSync.add(_pendingMetrics.removeFirst());
-    }
+    final count = _perfConfig.batchSize;
     for (var i = 0; i < count && _pendingNetworkMetrics.isNotEmpty; i++) {
       networkMetricsToSync.add(_pendingNetworkMetrics.removeFirst());
     }
 
-    if (metricsToSync.isEmpty && networkMetricsToSync.isEmpty) return true;
-
-    _isSyncing = true;
-
-    try {
-      final success = await _sendBatch(metricsToSync, networkMetricsToSync);
-      if (!success) {
-        for (final m in metricsToSync.reversed) {
-          _pendingMetrics.addFirst(m);
-        }
-        for (final m in networkMetricsToSync.reversed) {
-          _pendingNetworkMetrics.addFirst(m);
-        }
-      }
-      return success;
-    } finally {
-      _isSyncing = false;
-    }
-  }
-
-  Future<bool> _sendBatch(
-    List<PerformanceMetricData> metrics,
-    List<NetworkMetricData> networkMetrics,
-  ) async {
-    final endpoint = config.metricsEndpoint;
-    if (endpoint == null) return false;
-
-    final payload = {
-      'projectId': config.projectId,
+    return {
+      'projectId': _perfConfig.projectId,
       'metrics': metrics.map((m) => m.toJson()).toList(),
-      'networkMetrics': networkMetrics.map((m) => m.toJson()).toList(),
+      'networkMetrics': networkMetricsToSync.map((m) => m.toJson()).toList(),
     };
-
-    for (var attempt = 0; attempt <= config.maxRetries; attempt++) {
-      try {
-        final response = await _client
-            .post(
-              Uri.parse(endpoint),
-              headers: {
-                'Content-Type': 'application/json',
-                if (config.apiKey != null) 'X-API-Key': config.apiKey!,
-              },
-              body: jsonEncode(payload),
-            )
-            .timeout(config.timeout);
-
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          if (kDebugMode) {
-            debugPrint(
-                'PerformanceCloudSync: Synced ${metrics.length} metrics, ${networkMetrics.length} network metrics');
-          }
-          return true;
-        }
-
-        onError?.call('HTTP ${response.statusCode}');
-      } catch (e) {
-        onError?.call(e.toString());
-      }
-
-      if (attempt < config.maxRetries) {
-        await Future.delayed(Duration(milliseconds: 100 * (1 << attempt)));
-      }
-    }
-
-    return false;
   }
 
+  @override
   void dispose() {
-    _batchTimer?.cancel();
-    _client.close();
+    _pendingNetworkMetrics.clear();
+    super.dispose();
   }
 }

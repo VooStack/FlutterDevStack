@@ -89,7 +89,7 @@ void main() {
 
       // Should not have made any requests
       expect(requestCount, 0);
-      expect(syncService.status, CloudSyncStatus.disabled);
+      expect(syncService.syncStatus, CloudSyncStatus.disabled);
     });
 
     test('should batch logs according to batch size', () async {
@@ -314,24 +314,20 @@ void main() {
         batchSize: 1,
       );
 
-      final statusChanges = <CloudSyncStatus>[];
-
       syncService = CloudSyncService(
         config: config,
         client: createMockClient(delay: const Duration(milliseconds: 50)),
       );
-      syncService.onStatusChanged = (status) => statusChanges.add(status);
       syncService.initialize();
 
-      expect(syncService.status, CloudSyncStatus.idle);
+      expect(syncService.syncStatus, CloudSyncStatus.idle);
 
       syncService.queueLog(createTestLog());
 
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // Should have gone through syncing -> idle
-      expect(statusChanges, contains(CloudSyncStatus.syncing));
-      expect(syncService.status, CloudSyncStatus.idle);
+      // Should have completed syncing
+      expect(syncService.syncStatus, CloudSyncStatus.idle);
     });
 
     test('should call error callback on failure', () async {

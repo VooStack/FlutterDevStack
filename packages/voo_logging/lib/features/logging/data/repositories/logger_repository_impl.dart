@@ -27,7 +27,7 @@ class LoggerRepositoryImpl extends LoggerRepository {
   CloudSyncService? get cloudSync => _cloudSync;
 
   /// Get the current cloud sync status.
-  CloudSyncStatus get cloudSyncStatus => _cloudSync?.status ?? CloudSyncStatus.disabled;
+  CloudSyncStatus get cloudSyncStatus => _cloudSync?.syncStatus ?? CloudSyncStatus.disabled;
 
   /// Get the number of pending logs in the cloud sync queue.
   int get pendingCloudSyncCount => _cloudSync?.pendingCount ?? 0;
@@ -289,7 +289,7 @@ class LoggerRepositoryImpl extends LoggerRepository {
       }
 
       // Always send postEvent for DevTools integration (doesn't appear in console)
-      developer.postEvent('voo_logger_event', structuredData);
+      developer.postEvent('voo_log_event', structuredData);
     } catch (_) {
       // Silent fail - logging is best effort
     }

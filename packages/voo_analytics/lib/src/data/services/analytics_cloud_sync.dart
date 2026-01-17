@@ -1,40 +1,28 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
+import 'package:voo_core/voo_core.dart';
 
 /// Configuration for cloud sync of analytics events.
 @immutable
-class AnalyticsCloudSyncConfig {
-  final bool enabled;
-  final String? endpoint;
-  final String? apiKey;
-  final String? projectId;
-  final int batchSize;
-  final Duration batchInterval;
-  final int maxRetries;
-  final Duration timeout;
-  final int maxQueueSize;
-
+class AnalyticsCloudSyncConfig extends BaseSyncConfig {
   const AnalyticsCloudSyncConfig({
-    this.enabled = false,
-    this.endpoint,
-    this.apiKey,
-    this.projectId,
-    this.batchSize = 100,
-    this.batchInterval = const Duration(seconds: 30),
-    this.maxRetries = 3,
-    this.timeout = const Duration(seconds: 10),
-    this.maxQueueSize = 2000,
+    super.enabled = false,
+    super.endpoint,
+    super.apiKey,
+    super.projectId,
+    super.batchSize = 100,
+    super.batchInterval = const Duration(seconds: 30),
+    super.maxRetries = 3,
+    super.timeout = const Duration(seconds: 10),
+    super.maxQueueSize = 2000,
   });
 
-  bool get isValid =>
-      enabled && endpoint != null && endpoint!.isNotEmpty && apiKey != null && apiKey!.isNotEmpty;
-
-  String? get eventsEndpoint => endpoint != null ? '$endpoint/api/telemetry/analytics' : null;
+  /// Returns the full endpoint URL for analytics ingestion.
+  String? get eventsEndpoint =>
+      endpoint != null ? '$endpoint/api/v1/telemetry/analytics' : null;
 
   factory AnalyticsCloudSyncConfig.production({
     required String endpoint,
@@ -114,112 +102,63 @@ class AnalyticsEventData {
 }
 
 /// Service for syncing analytics events to a cloud backend.
-class AnalyticsCloudSyncService {
-  final AnalyticsCloudSyncConfig config;
-  final http.Client _client;
+///
+/// Extends [BaseSyncService] from voo_core to reuse common batching,
+/// retry, and HTTP logic. Handles both analytics events and touch events.
+class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
+  final AnalyticsCloudSyncConfig _analyticsConfig;
 
-  final Queue<AnalyticsEventData> _pendingEvents = Queue();
+  /// Separate queue for touch events.
   final Queue<TouchEvent> _pendingTouchEvents = Queue();
-  Timer? _batchTimer;
-  bool _isSyncing = false;
-
-  void Function(String error)? onError;
 
   AnalyticsCloudSyncService({
-    required this.config,
+    required AnalyticsCloudSyncConfig config,
     http.Client? client,
-  }) : _client = client ?? http.Client();
+  })  : _analyticsConfig = config,
+        super(
+          config: config,
+          serviceName: 'AnalyticsCloudSync',
+          client: client,
+        );
 
-  void initialize() {
-    if (!config.isValid) {
-      debugPrint('AnalyticsCloudSync: Invalid configuration, sync disabled');
-      return;
-    }
-    _startBatchTimer();
-    debugPrint('AnalyticsCloudSync: Initialized with endpoint ${config.endpoint}');
-  }
+  @override
+  String get endpoint => _analyticsConfig.eventsEndpoint ?? '';
 
+  /// Queue an analytics event for syncing.
   void queueEvent(AnalyticsEventData event) {
-    if (!config.enabled || !config.isValid) return;
-
-    _pendingEvents.add(event);
-    while (_pendingEvents.length > config.maxQueueSize) {
-      _pendingEvents.removeFirst();
-    }
-
-    if (_pendingEvents.length >= config.batchSize) {
-      _flushNow();
-    }
+    queueItem(event);
   }
 
+  /// Queue a touch event for syncing.
   void queueTouchEvent(TouchEvent event) {
-    if (!config.enabled || !config.isValid) return;
+    if (!_analyticsConfig.enabled || !_analyticsConfig.isValid) return;
 
     _pendingTouchEvents.add(event);
-    while (_pendingTouchEvents.length > config.maxQueueSize) {
+    while (_pendingTouchEvents.length > _analyticsConfig.maxQueueSize) {
       _pendingTouchEvents.removeFirst();
     }
 
-    if (_pendingTouchEvents.length >= config.batchSize) {
-      _flushNow();
+    if (_pendingTouchEvents.length >= _analyticsConfig.batchSize) {
+      flush();
     }
   }
 
-  Future<bool> flush() async => _flushNow();
+  @override
+  int get pendingCount => super.pendingCount + _pendingTouchEvents.length;
 
-  int get pendingCount => _pendingEvents.length + _pendingTouchEvents.length;
-
-  void _startBatchTimer() {
-    _batchTimer?.cancel();
-    _batchTimer = Timer.periodic(config.batchInterval, (_) => _flushNow());
-  }
-
-  Future<bool> _flushNow() async {
-    if (_isSyncing || !config.isValid) return false;
-
-    final eventsToSync = <AnalyticsEventData>[];
+  @override
+  Map<String, dynamic> formatPayload(List<AnalyticsEventData> events) {
+    // Extract touch events to include in payload
     final touchEventsToSync = <TouchEvent>[];
-
-    final count = config.batchSize;
-    for (var i = 0; i < count && _pendingEvents.isNotEmpty; i++) {
-      eventsToSync.add(_pendingEvents.removeFirst());
-    }
+    final count = _analyticsConfig.batchSize;
     for (var i = 0; i < count && _pendingTouchEvents.isNotEmpty; i++) {
       touchEventsToSync.add(_pendingTouchEvents.removeFirst());
     }
 
-    if (eventsToSync.isEmpty && touchEventsToSync.isEmpty) return true;
-
-    _isSyncing = true;
-
-    try {
-      final success = await _sendBatch(eventsToSync, touchEventsToSync);
-      if (!success) {
-        // Re-queue on failure
-        for (final e in eventsToSync.reversed) {
-          _pendingEvents.addFirst(e);
-        }
-        for (final e in touchEventsToSync.reversed) {
-          _pendingTouchEvents.addFirst(e);
-        }
-      }
-      return success;
-    } finally {
-      _isSyncing = false;
-    }
-  }
-
-  Future<bool> _sendBatch(
-    List<AnalyticsEventData> events,
-    List<TouchEvent> touchEvents,
-  ) async {
-    final endpoint = config.eventsEndpoint;
-    if (endpoint == null) return false;
-
-    final payload = {
-      'projectId': config.projectId,
+    return {
+      'projectId': _analyticsConfig.projectId,
       'events': events.map((e) => e.toJson()).toList(),
-      'touchEvents': touchEvents
+      'touchEvents': touchEventsToSync
           .map((e) => {
                 'x': e.x,
                 'y': e.y,
@@ -232,43 +171,11 @@ class AnalyticsCloudSyncService {
               })
           .toList(),
     };
-
-    for (var attempt = 0; attempt <= config.maxRetries; attempt++) {
-      try {
-        final response = await _client
-            .post(
-              Uri.parse(endpoint),
-              headers: {
-                'Content-Type': 'application/json',
-                if (config.apiKey != null) 'X-API-Key': config.apiKey!,
-              },
-              body: jsonEncode(payload),
-            )
-            .timeout(config.timeout);
-
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          if (kDebugMode) {
-            debugPrint(
-                'AnalyticsCloudSync: Synced ${events.length} events, ${touchEvents.length} touch events');
-          }
-          return true;
-        }
-
-        onError?.call('HTTP ${response.statusCode}');
-      } catch (e) {
-        onError?.call(e.toString());
-      }
-
-      if (attempt < config.maxRetries) {
-        await Future.delayed(Duration(milliseconds: 100 * (1 << attempt)));
-      }
-    }
-
-    return false;
   }
 
+  @override
   void dispose() {
-    _batchTimer?.cancel();
-    _client.close();
+    _pendingTouchEvents.clear();
+    super.dispose();
   }
 }

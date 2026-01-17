@@ -177,7 +177,7 @@ class VooPerformancePlugin extends VooPlugin {
       final structuredData = {'__voo_logger__': true, 'entry': entryData};
 
       // Send via postEvent for DevTools extension
-      developer.postEvent('voo_logger_event', structuredData);
+      developer.postEvent('voo_performance_event', structuredData);
     } catch (_) {
       // Silent fail - logging is best effort
     }

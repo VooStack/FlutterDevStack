@@ -17,3 +17,7 @@ export 'package:voo_core/src/metrics/performance_metrics.dart';
 
 // Analytics
 export 'package:voo_core/src/analytics/analytics_event.dart';
+
+// Sync Services
+export 'package:voo_core/src/config/base_sync_config.dart';
+export 'package:voo_core/src/services/base_sync_service.dart';
