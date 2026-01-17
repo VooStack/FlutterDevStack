@@ -5,9 +5,14 @@ dev_dependencies:
   melos: ^7.1.1
 workspace:
   - packages/voo_core
+  - packages/voo_core/example
   - packages/voo_logging
+  - packages/voo_logging/example
   - packages/voo_telemetry
+  - packages/voo_telemetry/example
   - packages/voo_performance
+  - packages/voo_performance/example
   - packages/voo_analytics
+  - packages/voo_analytics/example
   - tools/voo_devtools_extension
 melos:
