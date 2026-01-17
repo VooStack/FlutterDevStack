@@ -1,0 +1,55 @@
+name: flutter_dev_stack
+packages:
+  - packages/*
+  - tools/*
+
+command:
+  bootstrap:
+    environment:
+      sdk: '>=3.8.1 <4.0.0'
+      flutter: '>=3.0.0 <4.0.0'
+    dependencies:
+      dio: ^5.2.0
+      equatable: ^2.0.5
+      json_serializable: ^6.10.0
+      json_annotation: ^4.9.0
+      meta: ^1.9.0
+    dev_dependencies:
+      build_runner: ^2.4.0
+      flutter_lints: ^6.0.0
+
+  version:
+    workspaceChangelog: true
+    branch: main
+    updateGitTagRefs: true
+    message: |
+      chore(release): publish packages
+
+      {new_package_versions}
+
+scripts:
+  get:
+    description: Get dependencies for all packages.
+    run: melos bootstrap
+
+  clean:
+    description: Clean all packages.
+    run: melos clean
+
+  build_devtools_extension:
+    description: Build DevTools extension.
+    run: |
+      cd tools/voo_devtools_extension && flutter pub get && \
+      dart run devtools_extensions build_and_copy --source=. --dest=../../packages/voo_core/extension/devtools
+
+  test_all:
+    description: Run tests for all packages.
+    run: melos run test --no-select
+
+  test:
+    description: Run tests for selected packages.
+    run: melos exec -- flutter test
+
+  nuke_stale_state:
+    description: Nuke stale state from all packages.
+    run: melos exec -- bash -c 'rm -rf pubspec.lock .dart_tool build'

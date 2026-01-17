@@ -1,0 +1,13 @@
+name: flutter_dev_stack
+environment:
+  sdk: '>=3.9.2 <4.0.0'
+dev_dependencies:
+  melos: ^7.1.1
+workspace:
+  - packages/voo_core
+  - packages/voo_logging
+  - packages/voo_telemetry
+  - packages/voo_performance
+  - packages/voo_analytics
+  - tools/voo_devtools_extension
+melos:

@@ -1,0 +1,35 @@
+name: voo_devtools_extension
+description: 'Unified DevTools extension for all Voo packages'
+homepage: https://voostack.com/packages/voo_devtools_extension
+repository: https://github.com/voostack/FlutterDevStack/tree/main/tools/voo_devtools_extension
+issue_tracker: https://github.com/voostack/FlutterDevStack/issues
+
+publish_to: 'none'
+
+version: 1.1.1
+
+environment:
+  sdk: '>=3.8.1 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  devtools_extensions: ^0.4.0
+  devtools_app_shared: ^0.4.0
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.5
+  web: ^1.0.0
+  voo_core: ^0.4.3
+  voo_ui_core: ^0.1.3
+
+  vm_service: any
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

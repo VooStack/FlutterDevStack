@@ -1,0 +1,53 @@
+name: voo_logging
+description: 'Zero-config Flutter logging with pretty console output, persistent storage, DevTools integration, and Dio interceptor. Just call VooLogger.info() and it works.'
+version: 0.4.11
+homepage: https://voostack.com/packages/voo_logging
+repository: https://github.com/voostack/FlutterDevStack/tree/main/packages/voo_logging
+issue_tracker: https://github.com/voostack/FlutterDevStack/issues
+topics:
+  - logging
+  - logger
+  - debugging
+  - devtools
+  - dio
+resolution: workspace
+
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  web:
+  windows:
+
+environment:
+  sdk: '>=3.8.1 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  voo_core: ^0.4.3
+  voo_toast: ^0.0.6
+  json_annotation: ^4.9.0
+  equatable: ^2.0.5
+  sembast: ^3.8.5+1
+  sembast_web: ^2.4.2
+  path: ^1.9.1
+  path_provider: ^2.1.5
+  http: ^1.2.0
+
+dev_dependencies:
+  json_serializable: ^6.10.0
+  flutter_lints: ^6.0.0
+  test: ^1.24.0
+  flutter_test:
+    sdk: flutter
+  bloc_test: ^10.0.0
+  mockito: ^5.4.7
+  build_runner: ^2.4.0
+  dio: ^5.0.0
+  path_provider_platform_interface: ^2.1.0
+
+flutter:
+  uses-material-design: true

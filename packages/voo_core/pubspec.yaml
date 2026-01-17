@@ -1,0 +1,40 @@
+name: voo_core
+description: 'Core foundation package for the Voo Flutter ecosystem. Provides plugin architecture and shared utilities.'
+version: 0.4.3
+homepage: https://voostack.com/packages/voo_core
+repository: https://github.com/voostack/FlutterDevStack/tree/main/packages/voo_core
+issue_tracker: https://github.com/voostack/FlutterDevStack/issues
+topics:
+  - flutter
+  - core
+  - plugins
+  - architecture
+  - utilities
+resolution: workspace
+
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  web:
+  windows:
+
+environment:
+  sdk: '>=3.8.1 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+devtools_extension:
+  path: extension/devtools
