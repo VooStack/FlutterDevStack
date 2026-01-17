@@ -4,3 +4,4 @@ export 'src/domain/entities/network_metric.dart';
 export 'src/interceptors/performance_dio_interceptor.dart';
 export 'src/interceptors/performance_dio_interceptor_impl.dart';
 export 'src/utils/performance_tracker.dart';
+export 'src/data/services/performance_cloud_sync.dart';

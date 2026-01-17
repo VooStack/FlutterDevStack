@@ -143,12 +143,16 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
   @override
   Map<String, dynamic> formatPayload(List<LogEntry> logs) {
     final firstLog = logs.isNotEmpty ? logs.first : null;
+    // Wrap in 'request' as expected by the API
     return {
-      'logs': logs.map(_formatLogEntry).toList(),
-      'sessionId': firstLog?.sessionId ?? '',
-      'deviceId': firstLog?.deviceId ?? '',
-      'platform': _getPlatform(),
-      'appVersion': firstLog?.appVersion ?? '',
+      'request': {
+        'projectId': _loggingConfig.projectId,
+        'logs': logs.map(_formatLogEntry).toList(),
+        'sessionId': firstLog?.sessionId ?? '',
+        'deviceId': firstLog?.deviceId ?? '',
+        'platform': _getPlatform(),
+        'appVersion': firstLog?.appVersion ?? '',
+      },
     };
   }
 
@@ -156,10 +160,78 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
         'level': log.level.name.toLowerCase(),
         'message': log.message,
         'category': log.category ?? '',
-        'context': log.metadata ?? {},
+        'tag': log.tag,
+        'context': _sanitizeMetadata(log.metadata),
         'stackTrace': log.stackTrace,
         'timestamp': log.timestamp.toIso8601String(),
       };
+
+  /// Sanitize metadata to prevent oversized payloads and deep nesting.
+  /// - Limits string values to 10KB
+  /// - Removes deeply nested objects (max depth 5)
+  /// - Removes known problematic fields like responseBody
+  Map<String, dynamic> _sanitizeMetadata(Map<String, dynamic>? metadata) {
+    if (metadata == null) return {};
+    return _sanitizeMap(metadata, 0);
+  }
+
+  Map<String, dynamic> _sanitizeMap(Map<String, dynamic> map, int depth) {
+    if (depth > 5) return {'_truncated': 'max depth exceeded'};
+
+    final result = <String, dynamic>{};
+    for (final entry in map.entries) {
+      // Skip known problematic large fields
+      if (_isLargeFieldKey(entry.key)) {
+        result[entry.key] = '[truncated - large field]';
+        continue;
+      }
+
+      result[entry.key] = _sanitizeValue(entry.value, depth);
+    }
+    return result;
+  }
+
+  bool _isLargeFieldKey(String key) {
+    final lower = key.toLowerCase();
+    return lower.contains('responsebody') ||
+        lower.contains('requestbody') ||
+        lower.contains('body') ||
+        lower.contains('html') ||
+        lower.contains('content');
+  }
+
+  dynamic _sanitizeValue(dynamic value, int depth) {
+    if (value == null) return null;
+
+    if (value is String) {
+      // Limit string size to 10KB
+      if (value.length > 10240) {
+        return '${value.substring(0, 1000)}... [truncated ${value.length} chars]';
+      }
+      return value;
+    }
+
+    if (value is Map<String, dynamic>) {
+      return _sanitizeMap(value, depth + 1);
+    }
+
+    if (value is Map) {
+      return _sanitizeMap(Map<String, dynamic>.from(value), depth + 1);
+    }
+
+    if (value is List) {
+      if (value.length > 100) {
+        return [
+          ...value.take(10).map((e) => _sanitizeValue(e, depth + 1)),
+          '[truncated ${value.length} items]'
+        ];
+      }
+      return value.map((e) => _sanitizeValue(e, depth + 1)).toList();
+    }
+
+    // Primitives pass through
+    return value;
+  }
 
   String _getPlatform() {
     if (kIsWeb) return 'web';

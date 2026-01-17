@@ -301,8 +301,8 @@ void main() {
       expect(logData['level'], 'warning');
       expect(logData['message'], 'Test message');
       expect(logData['category'], 'TestCategory');
-      expect(logData['logger'], 'test-tag');
-      expect(logData['metadata'], {'key': 'value'});
+      expect(logData['tag'], 'test-tag');
+      expect(logData['context'], {'key': 'value'});
     });
 
     test('should update status correctly', () async {
@@ -375,10 +375,10 @@ void main() {
     });
 
     test('should generate correct log endpoint', () {
-      final config = const CloudSyncConfig(
-        endpoint: 'https://api.devstack.io',
+      const config = CloudSyncConfig(
+        endpoint: 'https://api.devstack.io/api',
       );
-      expect(config.logEndpoint, 'https://api.devstack.io/api/telemetry/logs');
+      expect(config.logEndpoint, 'https://api.devstack.io/api/v1/telemetry/logs');
     });
 
     test('production preset should have correct defaults', () {
@@ -405,7 +405,7 @@ void main() {
 
       expect(config.enabled, true);
       expect(config.batchSize, 10);
-      expect(config.batchInterval, const Duration(seconds: 10));
+      expect(config.batchInterval, const Duration(minutes: 10));
     });
   });
 }

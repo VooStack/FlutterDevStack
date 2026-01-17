@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -65,7 +66,7 @@ void main() {
       expect(capturedRequests.first['body']['projectId'], 'test-project');
     });
 
-    test('should batch touch events correctly', () async {
+    test('should include touch events in payload when flushing', () async {
       final config = AnalyticsCloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
@@ -81,6 +82,7 @@ void main() {
       );
       syncService.initialize();
 
+      // Queue touch events first
       for (var i = 0; i < 3; i++) {
         syncService.queueTouchEvent(TouchEvent(
           id: 'test-touch-$i',
@@ -91,9 +93,18 @@ void main() {
         ));
       }
 
+      // Queue analytics events to trigger flush (touch events are included in payload)
+      for (var i = 0; i < 3; i++) {
+        syncService.queueEvent(AnalyticsEventData(
+          eventName: 'event_$i',
+          timestamp: DateTime.now(),
+        ));
+      }
+
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(requestCount, 1);
+      expect(capturedRequests.first['body']['events'].length, 3);
       expect(capturedRequests.first['body']['touchEvents'].length, 3);
     });
 

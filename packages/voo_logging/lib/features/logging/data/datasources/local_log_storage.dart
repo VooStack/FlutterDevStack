@@ -63,6 +63,14 @@ class LocalLogStorage {
     return _database!;
   }
 
+  /// Check if error is a hot restart IndexedDB corruption error
+  bool _isHotRestartCorruptionError(Object e) {
+    final errorString = e.toString();
+    return errorString.contains('LegacyJavaScriptObject') ||
+        errorString.contains('KeyRange') ||
+        errorString.contains('IdbCursor');
+  }
+
   /// Initialize the database
   /// Handles both web and mobile/desktop platforms
   Future<Database> _initDatabase() async {
@@ -89,13 +97,25 @@ class LocalLogStorage {
       dbPath = path.join(dbDirectory.path, 'voo_logs.db');
     }
 
-    // Open database
-    final db = await dbFactory.openDatabase(dbPath);
-
-    // Initialize metadata if first time
-    await _initializeMetadata(db);
-
-    return db;
+    // Open database with hot restart error recovery for web
+    try {
+      final db = await dbFactory.openDatabase(dbPath);
+      // Initialize metadata if first time
+      await _initializeMetadata(db);
+      return db;
+    } catch (e) {
+      // Handle hot restart IndexedDB corruption on web
+      if (kIsWeb && _isHotRestartCorruptionError(e)) {
+        _webStorageError = true;
+        // Delete corrupted database and retry
+        await databaseFactoryWeb.deleteDatabase(dbPath);
+        final db = await databaseFactoryWeb.openDatabase(dbPath);
+        await _initializeMetadata(db);
+        _webStorageError = false;
+        return db;
+      }
+      rethrow;
+    }
   }
 
   /// Initialize metadata store with app info

@@ -21,8 +21,9 @@ class AnalyticsCloudSyncConfig extends BaseSyncConfig {
   });
 
   /// Returns the full endpoint URL for analytics ingestion.
+  /// Note: endpoint should already include /api if needed (e.g., 'http://localhost:5001/api')
   String? get eventsEndpoint =>
-      endpoint != null ? '$endpoint/api/v1/telemetry/analytics' : null;
+      endpoint != null ? '$endpoint/v1/telemetry/analytics' : null;
 
   factory AnalyticsCloudSyncConfig.production({
     required String endpoint,
@@ -93,9 +94,9 @@ class AnalyticsEventData {
   });
 
   Map<String, dynamic> toJson() => {
-        'eventName': eventName,
+        'name': eventName, // Backend expects 'Name' which maps to 'name' in JSON
         'timestamp': timestamp.toIso8601String(),
-        'parameters': parameters,
+        'properties': parameters ?? {}, // Backend requires Properties to be non-null
         'screenName': screenName,
         'userId': userId,
       };
@@ -155,8 +156,20 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
       touchEventsToSync.add(_pendingTouchEvents.removeFirst());
     }
 
+    // Get session/device info from Voo core config
+    final vooConfig = Voo.options?.customConfig ?? {};
+    final sessionId = vooConfig['sessionId'] as String? ?? '';
+    final deviceId = vooConfig['deviceId'] as String? ?? '';
+    final platform = vooConfig['platform'] as String? ?? 'unknown';
+    final appVersion = vooConfig['appVersion'] as String? ?? '1.0.0';
+
     return {
       'projectId': _analyticsConfig.projectId,
+      'sessionId': sessionId,
+      'deviceId': deviceId,
+      'platform': platform,
+      'appVersion': appVersion,
+      'userId': events.isNotEmpty ? events.first.userId ?? '' : '',
       'events': events.map((e) => e.toJson()).toList(),
       'touchEvents': touchEventsToSync
           .map((e) => {

@@ -127,7 +127,8 @@ class CloudSyncConfig {
 
   /// Returns the full endpoint URL for log ingestion.
   /// Uses standardized telemetry endpoint format.
-  String? get logEndpoint => endpoint != null ? '$endpoint/api/v1/telemetry/logs' : null;
+  /// Note: endpoint should already include /api if needed (e.g., 'http://localhost:5001/api')
+  String? get logEndpoint => endpoint != null ? '$endpoint/v1/telemetry/logs' : null;
 
   CloudSyncConfig copyWith({
     bool? enabled,

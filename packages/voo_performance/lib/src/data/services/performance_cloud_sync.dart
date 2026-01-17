@@ -20,8 +20,9 @@ class PerformanceCloudSyncConfig extends BaseSyncConfig {
   });
 
   /// Returns the full endpoint URL for performance metrics ingestion.
+  /// Note: endpoint should already include /api if needed (e.g., 'http://localhost:5001/api')
   String? get metricsEndpoint =>
-      endpoint != null ? '$endpoint/api/v1/telemetry/performance' : null;
+      endpoint != null ? '$endpoint/v1/telemetry/performance' : null;
 
   factory PerformanceCloudSyncConfig.production({
     required String endpoint,

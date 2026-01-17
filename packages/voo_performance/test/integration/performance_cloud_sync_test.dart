@@ -66,7 +66,7 @@ void main() {
       expect(capturedRequests.first['body']['projectId'], 'test-project');
     });
 
-    test('should batch network metrics correctly', () async {
+    test('should include network metrics in payload when flushing', () async {
       final config = PerformanceCloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
@@ -82,6 +82,7 @@ void main() {
       );
       syncService.initialize();
 
+      // Queue network metrics
       for (var i = 0; i < 3; i++) {
         syncService.queueNetworkMetric(NetworkMetricData(
           method: 'GET',
@@ -92,9 +93,21 @@ void main() {
         ));
       }
 
+      // Queue performance metrics to trigger flush
+      for (var i = 0; i < 3; i++) {
+        syncService.queueMetric(PerformanceMetricData(
+          name: 'metric_$i',
+          metricType: 'gauge',
+          value: i.toDouble(),
+          unit: 'ms',
+          timestamp: DateTime.now(),
+        ));
+      }
+
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(requestCount, 1);
+      expect(capturedRequests.first['body']['metrics'].length, 3);
       expect(capturedRequests.first['body']['networkMetrics'].length, 3);
     });
 
@@ -165,6 +178,7 @@ void main() {
       );
       syncService.initialize();
 
+      // Queue network metric first
       syncService.queueNetworkMetric(NetworkMetricData(
         method: 'POST',
         url: 'https://api.example.com/users',
@@ -175,8 +189,18 @@ void main() {
         timestamp: DateTime.utc(2024, 1, 15, 10, 30),
       ));
 
+      // Queue performance metric to trigger flush (network metrics are included in payload)
+      syncService.queueMetric(PerformanceMetricData(
+        name: 'test',
+        metricType: 'gauge',
+        value: 1.0,
+        unit: 'ms',
+        timestamp: DateTime.now(),
+      ));
+
       await Future.delayed(const Duration(milliseconds: 100));
 
+      expect(requestCount, 1);
       final metric = capturedRequests.first['body']['networkMetrics'][0];
       expect(metric['method'], 'POST');
       expect(metric['url'], 'https://api.example.com/users');
