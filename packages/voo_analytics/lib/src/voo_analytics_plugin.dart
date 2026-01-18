@@ -78,6 +78,10 @@ class VooAnalyticsPlugin extends VooPlugin {
     await repository!.logEvent(name, parameters: parameters);
   }
 
+  /// Sets a user property for analytics.
+  ///
+  /// Also forwards to [Voo.setUserProperty] to keep central context in sync.
+  /// Consider using [Voo.setUserProperty] directly for a unified approach.
   Future<void> setUserProperty(String name, String value) async {
     if (!_initialized) {
       throw const VooException(
@@ -85,9 +89,15 @@ class VooAnalyticsPlugin extends VooPlugin {
         code: 'not-initialized',
       );
     }
+    // Forward to Voo central context
+    Voo.setUserProperty(name, value);
     await repository!.setUserProperty(name, value);
   }
 
+  /// Sets the user ID for analytics.
+  ///
+  /// Also forwards to [Voo.setUserId] to keep central context in sync.
+  /// Consider using [Voo.setUserId] directly for a unified approach.
   Future<void> setUserId(String userId) async {
     if (!_initialized) {
       throw const VooException(
@@ -95,6 +105,8 @@ class VooAnalyticsPlugin extends VooPlugin {
         code: 'not-initialized',
       );
     }
+    // Forward to Voo central context
+    Voo.setUserId(userId);
     await repository!.setUserId(userId);
   }
 

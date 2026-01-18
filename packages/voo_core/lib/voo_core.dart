@@ -3,6 +3,15 @@ export 'package:voo_core/src/voo.dart';
 export 'package:voo_core/src/voo_options.dart';
 export 'package:voo_core/src/voo_plugin.dart';
 
+// Models - Configuration and Context
+export 'package:voo_core/src/models/voo_config.dart';
+export 'package:voo_core/src/models/voo_context.dart';
+export 'package:voo_core/src/models/voo_device_info.dart';
+export 'package:voo_core/src/models/voo_user_context.dart';
+
+// Services - Device Info Collection
+export 'package:voo_core/src/services/voo_device_info_service.dart';
+
 // Exceptions
 export 'package:voo_core/src/exceptions/voo_exception.dart';
 

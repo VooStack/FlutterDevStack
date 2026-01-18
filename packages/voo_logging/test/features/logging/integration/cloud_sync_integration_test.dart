@@ -142,7 +142,8 @@ void main() {
 
       expect(capturedRequests.first['headers']['X-API-Key'], 'my-secret-key');
       expect(capturedRequests.first['headers']['Content-Type'], 'application/json');
-      expect(capturedRequests.first['body']['projectId'], 'project-123');
+      // projectId is sent via X-Project-Id header, not in body
+      expect(capturedRequests.first['headers']['X-Project-Id'], 'project-123');
     });
 
     test('should prioritize error logs', () async {
@@ -301,8 +302,9 @@ void main() {
       expect(logData['level'], 'warning');
       expect(logData['message'], 'Test message');
       expect(logData['category'], 'TestCategory');
-      expect(logData['tag'], 'test-tag');
-      expect(logData['context'], {'key': 'value'});
+      // tag is now included in context (API doesn't have a separate tag field)
+      expect(logData['context']['tag'], 'test-tag');
+      expect(logData['context']['key'], 'value');
     });
 
     test('should update status correctly', () async {

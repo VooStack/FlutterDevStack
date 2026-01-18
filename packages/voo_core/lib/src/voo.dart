@@ -3,9 +3,35 @@ import 'package:flutter/foundation.dart';
 import 'package:voo_core/src/voo_options.dart';
 import 'package:voo_core/src/voo_plugin.dart';
 import 'package:voo_core/src/exceptions/voo_exception.dart';
+import 'package:voo_core/src/models/voo_config.dart';
+import 'package:voo_core/src/models/voo_context.dart';
+import 'package:voo_core/src/models/voo_device_info.dart';
+import 'package:voo_core/src/models/voo_user_context.dart';
+import 'package:voo_core/src/services/voo_device_info_service.dart';
 
 /// Central initialization and management for all Voo packages.
 /// Works similar to Firebase Core, providing a unified entry point.
+///
+/// ## Quick Start
+/// ```dart
+/// await Voo.initializeApp(
+///   config: VooConfig(
+///     endpoint: 'https://api.example.com/api',
+///     apiKey: 'your-api-key',
+///     projectId: 'your-project-id',
+///   ),
+/// );
+///
+/// // Device info is auto-collected
+/// print(Voo.deviceInfo?.deviceModel);
+///
+/// // Set user after authentication
+/// Voo.setUserId(user.id);
+/// Voo.setUserProperty('plan', 'premium');
+///
+/// // Access combined context for sync payloads
+/// final payload = Voo.context?.toSyncPayload();
+/// ```
 class Voo {
   static final Map<String, VooPlugin> _plugins = {};
   static final Map<String, VooApp> _apps = {};
@@ -13,29 +39,142 @@ class Voo {
   static VooOptions? _options;
   static const String _defaultAppName = '[DEFAULT]';
 
+  // New: Central context management
+  static VooConfig? _config;
+  static VooDeviceInfo? _deviceInfo;
+  static VooUserContext? _userContext;
+
   Voo._();
 
+  // Existing getters
   static VooOptions? get options => _options;
   static bool get isInitialized => _initialized;
   static Map<String, VooPlugin> get plugins => Map.unmodifiable(_plugins);
   static Map<String, VooApp> get apps => Map.unmodifiable(_apps);
 
+  // New: Typed context getters
+
+  /// The API and project configuration.
+  static VooConfig? get config => _config;
+
+  /// Device information collected at initialization.
+  static VooDeviceInfo? get deviceInfo => _deviceInfo;
+
+  /// User and session context (mutable).
+  static VooUserContext? get userContext => _userContext;
+
+  /// Combined context for child packages.
+  ///
+  /// Returns null if Voo is not fully initialized.
+  /// Child packages should use this to get sync payloads.
+  static VooContext? get context {
+    if (_config == null || _deviceInfo == null || _userContext == null) {
+      return null;
+    }
+    return VooContext(
+      config: _config!,
+      deviceInfo: _deviceInfo!,
+      userContext: _userContext!,
+    );
+  }
+
+  // New: User context convenience methods
+
+  /// Sets the current user ID.
+  ///
+  /// Call this after user authentication. All child packages will
+  /// automatically include this in their sync payloads.
+  static void setUserId(String? userId) {
+    _userContext?.setUserId(userId);
+  }
+
+  /// Sets a user property.
+  ///
+  /// User properties are included in telemetry sync payloads.
+  static void setUserProperty(String key, dynamic value) {
+    _userContext?.setUserProperty(key, value);
+  }
+
+  /// Sets multiple user properties at once.
+  static void setUserProperties(Map<String, dynamic> properties) {
+    _userContext?.setUserProperties(properties);
+  }
+
+  /// Clears all user identification and properties.
+  ///
+  /// Call this on logout.
+  static void clearUser() {
+    _userContext?.clearUser();
+  }
+
+  /// Starts a new session with an optional custom session ID.
+  ///
+  /// Call this on app foreground or after significant events.
+  static void startNewSession([String? sessionId]) {
+    _userContext?.startNewSession(sessionId);
+  }
+
+  /// Gets the current session ID.
+  static String? get sessionId => _userContext?.sessionId;
+
+  /// Gets the current user ID.
+  static String? get userId => _userContext?.userId;
+
   /// Initialize the default Voo app.
+  ///
+  /// The recommended way to initialize is with a [VooConfig]:
+  /// ```dart
+  /// await Voo.initializeApp(
+  ///   config: VooConfig(
+  ///     endpoint: 'https://api.example.com/api',
+  ///     apiKey: 'your-api-key',
+  ///     projectId: 'your-project-id',
+  ///   ),
+  /// );
+  /// ```
+  ///
+  /// For backwards compatibility, you can still use [VooOptions] with
+  /// [customConfig], but this is deprecated.
   static Future<VooApp> initializeApp({
     String name = _defaultAppName,
+    VooConfig? config,
     VooOptions? options,
   }) async {
     if (_apps.containsKey(name)) {
       return _apps[name]!;
     }
 
+    // Store config
+    _config = config;
+
+    // Use provided options or create default
     _options = options ?? const VooOptions();
+
+    // Auto-collect device info if enabled
+    if (_options!.autoCollectDeviceInfo) {
+      try {
+        _deviceInfo = await VooDeviceInfoService.initialize();
+        if (kDebugMode) {
+          debugPrint('Voo: Collected device info for ${_deviceInfo?.osName}');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('Voo: Failed to collect device info: $e');
+        }
+      }
+    }
+
+    // Initialize user context with auto-generated session
+    _userContext = VooUserContext();
+    if (kDebugMode) {
+      debugPrint('Voo: Session started: ${_userContext?.sessionId}');
+    }
 
     if (!_initialized) {
       _initialized = true;
     }
 
-    final app = VooApp._(name: name, options: _options!);
+    final app = VooApp._(name: name, options: _options!, config: _config);
     _apps[name] = app;
 
     // Notify all registered plugins about the new app
@@ -45,6 +184,9 @@ class Voo {
 
     if (kDebugMode) {
       debugPrint('Voo: Initialized app "$name"');
+      if (_config != null) {
+        debugPrint('Voo: Project: ${_config!.projectId}, Environment: ${_config!.environment}');
+      }
     }
 
     return app;
@@ -123,8 +265,13 @@ class Voo {
     }
     _apps.clear();
 
+    // Clear context
     _initialized = false;
     _options = null;
+    _config = null;
+    _deviceInfo = null;
+    _userContext = null;
+    VooDeviceInfoService.reset();
   }
 
   /// Check if a plugin is registered.
@@ -147,9 +294,10 @@ class Voo {
 class VooApp {
   final String name;
   final VooOptions options;
+  final VooConfig? config;
   final Map<String, dynamic> _data = {};
 
-  VooApp._({required this.name, required this.options});
+  VooApp._({required this.name, required this.options, this.config});
 
   /// Check if this is the default app.
   bool get isDefault => name == Voo._defaultAppName;

@@ -200,7 +200,17 @@ class PerformanceCloudSyncService
     // Clear pending network metrics since they need different handling
     _pendingNetworkMetrics.clear();
 
-    // Get session/device info from Voo core config
+    // Use new typed context from Voo.context (preferred)
+    final context = Voo.context;
+    if (context != null) {
+      return {
+        'metrics': metrics.map((m) => m.toJson()).toList(),
+        ...context.toSyncPayload(),
+      };
+    }
+
+    // Fallback: Legacy customConfig extraction (backwards compatibility)
+    // ignore: deprecated_member_use
     final vooConfig = Voo.options?.customConfig ?? {};
     final sessionId = vooConfig['sessionId'] as String? ?? '';
     final deviceId = vooConfig['deviceId'] as String? ?? '';

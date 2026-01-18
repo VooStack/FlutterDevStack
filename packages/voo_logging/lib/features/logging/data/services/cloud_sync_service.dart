@@ -142,6 +142,16 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
 
   @override
   Map<String, dynamic> formatPayload(List<LogEntry> logs) {
+    // Use new typed context from Voo.context (preferred)
+    final context = Voo.context;
+    if (context != null) {
+      return {
+        'logs': logs.map(_formatLogEntry).toList(),
+        ...context.toSyncPayload(),
+      };
+    }
+
+    // Fallback: Use LogEntry fields (backwards compatibility)
     final firstLog = logs.isNotEmpty ? logs.first : null;
     // API expects flat structure with logs array and batch-level metadata
     return {
@@ -153,15 +163,22 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
     };
   }
 
-  Map<String, dynamic> _formatLogEntry(LogEntry log) => {
-        'level': log.level.name.toLowerCase(),
-        'message': log.message,
-        'category': log.category ?? '',
-        'tag': log.tag,
-        'context': _sanitizeMetadata(log.metadata),
-        'stackTrace': log.stackTrace,
-        'timestamp': log.timestamp.toIso8601String(),
-      };
+  Map<String, dynamic> _formatLogEntry(LogEntry log) {
+    // Build context with tag included (API doesn't have a separate tag field)
+    final context = _sanitizeMetadata(log.metadata);
+    if (log.tag != null && log.tag!.isNotEmpty) {
+      context['tag'] = log.tag;
+    }
+
+    return {
+      'level': log.level.name.toLowerCase(),
+      'message': log.message,
+      'category': log.category ?? '',
+      'context': context,
+      'stackTrace': log.stackTrace,
+      'timestamp': log.timestamp.toIso8601String(),
+    };
+  }
 
   /// Sanitize metadata to prevent oversized payloads and deep nesting.
   /// - Limits string values to 10KB

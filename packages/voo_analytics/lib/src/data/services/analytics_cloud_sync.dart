@@ -159,7 +159,17 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
     // Clear any pending touch events since they're not part of the standard API
     _pendingTouchEvents.clear();
 
-    // Get session/device info from Voo core config
+    // Use new typed context from Voo.context (preferred)
+    final context = Voo.context;
+    if (context != null) {
+      return {
+        'events': events.map((e) => e.toJson()).toList(),
+        ...context.toSyncPayload(),
+      };
+    }
+
+    // Fallback: Legacy customConfig extraction (backwards compatibility)
+    // ignore: deprecated_member_use
     final vooConfig = Voo.options?.customConfig ?? {};
     final sessionId = vooConfig['sessionId'] as String? ?? '';
     final userId = vooConfig['userId'] as String? ?? '';
