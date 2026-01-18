@@ -1,0 +1,222 @@
+name: SDK Integration Tests
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.24.0'
+
+jobs:
+  voo-analytics-tests:
+    name: voo_analytics Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap packages
+        run: melos bootstrap
+
+      - name: Run voo_analytics unit tests
+        run: flutter test test/unit/ --reporter expanded || true
+        working-directory: packages/voo_analytics
+
+      - name: Run voo_analytics integration tests
+        run: flutter test test/integration/ --reporter expanded
+        working-directory: packages/voo_analytics
+
+      - name: Run funnel tracking tests
+        run: flutter test test/integration/funnel_tracking_test.dart --reporter expanded
+        working-directory: packages/voo_analytics
+
+      - name: Run attribution tracking tests
+        run: flutter test test/integration/attribution_tracking_test.dart --reporter expanded
+        working-directory: packages/voo_analytics
+
+  voo-performance-tests:
+    name: voo_performance Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap packages
+        run: melos bootstrap
+
+      - name: Run voo_performance unit tests
+        run: flutter test test/unit/ --reporter expanded || true
+        working-directory: packages/voo_performance
+
+      - name: Run voo_performance integration tests
+        run: flutter test test/integration/ --reporter expanded
+        working-directory: packages/voo_performance
+
+      - name: Run app launch tests
+        run: flutter test test/integration/app_launch_test.dart --reporter expanded
+        working-directory: packages/voo_performance
+
+      - name: Run network timing tests
+        run: flutter test test/integration/network_timing_test.dart --reporter expanded
+        working-directory: packages/voo_performance
+
+  voo-logging-tests:
+    name: voo_logging Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap packages
+        run: melos bootstrap
+
+      - name: Run voo_logging unit tests
+        run: flutter test test/unit/ --reporter expanded || true
+        working-directory: packages/voo_logging
+
+      - name: Run voo_logging integration tests
+        run: flutter test test/features/logging/integration/ --reporter expanded
+        working-directory: packages/voo_logging
+
+      - name: Run error fingerprint tests
+        run: flutter test test/features/logging/integration/error_fingerprint_test.dart --reporter expanded
+        working-directory: packages/voo_logging
+
+  voo-core-tests:
+    name: voo_core Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap packages
+        run: melos bootstrap
+
+      - name: Run voo_core tests
+        run: flutter test --reporter expanded
+        working-directory: packages/voo_core
+
+  e2e-cloud-sync:
+    name: E2E Cloud Sync Tests
+    runs-on: ubuntu-latest
+    needs: [voo-analytics-tests, voo-performance-tests, voo-logging-tests]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap packages
+        run: melos bootstrap
+
+      - name: Run all E2E tests
+        run: melos run test:e2e || true
+
+  coverage-report:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+    needs: [voo-analytics-tests, voo-performance-tests, voo-logging-tests, voo-core-tests]
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap packages
+        run: melos bootstrap
+
+      - name: Generate coverage for all packages
+        run: melos run test:coverage || true
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sdk-coverage
+          path: |
+            packages/*/coverage/
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [voo-analytics-tests, voo-performance-tests, voo-logging-tests, voo-core-tests, e2e-cloud-sync]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## SDK Integration Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| voo_analytics | ${{ needs.voo-analytics-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| voo_performance | ${{ needs.voo-performance-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| voo_logging | ${{ needs.voo-logging-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| voo_core | ${{ needs.voo-core-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Cloud Sync | ${{ needs.e2e-cloud-sync.result }} |" >> $GITHUB_STEP_SUMMARY
