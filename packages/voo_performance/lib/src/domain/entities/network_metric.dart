@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:voo_performance/src/domain/entities/network_timing.dart';
 
 class NetworkMetric extends Equatable {
   final String id;
@@ -11,6 +12,21 @@ class NetworkMetric extends Equatable {
   final int? responseSize;
   final Map<String, dynamic>? metadata;
 
+  /// Detailed timing breakdown for the request.
+  ///
+  /// Contains granular timing info like DNS lookup, TCP connect,
+  /// TLS handshake, time to first byte, and content download.
+  final NetworkTiming? timing;
+
+  /// Whether this request was served from cache.
+  final bool fromCache;
+
+  /// Request priority (low, medium, high).
+  final String? priority;
+
+  /// Initiator of the request (navigation, script, user, etc.).
+  final String? initiator;
+
   const NetworkMetric({
     required this.id,
     required this.url,
@@ -21,10 +37,25 @@ class NetworkMetric extends Equatable {
     this.requestSize,
     this.responseSize,
     this.metadata,
+    this.timing,
+    this.fromCache = false,
+    this.priority,
+    this.initiator,
   });
 
   bool get isError => statusCode >= 400;
   bool get isSuccess => statusCode >= 200 && statusCode < 300;
+
+  /// Bandwidth in KB/s based on response size and download time.
+  double? get bandwidthKBps {
+    if (timing != null && responseSize != null) {
+      return timing!.calculateBandwidth(responseSize!);
+    }
+    return null;
+  }
+
+  /// Time to first byte from timing breakdown.
+  int? get timeToFirstByteMs => timing?.timeToFirstByteMs;
 
   Map<String, dynamic> toMap() {
     return {
@@ -37,6 +68,10 @@ class NetworkMetric extends Equatable {
       if (requestSize != null) 'request_size': requestSize,
       if (responseSize != null) 'response_size': responseSize,
       if (metadata != null) 'metadata': metadata,
+      if (timing != null) 'timing': timing!.toJson(),
+      'from_cache': fromCache,
+      if (priority != null) 'priority': priority,
+      if (initiator != null) 'initiator': initiator,
     };
   }
 
@@ -51,19 +86,60 @@ class NetworkMetric extends Equatable {
       requestSize: map['request_size'] as int?,
       responseSize: map['response_size'] as int?,
       metadata: map['metadata'] as Map<String, dynamic>?,
+      timing: map['timing'] != null
+          ? NetworkTiming.fromJson(map['timing'] as Map<String, dynamic>)
+          : null,
+      fromCache: map['from_cache'] as bool? ?? false,
+      priority: map['priority'] as String?,
+      initiator: map['initiator'] as String?,
     );
   }
 
+  NetworkMetric copyWith({
+    String? id,
+    String? url,
+    String? method,
+    int? statusCode,
+    Duration? duration,
+    DateTime? timestamp,
+    int? requestSize,
+    int? responseSize,
+    Map<String, dynamic>? metadata,
+    NetworkTiming? timing,
+    bool? fromCache,
+    String? priority,
+    String? initiator,
+  }) =>
+      NetworkMetric(
+        id: id ?? this.id,
+        url: url ?? this.url,
+        method: method ?? this.method,
+        statusCode: statusCode ?? this.statusCode,
+        duration: duration ?? this.duration,
+        timestamp: timestamp ?? this.timestamp,
+        requestSize: requestSize ?? this.requestSize,
+        responseSize: responseSize ?? this.responseSize,
+        metadata: metadata ?? this.metadata,
+        timing: timing ?? this.timing,
+        fromCache: fromCache ?? this.fromCache,
+        priority: priority ?? this.priority,
+        initiator: initiator ?? this.initiator,
+      );
+
   @override
   List<Object?> get props => [
-    id,
-    url,
-    method,
-    statusCode,
-    duration,
-    timestamp,
-    requestSize,
-    responseSize,
-    metadata,
-  ];
+        id,
+        url,
+        method,
+        statusCode,
+        duration,
+        timestamp,
+        requestSize,
+        responseSize,
+        metadata,
+        timing,
+        fromCache,
+        priority,
+        initiator,
+      ];
 }

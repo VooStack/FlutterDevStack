@@ -13,3 +13,4 @@ export 'src/data/services/deep_link_service.dart';
 export 'src/data/services/funnel_tracking_service.dart';
 export 'src/data/models/user_path.dart';
 export 'src/presentation/widgets/voo_trackable.dart';
+export 'src/data/services/install_referrer_service.dart';
