@@ -62,11 +62,18 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(requestCount, 1);
-      expect(capturedRequests.first['body']['metrics'].length, 5);
-      expect(capturedRequests.first['body']['projectId'], 'test-project');
+      final body = capturedRequests.first['body'];
+      expect(body['metrics'].length, 5);
+      // API expects batch-level metadata
+      expect(body.containsKey('sessionId'), isTrue);
+      expect(body.containsKey('deviceId'), isTrue);
+      expect(body.containsKey('platform'), isTrue);
+      expect(body.containsKey('appVersion'), isTrue);
+      // projectId is no longer in the payload (sent via X-Project-Id header)
+      expect(body.containsKey('projectId'), isFalse);
     });
 
-    test('should include network metrics in payload when flushing', () async {
+    test('should queue network metrics separately (deprecated)', () async {
       final config = PerformanceCloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
@@ -82,7 +89,7 @@ void main() {
       );
       syncService.initialize();
 
-      // Queue network metrics
+      // Queue network metrics (these are cleared on flush as they're not part of standard API)
       for (var i = 0; i < 3; i++) {
         syncService.queueNetworkMetric(NetworkMetricData(
           method: 'GET',
@@ -107,8 +114,10 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(requestCount, 1);
-      expect(capturedRequests.first['body']['metrics'].length, 3);
-      expect(capturedRequests.first['body']['networkMetrics'].length, 3);
+      final body = capturedRequests.first['body'];
+      expect(body['metrics'].length, 3);
+      // Network metrics are no longer included (cleared on flush)
+      expect(body.containsKey('networkMetrics'), isFalse);
     });
 
     test('should include API key in headers', () async {
@@ -163,7 +172,7 @@ void main() {
       expect(requestCount, 0);
     });
 
-    test('should format network metric data correctly', () async {
+    test('should format metric with type field correctly', () async {
       final config = PerformanceCloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
@@ -178,36 +187,29 @@ void main() {
       );
       syncService.initialize();
 
-      // Queue network metric first
-      syncService.queueNetworkMetric(NetworkMetricData(
-        method: 'POST',
-        url: 'https://api.example.com/users',
-        statusCode: 201,
-        duration: 250,
-        requestSize: 1024,
-        responseSize: 512,
-        timestamp: DateTime.utc(2024, 1, 15, 10, 30),
-      ));
-
-      // Queue performance metric to trigger flush (network metrics are included in payload)
       syncService.queueMetric(PerformanceMetricData(
-        name: 'test',
-        metricType: 'gauge',
-        value: 1.0,
+        name: 'api_response_time',
+        metricType: 'timer',
+        value: 250.0,
         unit: 'ms',
-        timestamp: DateTime.now(),
+        timestamp: DateTime.utc(2024, 1, 15, 10, 30),
+        source: 'frontend',
+        endpoint: '/api/users',
+        pageName: 'UserList',
       ));
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(requestCount, 1);
-      final metric = capturedRequests.first['body']['networkMetrics'][0];
-      expect(metric['method'], 'POST');
-      expect(metric['url'], 'https://api.example.com/users');
-      expect(metric['statusCode'], 201);
-      expect(metric['duration'], 250);
-      expect(metric['requestSize'], 1024);
-      expect(metric['responseSize'], 512);
+      final metric = capturedRequests.first['body']['metrics'][0];
+      // API expects 'type', not 'metricType'
+      expect(metric['name'], 'api_response_time');
+      expect(metric['type'], 'timer');
+      expect(metric['value'], 250.0);
+      expect(metric['unit'], 'ms');
+      expect(metric['source'], 'frontend');
+      expect(metric['endpoint'], '/api/users');
+      expect(metric['pageName'], 'UserList');
     });
   });
 

@@ -62,11 +62,18 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(requestCount, 1);
-      expect(capturedRequests.first['body']['events'].length, 5);
-      expect(capturedRequests.first['body']['projectId'], 'test-project');
+      final body = capturedRequests.first['body'];
+      expect(body['events'].length, 5);
+      // API expects batch-level metadata
+      expect(body.containsKey('sessionId'), isTrue);
+      expect(body.containsKey('deviceId'), isTrue);
+      expect(body.containsKey('platform'), isTrue);
+      expect(body.containsKey('appVersion'), isTrue);
+      // projectId is no longer in the payload (sent via X-Project-Id header)
+      expect(body.containsKey('projectId'), isFalse);
     });
 
-    test('should include touch events in payload when flushing', () async {
+    test('should queue touch events separately (deprecated)', () async {
       final config = AnalyticsCloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
@@ -82,7 +89,7 @@ void main() {
       );
       syncService.initialize();
 
-      // Queue touch events first
+      // Queue touch events (these are cleared on flush as they're not part of standard API)
       for (var i = 0; i < 3; i++) {
         syncService.queueTouchEvent(TouchEvent(
           id: 'test-touch-$i',
@@ -93,7 +100,7 @@ void main() {
         ));
       }
 
-      // Queue analytics events to trigger flush (touch events are included in payload)
+      // Queue analytics events to trigger flush
       for (var i = 0; i < 3; i++) {
         syncService.queueEvent(AnalyticsEventData(
           eventName: 'event_$i',
@@ -104,8 +111,10 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(requestCount, 1);
-      expect(capturedRequests.first['body']['events'].length, 3);
-      expect(capturedRequests.first['body']['touchEvents'].length, 3);
+      final body = capturedRequests.first['body'];
+      expect(body['events'].length, 3);
+      // Touch events are no longer included (cleared on flush)
+      expect(body.containsKey('touchEvents'), isFalse);
     });
 
     test('should include API key in headers', () async {

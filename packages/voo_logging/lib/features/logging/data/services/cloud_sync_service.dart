@@ -143,16 +143,13 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
   @override
   Map<String, dynamic> formatPayload(List<LogEntry> logs) {
     final firstLog = logs.isNotEmpty ? logs.first : null;
-    // Wrap in 'request' as expected by the API
+    // API expects flat structure with logs array and batch-level metadata
     return {
-      'request': {
-        'projectId': _loggingConfig.projectId,
-        'logs': logs.map(_formatLogEntry).toList(),
-        'sessionId': firstLog?.sessionId ?? '',
-        'deviceId': firstLog?.deviceId ?? '',
-        'platform': _getPlatform(),
-        'appVersion': firstLog?.appVersion ?? '',
-      },
+      'logs': logs.map(_formatLogEntry).toList(),
+      'sessionId': firstLog?.sessionId ?? '',
+      'deviceId': firstLog?.deviceId ?? '',
+      'platform': _getPlatform(),
+      'appVersion': firstLog?.appVersion ?? '',
     };
   }
 

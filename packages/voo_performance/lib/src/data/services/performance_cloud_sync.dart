@@ -83,11 +83,10 @@ class PerformanceMetricData {
   final double value;
   final String unit;
   final DateTime timestamp;
-  final Map<String, dynamic>? tags;
-  final String? sessionId;
-  final String? deviceId;
-  final String? appVersion;
-  final String? platform;
+  final Map<String, String>? tags;
+  final String? source;
+  final String? endpoint;
+  final String? pageName;
 
   PerformanceMetricData({
     required this.name,
@@ -96,23 +95,22 @@ class PerformanceMetricData {
     required this.unit,
     required this.timestamp,
     this.tags,
-    this.sessionId,
-    this.deviceId,
-    this.appVersion,
-    this.platform,
+    this.source,
+    this.endpoint,
+    this.pageName,
   });
 
+  /// Converts to JSON matching API's MetricEntry structure.
   Map<String, dynamic> toJson() => {
         'name': name,
-        'metricType': metricType,
+        'type': metricType, // API expects 'type', not 'metricType'
         'value': value,
         'unit': unit,
+        'tags': tags ?? <String, String>{},
         'timestamp': timestamp.toIso8601String(),
-        'tags': tags,
-        'sessionId': sessionId,
-        'deviceId': deviceId,
-        'appVersion': appVersion,
-        'platform': platform,
+        'source': source,
+        'endpoint': endpoint,
+        'pageName': pageName,
       };
 }
 
@@ -198,17 +196,24 @@ class PerformanceCloudSyncService
 
   @override
   Map<String, dynamic> formatPayload(List<PerformanceMetricData> metrics) {
-    // Extract network metrics to include in payload
-    final networkMetricsToSync = <NetworkMetricData>[];
-    final count = _perfConfig.batchSize;
-    for (var i = 0; i < count && _pendingNetworkMetrics.isNotEmpty; i++) {
-      networkMetricsToSync.add(_pendingNetworkMetrics.removeFirst());
-    }
+    // Note: Network metrics are synced separately or converted to standard metrics
+    // Clear pending network metrics since they need different handling
+    _pendingNetworkMetrics.clear();
 
+    // Get session/device info from Voo core config
+    final vooConfig = Voo.options?.customConfig ?? {};
+    final sessionId = vooConfig['sessionId'] as String? ?? '';
+    final deviceId = vooConfig['deviceId'] as String? ?? '';
+    final platform = vooConfig['platform'] as String? ?? 'unknown';
+    final appVersion = vooConfig['appVersion'] as String? ?? '1.0.0';
+
+    // API expects MetricsBatchRequest structure
     return {
-      'projectId': _perfConfig.projectId,
       'metrics': metrics.map((m) => m.toJson()).toList(),
-      'networkMetrics': networkMetricsToSync.map((m) => m.toJson()).toList(),
+      'sessionId': sessionId,
+      'deviceId': deviceId,
+      'platform': platform,
+      'appVersion': appVersion,
     };
   }
 

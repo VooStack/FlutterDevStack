@@ -80,25 +80,31 @@ class AnalyticsCloudSyncConfig extends BaseSyncConfig {
 /// Analytics event data for cloud sync.
 class AnalyticsEventData {
   final String eventName;
+  final String category;
   final DateTime timestamp;
   final Map<String, dynamic>? parameters;
-  final String? screenName;
-  final String? userId;
+  final String? action;
+  final String? label;
+  final double? value;
 
   AnalyticsEventData({
     required this.eventName,
+    this.category = 'general',
     required this.timestamp,
     this.parameters,
-    this.screenName,
-    this.userId,
+    this.action,
+    this.label,
+    this.value,
   });
 
   Map<String, dynamic> toJson() => {
-        'name': eventName, // Backend expects 'Name' which maps to 'name' in JSON
+        'name': eventName,
+        'category': category,
+        'action': action,
+        'label': label,
+        'value': value,
+        'properties': parameters ?? {},
         'timestamp': timestamp.toIso8601String(),
-        'properties': parameters ?? {}, // Backend requires Properties to be non-null
-        'screenName': screenName,
-        'userId': userId,
       };
 }
 
@@ -149,40 +155,26 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
 
   @override
   Map<String, dynamic> formatPayload(List<AnalyticsEventData> events) {
-    // Extract touch events to include in payload
-    final touchEventsToSync = <TouchEvent>[];
-    final count = _analyticsConfig.batchSize;
-    for (var i = 0; i < count && _pendingTouchEvents.isNotEmpty; i++) {
-      touchEventsToSync.add(_pendingTouchEvents.removeFirst());
-    }
+    // Note: Touch events are synced separately or can be added to properties
+    // Clear any pending touch events since they're not part of the standard API
+    _pendingTouchEvents.clear();
 
     // Get session/device info from Voo core config
     final vooConfig = Voo.options?.customConfig ?? {};
     final sessionId = vooConfig['sessionId'] as String? ?? '';
+    final userId = vooConfig['userId'] as String? ?? '';
     final deviceId = vooConfig['deviceId'] as String? ?? '';
     final platform = vooConfig['platform'] as String? ?? 'unknown';
     final appVersion = vooConfig['appVersion'] as String? ?? '1.0.0';
 
+    // API expects EventsBatchRequest structure
     return {
-      'projectId': _analyticsConfig.projectId,
+      'events': events.map((e) => e.toJson()).toList(),
       'sessionId': sessionId,
+      'userId': userId,
       'deviceId': deviceId,
       'platform': platform,
       'appVersion': appVersion,
-      'userId': events.isNotEmpty ? events.first.userId ?? '' : '',
-      'events': events.map((e) => e.toJson()).toList(),
-      'touchEvents': touchEventsToSync
-          .map((e) => {
-                'x': e.x,
-                'y': e.y,
-                'screenName': e.screenName,
-                'route': e.route,
-                'type': e.type.name,
-                'timestamp': e.timestamp.toIso8601String(),
-                'widgetKey': e.widgetKey,
-                'widgetType': e.widgetType,
-              })
-          .toList(),
     };
   }
 

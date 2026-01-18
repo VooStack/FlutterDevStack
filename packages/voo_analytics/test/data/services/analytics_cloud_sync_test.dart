@@ -124,19 +124,33 @@ void main() {
     test('should convert to JSON correctly', () {
       final event = AnalyticsEventData(
         eventName: 'button_click',
+        category: 'user_interaction',
         timestamp: DateTime.utc(2024, 1, 15, 10, 30),
         parameters: {'button_id': 'submit'},
-        screenName: 'checkout',
-        userId: 'user-123',
+        action: 'click',
+        label: 'checkout_submit',
+        value: 1.0,
       );
 
       final json = event.toJson();
 
-      expect(json['eventName'], equals('button_click'));
+      expect(json['name'], equals('button_click'));
+      expect(json['category'], equals('user_interaction'));
       expect(json['timestamp'], equals('2024-01-15T10:30:00.000Z'));
-      expect(json['parameters'], equals({'button_id': 'submit'}));
-      expect(json['screenName'], equals('checkout'));
-      expect(json['userId'], equals('user-123'));
+      expect(json['properties'], equals({'button_id': 'submit'}));
+      expect(json['action'], equals('click'));
+      expect(json['label'], equals('checkout_submit'));
+      expect(json['value'], equals(1.0));
+    });
+
+    test('should use default category when not provided', () {
+      final event = AnalyticsEventData(
+        eventName: 'test_event',
+        timestamp: DateTime.utc(2024, 1, 15, 10, 30),
+      );
+
+      final json = event.toJson();
+      expect(json['category'], equals('general'));
     });
   });
 
@@ -249,7 +263,7 @@ void main() {
     });
 
     group('queueTouchEvent', () {
-      test('should queue touch events', () {
+      test('should queue touch events (deprecated - cleared on flush)', () {
         syncService = AnalyticsCloudSyncService(
           config: createValidConfig(),
           client: createMockClient(),
@@ -265,12 +279,13 @@ void main() {
           timestamp: DateTime.now(),
         ));
 
+        // Touch events are still queued but cleared on flush (not part of standard API)
         expect(syncService.pendingCount, equals(1));
       });
     });
 
     group('flush', () {
-      test('should send events and touch events in payload', () async {
+      test('should send events with batch metadata', () async {
         syncService = AnalyticsCloudSyncService(
           config: createValidConfig(),
           client: createMockClient(),
@@ -281,20 +296,20 @@ void main() {
           eventName: 'test_event',
           timestamp: DateTime.now(),
         ));
-        syncService.queueTouchEvent(TouchEvent(
-          id: 'touch-1',
-          position: const Offset(100.0, 200.0),
-          screenName: 'home',
-          route: '/home',
-          type: TouchType.tap,
-          timestamp: DateTime.now(),
-        ));
 
         await syncService.flush();
 
-        expect(capturedRequests.first['body']['projectId'], equals('test-project-id'));
-        expect(capturedRequests.first['body']['events'].length, equals(1));
-        expect(capturedRequests.first['body']['touchEvents'].length, equals(1));
+        // Verify batch structure matches EventsBatchRequest
+        final body = capturedRequests.first['body'];
+        expect(body['events'].length, equals(1));
+        expect(body.containsKey('sessionId'), isTrue);
+        expect(body.containsKey('userId'), isTrue);
+        expect(body.containsKey('deviceId'), isTrue);
+        expect(body.containsKey('platform'), isTrue);
+        expect(body.containsKey('appVersion'), isTrue);
+        // projectId and touchEvents are no longer included in standard API
+        expect(body.containsKey('projectId'), isFalse);
+        expect(body.containsKey('touchEvents'), isFalse);
       });
 
       test('should include correct headers', () async {
