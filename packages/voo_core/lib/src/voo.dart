@@ -3,10 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:voo_core/src/voo_options.dart';
 import 'package:voo_core/src/voo_plugin.dart';
 import 'package:voo_core/src/exceptions/voo_exception.dart';
+import 'package:voo_core/src/models/voo_breadcrumb.dart';
 import 'package:voo_core/src/models/voo_config.dart';
 import 'package:voo_core/src/models/voo_context.dart';
 import 'package:voo_core/src/models/voo_device_info.dart';
 import 'package:voo_core/src/models/voo_user_context.dart';
+import 'package:voo_core/src/services/voo_breadcrumb_service.dart';
 import 'package:voo_core/src/services/voo_device_info_service.dart';
 
 /// Central initialization and management for all Voo packages.
@@ -119,6 +121,52 @@ class Voo {
 
   /// Gets the current user ID.
   static String? get userId => _userContext?.userId;
+
+  // Breadcrumb convenience methods
+
+  /// Add a breadcrumb to the trail.
+  ///
+  /// Breadcrumbs capture the user's journey and are attached to error reports.
+  static void addBreadcrumb(VooBreadcrumb breadcrumb) {
+    VooBreadcrumbService.addBreadcrumb(breadcrumb);
+  }
+
+  /// Add a navigation breadcrumb.
+  static void addNavigationBreadcrumb({
+    required String from,
+    required String to,
+    String action = 'push',
+    Map<String, dynamic>? routeParams,
+  }) {
+    VooBreadcrumbService.addNavigationBreadcrumb(
+      from: from,
+      to: to,
+      action: action,
+      routeParams: routeParams,
+    );
+  }
+
+  /// Add an HTTP request breadcrumb.
+  static void addHttpBreadcrumb({
+    required String method,
+    required String url,
+    int? statusCode,
+    int? durationMs,
+    bool isError = false,
+  }) {
+    VooBreadcrumbService.addHttpBreadcrumb(
+      method: method,
+      url: url,
+      statusCode: statusCode,
+      durationMs: durationMs,
+      isError: isError,
+    );
+  }
+
+  /// Get recent breadcrumbs for error context.
+  static List<VooBreadcrumb> getRecentBreadcrumbs([int count = 50]) {
+    return VooBreadcrumbService.getRecentBreadcrumbs(count);
+  }
 
   /// Initialize the default Voo app.
   ///

@@ -8,9 +8,19 @@ export 'package:voo_core/src/models/voo_config.dart';
 export 'package:voo_core/src/models/voo_context.dart';
 export 'package:voo_core/src/models/voo_device_info.dart';
 export 'package:voo_core/src/models/voo_user_context.dart';
+export 'package:voo_core/src/models/voo_breadcrumb.dart';
 
 // Services - Device Info Collection
 export 'package:voo_core/src/services/voo_device_info_service.dart';
+
+// Services - Background Processing
+export 'package:voo_core/src/services/voo_isolate_manager.dart';
+
+// Services - Runtime Metrics
+export 'package:voo_core/src/services/voo_runtime_metrics_service.dart';
+
+// Services - Breadcrumb Trail
+export 'package:voo_core/src/services/voo_breadcrumb_service.dart';
 
 // Exceptions
 export 'package:voo_core/src/exceptions/voo_exception.dart';

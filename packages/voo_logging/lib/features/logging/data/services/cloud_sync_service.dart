@@ -170,7 +170,7 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
       context['tag'] = log.tag;
     }
 
-    return {
+    final entry = <String, dynamic>{
       'level': log.level.name.toLowerCase(),
       'message': log.message,
       'category': log.category ?? '',
@@ -178,6 +178,24 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
       'stackTrace': log.stackTrace,
       'timestamp': log.timestamp.toIso8601String(),
     };
+
+    // Include breadcrumbs for error/fatal logs for better debugging context
+    final level = log.level.name.toLowerCase();
+    if (level == 'error' || level == 'fatal') {
+      try {
+        final breadcrumbs = Voo.getRecentBreadcrumbs(50);
+        if (breadcrumbs.isNotEmpty) {
+          entry['breadcrumbs'] = breadcrumbs.map((b) => b.toJson()).toList();
+        }
+      } catch (e) {
+        // Ignore breadcrumb errors - they shouldn't break logging
+        if (kDebugMode) {
+          debugPrint('CloudSyncService: Failed to get breadcrumbs: $e');
+        }
+      }
+    }
+
+    return entry;
   }
 
   /// Sanitize metadata to prevent oversized payloads and deep nesting.
