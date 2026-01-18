@@ -130,7 +130,8 @@ class DeepLinkService {
     }
 
     // Add breadcrumb
-    Voo.addBreadcrumb(VooBreadcrumb.custom(
+    Voo.addBreadcrumb(VooBreadcrumb(
+      type: VooBreadcrumbType.custom,
       category: 'deep_link',
       message: 'Deep link received: ${uri.path}',
       data: {
