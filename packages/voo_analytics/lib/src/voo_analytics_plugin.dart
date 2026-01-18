@@ -5,6 +5,7 @@ import 'package:voo_core/voo_core.dart';
 import 'package:voo_analytics/src/domain/repositories/analytics_repository.dart';
 import 'package:voo_analytics/src/data/repositories/analytics_repository_impl.dart';
 import 'package:voo_analytics/src/presentation/widgets/route_aware_touch_tracker.dart';
+import 'package:voo_analytics/src/data/services/funnel_tracking_service.dart';
 
 class VooAnalyticsPlugin extends VooPlugin {
   static VooAnalyticsPlugin? _instance;
@@ -68,14 +69,30 @@ class VooAnalyticsPlugin extends VooPlugin {
     }
   }
 
-  Future<void> logEvent(String name, {Map<String, dynamic>? parameters}) async {
+  Future<void> logEvent(
+    String name, {
+    String? category,
+    Map<String, dynamic>? parameters,
+  }) async {
     if (!_initialized) {
       throw const VooException(
         'VooAnalytics not initialized. Call initialize() first.',
         code: 'not-initialized',
       );
     }
-    await repository!.logEvent(name, parameters: parameters);
+
+    // Add category to parameters if provided
+    final params = parameters != null ? Map<String, dynamic>.from(parameters) : <String, dynamic>{};
+    if (category != null) {
+      params['event_category'] = category;
+    }
+
+    await repository!.logEvent(name, parameters: params.isNotEmpty ? params : null);
+
+    // Notify funnel tracking service (don't recurse on funnel events)
+    if (category != 'funnel' && FunnelTrackingService.isInitialized) {
+      FunnelTrackingService.onEvent(name, parameters);
+    }
   }
 
   /// Sets a user property for analytics.

@@ -149,9 +149,6 @@ class FpsMonitorService {
   final StreamController<FpsSample> _fpsController =
       StreamController<FpsSample>.broadcast();
 
-  /// Last frame timestamp for calculating duration.
-  Duration? _lastFrameTimestamp;
-
   /// Start time of the current monitoring session.
   DateTime? _sessionStartTime;
 
@@ -210,7 +207,6 @@ class FpsMonitorService {
     if (_isMonitoring) return;
 
     instance._samples.clear();
-    instance._lastFrameTimestamp = null;
     instance._sessionStartTime = DateTime.now();
     instance._sessionJankyFrames = 0;
     instance._sessionTotalFrames = 0;
