@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
@@ -51,16 +50,13 @@ class MemorySnapshot {
   });
 
   /// Heap usage in megabytes.
-  double? get heapUsageMB =>
-      heapUsageBytes != null ? heapUsageBytes! / (1024 * 1024) : null;
+  double? get heapUsageMB => heapUsageBytes != null ? heapUsageBytes! / (1024 * 1024) : null;
 
   /// External usage in megabytes.
-  double? get externalUsageMB =>
-      externalUsageBytes != null ? externalUsageBytes! / (1024 * 1024) : null;
+  double? get externalUsageMB => externalUsageBytes != null ? externalUsageBytes! / (1024 * 1024) : null;
 
   /// Heap capacity in megabytes.
-  double? get heapCapacityMB =>
-      heapCapacityBytes != null ? heapCapacityBytes! / (1024 * 1024) : null;
+  double? get heapCapacityMB => heapCapacityBytes != null ? heapCapacityBytes! / (1024 * 1024) : null;
 
   /// Total memory usage (heap + external) in bytes.
   int? get totalUsageBytes {
@@ -69,41 +65,37 @@ class MemorySnapshot {
   }
 
   /// Total memory usage in megabytes.
-  double? get totalUsageMB =>
-      totalUsageBytes != null ? totalUsageBytes! / (1024 * 1024) : null;
+  double? get totalUsageMB => totalUsageBytes != null ? totalUsageBytes! / (1024 * 1024) : null;
 
   Map<String, dynamic> toJson() => {
-        'timestamp': timestamp.toIso8601String(),
-        if (heapUsageBytes != null) 'heap_usage_bytes': heapUsageBytes,
-        if (externalUsageBytes != null)
-          'external_usage_bytes': externalUsageBytes,
-        if (heapCapacityBytes != null) 'heap_capacity_bytes': heapCapacityBytes,
-        if (objectCount != null) 'object_count': objectCount,
-        if (usagePercent != null) 'usage_percent': usagePercent,
-        'is_under_pressure': isUnderPressure,
-        'pressure_level': pressureLevel.name,
-        if (gcCount != null) 'gc_count': gcCount,
-        if (context != null) 'context': context,
-      };
+    'timestamp': timestamp.toIso8601String(),
+    if (heapUsageBytes != null) 'heap_usage_bytes': heapUsageBytes,
+    if (externalUsageBytes != null) 'external_usage_bytes': externalUsageBytes,
+    if (heapCapacityBytes != null) 'heap_capacity_bytes': heapCapacityBytes,
+    if (objectCount != null) 'object_count': objectCount,
+    if (usagePercent != null) 'usage_percent': usagePercent,
+    'is_under_pressure': isUnderPressure,
+    'pressure_level': pressureLevel.name,
+    if (gcCount != null) 'gc_count': gcCount,
+    if (context != null) 'context': context,
+  };
 
   factory MemorySnapshot.fromJson(Map<String, dynamic> json) => MemorySnapshot(
-        timestamp: DateTime.parse(json['timestamp'] as String),
-        heapUsageBytes: json['heap_usage_bytes'] as int?,
-        externalUsageBytes: json['external_usage_bytes'] as int?,
-        heapCapacityBytes: json['heap_capacity_bytes'] as int?,
-        objectCount: json['object_count'] as int?,
-        usagePercent: json['usage_percent'] as double?,
-        isUnderPressure: json['is_under_pressure'] as bool? ?? false,
-        pressureLevel: MemoryPressureLevel.values.firstWhere(
-          (l) => l.name == json['pressure_level'],
-          orElse: () => MemoryPressureLevel.none,
-        ),
-        gcCount: json['gc_count'] as int?,
-        context: json['context'] as String?,
-      );
+    timestamp: DateTime.parse(json['timestamp'] as String),
+    heapUsageBytes: json['heap_usage_bytes'] as int?,
+    externalUsageBytes: json['external_usage_bytes'] as int?,
+    heapCapacityBytes: json['heap_capacity_bytes'] as int?,
+    objectCount: json['object_count'] as int?,
+    usagePercent: json['usage_percent'] as double?,
+    isUnderPressure: json['is_under_pressure'] as bool? ?? false,
+    pressureLevel: MemoryPressureLevel.values.firstWhere((l) => l.name == json['pressure_level'], orElse: () => MemoryPressureLevel.none),
+    gcCount: json['gc_count'] as int?,
+    context: json['context'] as String?,
+  );
 
   @override
-  String toString() => 'MemorySnapshot('
+  String toString() =>
+      'MemorySnapshot('
       'heap: ${heapUsageMB?.toStringAsFixed(1)}MB, '
       'pressure: ${pressureLevel.name})';
 }
@@ -165,12 +157,10 @@ class MemoryMonitorService {
   static const int _maxHistorySize = 100;
 
   /// Stream controller for memory snapshots.
-  final StreamController<MemorySnapshot> _snapshotController =
-      StreamController<MemorySnapshot>.broadcast();
+  final StreamController<MemorySnapshot> _snapshotController = StreamController<MemorySnapshot>.broadcast();
 
   /// Stream controller for memory pressure events.
-  final StreamController<MemoryPressureLevel> _pressureController =
-      StreamController<MemoryPressureLevel>.broadcast();
+  final StreamController<MemoryPressureLevel> _pressureController = StreamController<MemoryPressureLevel>.broadcast();
 
   /// Callbacks for memory pressure.
   final List<MemoryPressureCallback> _pressureCallbacks = [];
@@ -202,16 +192,13 @@ class MemoryMonitorService {
   static bool get isMonitoring => instance._monitoringTimer?.isActive ?? false;
 
   /// Stream of memory snapshots.
-  static Stream<MemorySnapshot> get snapshotStream =>
-      instance._snapshotController.stream;
+  static Stream<MemorySnapshot> get snapshotStream => instance._snapshotController.stream;
 
   /// Stream of memory pressure events.
-  static Stream<MemoryPressureLevel> get pressureStream =>
-      instance._pressureController.stream;
+  static Stream<MemoryPressureLevel> get pressureStream => instance._pressureController.stream;
 
   /// Memory snapshot history.
-  static List<MemorySnapshot> get history =>
-      List.unmodifiable(instance._history);
+  static List<MemorySnapshot> get history => List.unmodifiable(instance._history);
 
   /// Peak heap usage observed in bytes.
   static int get peakHeapUsage => instance._peakHeapUsage;
@@ -231,8 +218,7 @@ class MemoryMonitorService {
 
     if (kDebugMode) {
       debugPrint('MemoryMonitorService: Initialized');
-      debugPrint(
-          'MemoryMonitorService: Baseline heap: ${baseline.heapUsageMB?.toStringAsFixed(1)}MB');
+      debugPrint('MemoryMonitorService: Baseline heap: ${baseline.heapUsageMB?.toStringAsFixed(1)}MB');
     }
   }
 
@@ -245,13 +231,11 @@ class MemoryMonitorService {
     int? heapCapacity;
 
     try {
-      // Use developer.Service to get memory info if available
-      final memoryUsage = developer.Service.getIsolateId(developer.Service.getInfo());
-
-      // In debug mode, we can get more detailed info
+      // Memory info is primarily available through DevTools in debug mode.
+      // For production, we rely on platform-specific methods.
+      // The Dart VM doesn't expose direct memory APIs to user code.
       if (kDebugMode) {
-        // This information is primarily available through DevTools
-        // For production, we rely on platform-specific methods
+        // Debug-only memory introspection could be added via DevTools protocol
       }
     } catch (e) {
       // Memory info not available
@@ -319,10 +303,7 @@ class MemoryMonitorService {
     return snapshot;
   }
 
-  static MemoryPressureLevel _determinePressureLevel(
-    double? usagePercent,
-    int? heapUsage,
-  ) {
+  static MemoryPressureLevel _determinePressureLevel(double? usagePercent, int? heapUsage) {
     // If we have usage percent, use that
     if (usagePercent != null) {
       if (usagePercent > 90) return MemoryPressureLevel.critical;
@@ -341,37 +322,28 @@ class MemoryMonitorService {
     return MemoryPressureLevel.none;
   }
 
-  static void _addPressureBreadcrumb(
-    MemoryPressureLevel level,
-    MemorySnapshot snapshot,
-  ) {
+  static void _addPressureBreadcrumb(MemoryPressureLevel level, MemorySnapshot snapshot) {
     try {
-      Voo.addBreadcrumb(VooBreadcrumb(
-        type: level == MemoryPressureLevel.critical
-            ? VooBreadcrumbType.error
-            : VooBreadcrumbType.custom,
-        category: 'memory',
-        message: 'Memory pressure: ${level.name}',
-        level: level == MemoryPressureLevel.critical
-            ? VooLogLevel.warning
-            : VooLogLevel.info,
-        data: {
-          'pressure_level': level.name,
-          if (snapshot.heapUsageMB != null)
-            'heap_usage_mb': snapshot.heapUsageMB!.toStringAsFixed(1),
-          if (snapshot.usagePercent != null)
-            'usage_percent': snapshot.usagePercent!.toStringAsFixed(1),
-        },
-      ));
+      Voo.addBreadcrumb(
+        VooBreadcrumb(
+          type: level == MemoryPressureLevel.critical ? VooBreadcrumbType.error : VooBreadcrumbType.custom,
+          category: 'memory',
+          message: 'Memory pressure: ${level.name}',
+          level: level == MemoryPressureLevel.critical ? VooBreadcrumbLevel.warning : VooBreadcrumbLevel.info,
+          data: {
+            'pressure_level': level.name,
+            if (snapshot.heapUsageMB != null) 'heap_usage_mb': snapshot.heapUsageMB!.toStringAsFixed(1),
+            if (snapshot.usagePercent != null) 'usage_percent': snapshot.usagePercent!.toStringAsFixed(1),
+          },
+        ),
+      );
     } catch (e) {
       // Ignore breadcrumb errors
     }
   }
 
   /// Start periodic memory monitoring.
-  static void startMonitoring({
-    Duration interval = const Duration(seconds: 30),
-  }) {
+  static void startMonitoring({Duration interval = const Duration(seconds: 30)}) {
     if (!_initialized) initialize();
 
     // Stop existing timer
@@ -382,8 +354,7 @@ class MemoryMonitorService {
     });
 
     if (kDebugMode) {
-      debugPrint(
-          'MemoryMonitorService: Started monitoring (interval: ${interval.inSeconds}s)');
+      debugPrint('MemoryMonitorService: Started monitoring (interval: ${interval.inSeconds}s)');
     }
   }
 
@@ -419,8 +390,7 @@ class MemoryMonitorService {
 
   /// Get memory growth percentage since baseline.
   static double? get memoryGrowthPercent {
-    if (instance._baselineHeapUsage == null ||
-        instance._baselineHeapUsage == 0) {
+    if (instance._baselineHeapUsage == null || instance._baselineHeapUsage == 0) {
       return null;
     }
     final growth = memoryGrowthBytes;
@@ -430,38 +400,29 @@ class MemoryMonitorService {
 
   /// Get average heap usage from history.
   static double? get averageHeapUsageBytes {
-    final samples = instance._history
-        .where((s) => s.heapUsageBytes != null)
-        .map((s) => s.heapUsageBytes!)
-        .toList();
+    final samples = instance._history.where((s) => s.heapUsageBytes != null).map((s) => s.heapUsageBytes!).toList();
     if (samples.isEmpty) return null;
     return samples.reduce((a, b) => a + b) / samples.length;
   }
 
-  /// Log current memory metrics to performance system.
+  /// Log current memory metrics as a breadcrumb.
   static Future<void> logMemoryMetrics() async {
     final snapshot = await takeSnapshot(context: 'metrics_log');
 
     try {
-      if (snapshot.heapUsageMB != null) {
-        Voo.logPerformance(
-          name: 'memory_heap_usage',
-          durationMs: snapshot.heapUsageMB!,
-          tags: {
+      Voo.addBreadcrumb(
+        VooBreadcrumb(
+          type: VooBreadcrumbType.system,
+          category: 'performance.memory',
+          message: 'Memory metrics snapshot',
+          data: {
             'pressure_level': snapshot.pressureLevel.name,
+            if (snapshot.heapUsageMB != null) 'heap_usage_mb': snapshot.heapUsageMB,
+            if (memoryGrowthPercent != null) 'memory_growth_percent': memoryGrowthPercent,
+            if (snapshot.usagePercent != null) 'usage_percent': snapshot.usagePercent,
           },
-        );
-      }
-
-      if (memoryGrowthPercent != null) {
-        Voo.logPerformance(
-          name: 'memory_growth_percent',
-          durationMs: memoryGrowthPercent!,
-          tags: {
-            'pressure_level': snapshot.pressureLevel.name,
-          },
-        );
-      }
+        ),
+      );
     } catch (e) {
       if (kDebugMode) {
         debugPrint('MemoryMonitorService: Failed to log metrics: $e');
@@ -497,8 +458,7 @@ class MemoryMonitorService {
 
     if (kDebugMode && before.heapUsageBytes != null && after.heapUsageBytes != null) {
       final freed = before.heapUsageBytes! - after.heapUsageBytes!;
-      debugPrint(
-          'MemoryMonitorService: GC hint - freed ~${(freed / 1024 / 1024).toStringAsFixed(1)}MB');
+      debugPrint('MemoryMonitorService: GC hint - freed ~${(freed / 1024 / 1024).toStringAsFixed(1)}MB');
     }
   }
 

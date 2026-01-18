@@ -30,14 +30,12 @@ class TestSyncService extends BaseSyncService<TestItem> {
   bool shouldFlushImmediatelyFlag = false;
 
   TestSyncService({
-    required BaseSyncConfig config,
-    http.Client? client,
+    required super.config,
+    super.client,
     String? endpoint,
   })  : _endpoint = endpoint ?? 'https://api.test.com/test',
         super(
-          config: config,
           serviceName: 'TestSyncService',
-          client: client,
         );
 
   @override

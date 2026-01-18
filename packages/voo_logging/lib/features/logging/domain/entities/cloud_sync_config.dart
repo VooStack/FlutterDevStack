@@ -102,7 +102,6 @@ class CloudSyncConfig {
         batchSize: 100,
         batchInterval: const Duration(seconds: 60),
         syncMinimumLevel: 'info',
-        prioritizeErrors: true,
         maxQueueSize: 2000,
       );
 
@@ -119,7 +118,6 @@ class CloudSyncConfig {
         projectId: projectId,
         batchSize: 10,
         batchInterval: const Duration(minutes: 10),
-        prioritizeErrors: true,
       );
 
   /// Validates that the configuration is complete for syncing.

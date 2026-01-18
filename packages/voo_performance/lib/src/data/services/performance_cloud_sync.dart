@@ -160,13 +160,11 @@ class PerformanceCloudSyncService
   final Queue<NetworkMetricData> _pendingNetworkMetrics = Queue();
 
   PerformanceCloudSyncService({
-    required PerformanceCloudSyncConfig config,
-    http.Client? client,
+    required PerformanceCloudSyncConfig super.config,
+    super.client,
   })  : _perfConfig = config,
         super(
-          config: config,
           serviceName: 'PerformanceCloudSync',
-          client: client,
         );
 
   @override

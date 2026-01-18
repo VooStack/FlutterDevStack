@@ -71,30 +71,22 @@ class AppLaunchMetrics {
   Duration? get totalLaunchTime => timeToInteractive ?? timeToFirstFrame;
 
   /// Whether this was a slow launch (> 3 seconds).
-  bool get isSlowLaunch =>
-      totalLaunchTime != null && totalLaunchTime!.inMilliseconds > 3000;
+  bool get isSlowLaunch => totalLaunchTime != null && totalLaunchTime!.inMilliseconds > 3000;
 
   Map<String, dynamic> toJson() => {
-        'launch_type': launchType.name,
-        if (timeToFirstFrame != null)
-          'time_to_first_frame_ms': timeToFirstFrame!.inMilliseconds,
-        if (timeToInteractive != null)
-          'time_to_interactive_ms': timeToInteractive!.inMilliseconds,
-        if (nativeInitTime != null)
-          'native_init_time_ms': nativeInitTime!.inMilliseconds,
-        if (engineInitTime != null)
-          'engine_init_time_ms': engineInitTime!.inMilliseconds,
-        if (dartInitTime != null)
-          'dart_init_time_ms': dartInitTime!.inMilliseconds,
-        if (widgetBindingInitTime != null)
-          'widget_binding_init_time_ms': widgetBindingInitTime!.inMilliseconds,
-        if (firstFrameRenderTime != null)
-          'first_frame_render_time_ms': firstFrameRenderTime!.inMilliseconds,
-        'launch_timestamp': launchTimestamp.toIso8601String(),
-        'is_successful': isSuccessful,
-        if (errorMessage != null) 'error_message': errorMessage,
-        'is_slow_launch': isSlowLaunch,
-      };
+    'launch_type': launchType.name,
+    if (timeToFirstFrame != null) 'time_to_first_frame_ms': timeToFirstFrame!.inMilliseconds,
+    if (timeToInteractive != null) 'time_to_interactive_ms': timeToInteractive!.inMilliseconds,
+    if (nativeInitTime != null) 'native_init_time_ms': nativeInitTime!.inMilliseconds,
+    if (engineInitTime != null) 'engine_init_time_ms': engineInitTime!.inMilliseconds,
+    if (dartInitTime != null) 'dart_init_time_ms': dartInitTime!.inMilliseconds,
+    if (widgetBindingInitTime != null) 'widget_binding_init_time_ms': widgetBindingInitTime!.inMilliseconds,
+    if (firstFrameRenderTime != null) 'first_frame_render_time_ms': firstFrameRenderTime!.inMilliseconds,
+    'launch_timestamp': launchTimestamp.toIso8601String(),
+    'is_successful': isSuccessful,
+    if (errorMessage != null) 'error_message': errorMessage,
+    'is_slow_launch': isSlowLaunch,
+  };
 }
 
 /// Service for tracking app launch performance.
@@ -154,8 +146,7 @@ class AppLaunchService with WidgetsBindingObserver {
   DateTime? _lastBackgroundTime;
 
   /// Stream controller for launch metrics.
-  final StreamController<AppLaunchMetrics> _launchController =
-      StreamController<AppLaunchMetrics>.broadcast();
+  final StreamController<AppLaunchMetrics> _launchController = StreamController<AppLaunchMetrics>.broadcast();
 
   /// History of launches in this session.
   final List<AppLaunchMetrics> _launchHistory = [];
@@ -172,16 +163,13 @@ class AppLaunchService with WidgetsBindingObserver {
   static bool get isInitialized => _initialized;
 
   /// Stream of launch metrics.
-  static Stream<AppLaunchMetrics> get launchStream =>
-      instance._launchController.stream;
+  static Stream<AppLaunchMetrics> get launchStream => instance._launchController.stream;
 
   /// Get launch history.
-  static List<AppLaunchMetrics> get launchHistory =>
-      List.unmodifiable(instance._launchHistory);
+  static List<AppLaunchMetrics> get launchHistory => List.unmodifiable(instance._launchHistory);
 
   /// Get the initial launch metrics.
-  static AppLaunchMetrics? get initialLaunch =>
-      instance._launchHistory.isNotEmpty ? instance._launchHistory.first : null;
+  static AppLaunchMetrics? get initialLaunch => instance._launchHistory.isNotEmpty ? instance._launchHistory.first : null;
 
   /// Mark the start of app launch - call this as early as possible in main().
   static void markLaunchStart() {
@@ -242,19 +230,15 @@ class AppLaunchService with WidgetsBindingObserver {
     _interactiveTime = DateTime.now();
 
     if (kDebugMode) {
-      final ttif = _firstFrameTime != null
-          ? _firstFrameTime!.difference(_processStartTime!).inMilliseconds
-          : 'N/A';
+      final ttif = _firstFrameTime != null ? _firstFrameTime!.difference(_processStartTime!).inMilliseconds : 'N/A';
       final tti = _interactiveTime!.difference(_processStartTime!).inMilliseconds;
-      debugPrint(
-          'AppLaunchService: Interactive (TTFF: ${ttif}ms, TTI: ${tti}ms)');
+      debugPrint('AppLaunchService: Interactive (TTFF: ${ttif}ms, TTI: ${tti}ms)');
     }
 
     // Update metrics with interactive time
     if (instance._isInitialLaunch && instance._launchHistory.isNotEmpty) {
       final lastLaunch = instance._launchHistory.last;
-      instance._launchHistory[instance._launchHistory.length - 1] =
-          AppLaunchMetrics(
+      instance._launchHistory[instance._launchHistory.length - 1] = AppLaunchMetrics(
         launchType: lastLaunch.launchType,
         timeToFirstFrame: lastLaunch.timeToFirstFrame,
         timeToInteractive: _interactiveTime!.difference(_processStartTime!),
@@ -271,15 +255,14 @@ class AppLaunchService with WidgetsBindingObserver {
     instance._isInitialLaunch = false;
 
     // Add breadcrumb
-    Voo.addBreadcrumb(VooBreadcrumb(
-      type: VooBreadcrumbType.custom,
-      category: 'app_lifecycle',
-      message: 'App became interactive',
-      data: {
-        'time_to_interactive_ms':
-            _interactiveTime!.difference(_processStartTime!).inMilliseconds,
-      },
-    ));
+    Voo.addBreadcrumb(
+      VooBreadcrumb(
+        type: VooBreadcrumbType.custom,
+        category: 'app_lifecycle',
+        message: 'App became interactive',
+        data: {'time_to_interactive_ms': _interactiveTime!.difference(_processStartTime!).inMilliseconds},
+      ),
+    );
   }
 
   @override
@@ -297,8 +280,7 @@ class AppLaunchService with WidgetsBindingObserver {
         _lastBackgroundTime = DateTime.now();
 
       case AppLifecycleState.resumed:
-        if (previousState == AppLifecycleState.paused ||
-            previousState == AppLifecycleState.inactive) {
+        if (previousState == AppLifecycleState.paused || previousState == AppLifecycleState.inactive) {
           _handleResume();
         }
 
@@ -327,23 +309,20 @@ class AppLaunchService with WidgetsBindingObserver {
     }
 
     // Add breadcrumb
-    Voo.addBreadcrumb(VooBreadcrumb(
-      type: VooBreadcrumbType.custom,
-      category: 'app_lifecycle',
-      message: 'App resumed (${launchType.name} start)',
-      data: {
-        if (_lastBackgroundTime != null)
-          'background_duration_ms':
-              resumeTime.difference(_lastBackgroundTime!).inMilliseconds,
-      },
-    ));
+    Voo.addBreadcrumb(
+      VooBreadcrumb(
+        type: VooBreadcrumbType.custom,
+        category: 'app_lifecycle',
+        message: 'App resumed (${launchType.name} start)',
+        data: {if (_lastBackgroundTime != null) 'background_duration_ms': resumeTime.difference(_lastBackgroundTime!).inMilliseconds},
+      ),
+    );
   }
 
   LaunchType _determineLaunchType() {
     if (_lastBackgroundTime == null) return LaunchType.cold;
 
-    final backgroundDuration =
-        DateTime.now().difference(_lastBackgroundTime!);
+    final backgroundDuration = DateTime.now().difference(_lastBackgroundTime!);
 
     // If app was in background for more than 30 minutes, consider it a warm start
     // (OS may have released some resources)
@@ -366,15 +345,13 @@ class AppLaunchService with WidgetsBindingObserver {
     }
 
     if (_processStartTime != null && _widgetBindingReadyTime != null) {
-      widgetBindingInitTime =
-          _widgetBindingReadyTime!.difference(_processStartTime!);
+      widgetBindingInitTime = _widgetBindingReadyTime!.difference(_processStartTime!);
     }
 
     final metrics = AppLaunchMetrics(
       launchType: launchType,
       timeToFirstFrame: timeToFirstFrame,
-      timeToInteractive:
-          _interactiveTime?.difference(_processStartTime ?? now),
+      timeToInteractive: _interactiveTime?.difference(_processStartTime ?? now),
       widgetBindingInitTime: widgetBindingInitTime,
       launchTimestamp: now,
       isSuccessful: true,
@@ -389,39 +366,28 @@ class AppLaunchService with WidgetsBindingObserver {
     if (kDebugMode) {
       debugPrint('AppLaunchService: Recorded ${launchType.name} launch');
       if (metrics.timeToFirstFrame != null) {
-        debugPrint(
-            '  Time to first frame: ${metrics.timeToFirstFrame!.inMilliseconds}ms');
+        debugPrint('  Time to first frame: ${metrics.timeToFirstFrame!.inMilliseconds}ms');
       }
     }
   }
 
   void _logLaunchMetrics(AppLaunchMetrics metrics) {
     try {
-      // Log as performance metric
-      Voo.logPerformance(
-        name: 'app_launch',
-        durationMs: metrics.totalLaunchTime?.inMilliseconds.toDouble() ?? 0,
-        tags: {
-          'launch_type': metrics.launchType.name,
-          'is_slow': metrics.isSlowLaunch.toString(),
-        },
+      // Add breadcrumb for launch metrics
+      Voo.addBreadcrumb(
+        VooBreadcrumb(
+          type: VooBreadcrumbType.system,
+          category: 'performance',
+          message: 'App launch: ${metrics.launchType.name}',
+          data: {
+            'launch_type': metrics.launchType.name,
+            'is_slow': metrics.isSlowLaunch,
+            if (metrics.totalLaunchTime != null) 'total_launch_time_ms': metrics.totalLaunchTime!.inMilliseconds,
+            if (metrics.timeToFirstFrame != null) 'time_to_first_frame_ms': metrics.timeToFirstFrame!.inMilliseconds,
+            if (metrics.timeToInteractive != null) 'time_to_interactive_ms': metrics.timeToInteractive!.inMilliseconds,
+          },
+        ),
       );
-
-      if (metrics.timeToFirstFrame != null) {
-        Voo.logPerformance(
-          name: 'time_to_first_frame',
-          durationMs: metrics.timeToFirstFrame!.inMilliseconds.toDouble(),
-          tags: {'launch_type': metrics.launchType.name},
-        );
-      }
-
-      if (metrics.timeToInteractive != null) {
-        Voo.logPerformance(
-          name: 'time_to_interactive',
-          durationMs: metrics.timeToInteractive!.inMilliseconds.toDouble(),
-          tags: {'launch_type': metrics.launchType.name},
-        );
-      }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('AppLaunchService: Failed to log metrics: $e');
@@ -441,12 +407,7 @@ class AppLaunchService with WidgetsBindingObserver {
     instance._launchHistory.add(metrics);
     instance._launchController.add(metrics);
 
-    Voo.addBreadcrumb(VooBreadcrumb(
-      type: VooBreadcrumbType.error,
-      category: 'app_lifecycle',
-      message: 'Launch error: $error',
-      level: VooLogLevel.error,
-    ));
+    Voo.addBreadcrumb(VooBreadcrumb(type: VooBreadcrumbType.error, category: 'app_lifecycle', message: 'Launch error: $error', level: VooBreadcrumbLevel.error));
   }
 
   /// Dispose resources.

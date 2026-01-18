@@ -119,13 +119,11 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
   final Queue<TouchEvent> _pendingTouchEvents = Queue();
 
   AnalyticsCloudSyncService({
-    required AnalyticsCloudSyncConfig config,
-    http.Client? client,
+    required AnalyticsCloudSyncConfig super.config,
+    super.client,
   })  : _analyticsConfig = config,
         super(
-          config: config,
           serviceName: 'AnalyticsCloudSync',
-          client: client,
         );
 
   @override

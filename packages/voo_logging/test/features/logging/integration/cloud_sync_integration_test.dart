@@ -61,18 +61,16 @@ void main() {
       LogLevel level = LogLevel.info,
       String message = 'Test message',
       String? category,
-    }) {
-      return LogEntry(
+    }) => LogEntry(
         id: 'test_${DateTime.now().millisecondsSinceEpoch}',
         timestamp: DateTime.now(),
         message: message,
         level: level,
         category: category,
       );
-    }
 
     test('should not sync when disabled', () async {
-      final config = const CloudSyncConfig(enabled: false);
+      const config = CloudSyncConfig();
       syncService = CloudSyncService(
         config: config,
         client: createMockClient(),
@@ -93,7 +91,7 @@ void main() {
     });
 
     test('should batch logs according to batch size', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'test-api-key',
@@ -122,7 +120,7 @@ void main() {
     });
 
     test('should include correct headers and API key', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'my-secret-key',
@@ -147,13 +145,12 @@ void main() {
     });
 
     test('should prioritize error logs', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'test-key',
         projectId: 'test',
         batchSize: 10,
-        prioritizeErrors: true,
       );
 
       syncService = CloudSyncService(
@@ -164,7 +161,7 @@ void main() {
 
       // Queue some regular logs
       for (var i = 0; i < 3; i++) {
-        syncService.queueLog(createTestLog(level: LogLevel.info, message: 'Info $i'));
+        syncService.queueLog(createTestLog(message: 'Info $i'));
       }
 
       // Queue an error - should trigger immediate sync
@@ -182,7 +179,7 @@ void main() {
     });
 
     test('should retry on failure', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'test-key',
@@ -208,7 +205,7 @@ void main() {
     });
 
     test('should respect minimum sync level', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'test-key',
@@ -225,7 +222,7 @@ void main() {
 
       // Queue logs below minimum level
       syncService.queueLog(createTestLog(level: LogLevel.debug, message: 'Debug'));
-      syncService.queueLog(createTestLog(level: LogLevel.info, message: 'Info'));
+      syncService.queueLog(createTestLog(message: 'Info'));
 
       // Queue logs at or above minimum level
       syncService.queueLog(createTestLog(level: LogLevel.warning, message: 'Warning'));
@@ -244,7 +241,7 @@ void main() {
     });
 
     test('should enforce max queue size', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'test-key',
@@ -270,7 +267,7 @@ void main() {
     });
 
     test('should format log entries correctly', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'test-key',
@@ -286,12 +283,12 @@ void main() {
 
       final testLog = LogEntry(
         id: 'test-id',
-        timestamp: DateTime.utc(2024, 1, 15, 10, 30, 0),
+        timestamp: DateTime.utc(2024, 1, 15, 10, 30),
         message: 'Test message',
         level: LogLevel.warning,
         category: 'TestCategory',
         tag: 'test-tag',
-        metadata: {'key': 'value'},
+        metadata: const {'key': 'value'},
       );
 
       syncService.queueLog(testLog);
@@ -308,7 +305,7 @@ void main() {
     });
 
     test('should update status correctly', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'test-key',
@@ -333,7 +330,7 @@ void main() {
     });
 
     test('should call error callback on failure', () async {
-      final config = CloudSyncConfig(
+      const config = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'test-key',
@@ -362,17 +359,17 @@ void main() {
 
   group('CloudSyncConfig Tests', () {
     test('should validate configuration correctly', () {
-      final invalidConfig = const CloudSyncConfig(enabled: true);
+      const invalidConfig = CloudSyncConfig(enabled: true);
       expect(invalidConfig.isValid, false);
 
-      final validConfig = const CloudSyncConfig(
+      const validConfig = CloudSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
         apiKey: 'key',
       );
       expect(validConfig.isValid, true);
 
-      final disabledConfig = const CloudSyncConfig(enabled: false);
+      const disabledConfig = CloudSyncConfig();
       expect(disabledConfig.isValid, false);
     });
 

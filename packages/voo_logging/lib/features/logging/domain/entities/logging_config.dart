@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:voo_logging/features/logging/domain/entities/cloud_sync_config.dart';
 import 'package:voo_logging/features/logging/domain/utils/pretty_log_formatter.dart';
 import 'package:voo_logging/voo_logging.dart';
 

@@ -477,9 +477,7 @@ class LoggerRepositoryImpl extends LoggerRepository {
   }
 
   /// Manually flush cloud sync queue.
-  Future<bool> flushCloudSync() async {
-    return await _cloudSync?.flush() ?? false;
-  }
+  Future<bool> flushCloudSync() async => await _cloudSync?.flush() ?? false;
 
   void close() {
     try {

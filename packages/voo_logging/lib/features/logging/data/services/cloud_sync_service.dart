@@ -26,17 +26,15 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
 
   CloudSyncService({
     required CloudSyncConfig config,
-    http.Client? client,
+    super.client,
   })  : _loggingConfig = config,
         super(
           config: _toBaseSyncConfig(config),
           serviceName: 'CloudSyncService',
-          client: client,
         );
 
   /// Convert CloudSyncConfig to BaseSyncConfig.
-  static BaseSyncConfig _toBaseSyncConfig(CloudSyncConfig config) {
-    return BaseSyncConfig(
+  static BaseSyncConfig _toBaseSyncConfig(CloudSyncConfig config) => BaseSyncConfig(
       enabled: config.enabled,
       endpoint: config.endpoint,
       apiKey: config.apiKey,
@@ -49,7 +47,6 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
       maxQueueSize: config.maxQueueSize,
       headers: config.headers,
     );
-  }
 
   @override
   String get endpoint => _loggingConfig.logEndpoint ?? '';
@@ -183,7 +180,7 @@ class CloudSyncService extends BaseSyncService<LogEntry> {
     final level = log.level.name.toLowerCase();
     if (level == 'error' || level == 'fatal') {
       try {
-        final breadcrumbs = Voo.getRecentBreadcrumbs(50);
+        final breadcrumbs = Voo.getRecentBreadcrumbs();
         if (breadcrumbs.isNotEmpty) {
           entry['breadcrumbs'] = breadcrumbs.map((b) => b.toJson()).toList();
         }
