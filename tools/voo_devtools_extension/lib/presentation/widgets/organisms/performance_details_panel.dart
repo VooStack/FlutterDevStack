@@ -96,6 +96,7 @@ class PerformanceDetailsPanel extends StatelessWidget {
       sections.add(
         DetailSection(
           title: 'Performance Metrics',
+          itemCount: metrics.length,
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: metrics.entries.map((entry) {
@@ -106,6 +107,8 @@ class PerformanceDetailsPanel extends StatelessWidget {
               );
             }).toList(),
           ),
+          collapsible: metrics.length > 5,
+          initiallyExpanded: metrics.length <= 5,
         ),
       );
     }

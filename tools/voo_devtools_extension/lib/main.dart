@@ -1,10 +1,48 @@
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:voo_analytics/voo_analytics.dart';
+import 'package:voo_core/voo_core.dart';
 import 'package:voo_devtools_extension/core/services/theme_service.dart';
 import 'package:voo_devtools_extension/presentation/widgets/app_wrapper.dart';
+import 'package:voo_logging/voo_logging.dart';
+import 'package:voo_performance/voo_performance.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Dogfooding: Initialize Voo core for the DevTools extension itself
+  // No config = local only, no API sync (appropriate for the extension)
+  await Voo.initializeApp();
+
+  // Initialize VooLogger for structured logging
+  await VooLogger.ensureInitialized(
+    config: LoggingConfig(
+      minimumLevel: LogLevel.debug,
+      enablePrettyLogs: true,
+      showEmojis: true,
+    ),
+  );
+
+  // Initialize VooAnalytics for event tracking
+  await VooAnalyticsPlugin.initialize(
+    enableTouchTracking: false, // Not needed for DevTools extension
+    enableEventLogging: true,
+    enableUserProperties: true,
+  );
+
+  // Initialize VooPerformance for performance tracing
+  await VooPerformancePlugin.initialize(
+    enableNetworkMonitoring: false, // Extension doesn't make API calls
+    enableTraceMonitoring: true,
+    enableAutoAppStartTrace: true,
+  );
+
+  await VooLogger.info(
+    'VooDevToolsExtension starting',
+    category: 'Lifecycle',
+    tag: 'startup',
+  );
+
   await ThemeService().initialize();
   runApp(const VooDevToolsExtension());
 }

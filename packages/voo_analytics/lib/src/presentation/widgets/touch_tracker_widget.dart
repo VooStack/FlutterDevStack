@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_analytics/src/voo_analytics_plugin.dart';
 import 'package:voo_analytics/src/data/repositories/analytics_repository_impl.dart';
+import 'package:voo_analytics/src/replay/replay_capture_service.dart';
 
 class TouchTrackerWidget extends StatefulWidget {
   final Widget child;
@@ -21,6 +22,7 @@ class TouchTrackerWidget extends StatefulWidget {
 
 class _TouchTrackerWidgetState extends State<TouchTrackerWidget> {
   Offset? _lastPosition;
+  Size? _screenSize;
 
   void _logTouchEvent(
     Offset position,
@@ -56,6 +58,41 @@ class _TouchTrackerWidgetState extends State<TouchTrackerWidget> {
     if (repository is AnalyticsRepositoryImpl) {
       repository.logTouchEvent(event);
     }
+
+    // Also capture for replay if enabled
+    _captureForReplay(effectivePosition, type);
+  }
+
+  void _captureForReplay(Offset position, TouchType type) {
+    if (!ReplayCaptureService.instance.isEnabled) return;
+
+    // Get screen size for normalization
+    final size = _screenSize;
+    if (size == null || size.width == 0 || size.height == 0) return;
+
+    // Normalize coordinates to 0-1 range
+    final normalizedX = (position.dx / size.width).clamp(0.0, 1.0);
+    final normalizedY = (position.dy / size.height).clamp(0.0, 1.0);
+
+    // Map TouchType to replay touch type string
+    final touchTypeStr = switch (type) {
+      TouchType.tap => 'tap',
+      TouchType.doubleTap => 'doubleTap',
+      TouchType.longPress => 'longPress',
+      TouchType.panStart => 'panStart',
+      TouchType.panUpdate => 'panUpdate',
+      TouchType.panEnd => 'panEnd',
+      TouchType.scaleStart => 'scaleStart',
+      TouchType.scaleUpdate => 'scaleUpdate',
+      TouchType.scaleEnd => 'scaleEnd',
+    };
+
+    ReplayCaptureService.instance.captureTouch(
+      x: normalizedX,
+      y: normalizedY,
+      touchType: touchTypeStr,
+      screenName: widget.screenName,
+    );
   }
 
   @override
@@ -63,6 +100,9 @@ class _TouchTrackerWidgetState extends State<TouchTrackerWidget> {
     if (!widget.enabled) {
       return widget.child;
     }
+
+    // Cache screen size for coordinate normalization
+    _screenSize = MediaQuery.sizeOf(context);
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,

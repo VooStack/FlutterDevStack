@@ -22,8 +22,16 @@ dependencies:
   flutter_bloc: ^9.1.1
   equatable: ^2.0.5
   web: ^1.0.0
-  voo_core: ^0.4.3
   voo_ui_core: ^0.1.3
+  # Dogfooding: DevTools extension uses its own packages
+  voo_core:
+    path: ../../packages/voo_core
+  voo_logging:
+    path: ../../packages/voo_logging
+  voo_analytics:
+    path: ../../packages/voo_analytics
+  voo_performance:
+    path: ../../packages/voo_performance
 
   vm_service: any
 dev_dependencies:

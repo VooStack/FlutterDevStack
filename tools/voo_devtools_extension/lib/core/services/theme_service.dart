@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voo_devtools_extension/core/services/preferences_service.dart';
+import 'package:voo_logging/voo_logging.dart';
 
 /// Service for managing app theme
 class ThemeService extends ChangeNotifier {
@@ -21,6 +22,13 @@ class ThemeService extends ChangeNotifier {
     await _preferencesService.initialize();
     _themeMode = _preferencesService.preferences.themeMode;
     notifyListeners();
+
+    VooLogger.debug(
+      'ThemeService initialized',
+      category: 'Service',
+      tag: 'init',
+      metadata: {'theme_mode': _themeMode.name},
+    );
   }
 
   /// Set theme mode

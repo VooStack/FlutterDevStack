@@ -24,3 +24,5 @@ export 'domain/entities/logger_context.dart';
 export 'domain/entities/voo_logger.dart';
 // Domain - Repositories
 export 'domain/repositories/logger_repository.dart';
+// Data - Repositories (for ErrorCaptureCallback)
+export 'data/repositories/logger_repository_impl.dart';

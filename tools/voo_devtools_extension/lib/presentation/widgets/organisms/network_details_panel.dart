@@ -133,6 +133,7 @@ class NetworkDetailsPanel extends StatelessWidget {
       sections.add(
         DetailSection(
           title: 'Request Headers',
+          itemCount: requestHeaders.length,
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: requestHeaders.entries.map((entry) {
@@ -169,6 +170,7 @@ class NetworkDetailsPanel extends StatelessWidget {
       sections.add(
         DetailSection(
           title: 'Response Headers',
+          itemCount: responseHeaders.length,
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: responseHeaders.entries.map((entry) {

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
 
 import '../voo_analytics_plugin.dart';
+import '../replay/replay_capture_service.dart';
 
 /// A screen view event for analytics.
 @immutable
@@ -189,6 +190,14 @@ class VooNavigationObserver extends NavigatorObserver {
         VooAnalyticsPlugin.instance.logEvent(
           'screen_view',
           parameters: event.toJson(),
+        );
+      }
+
+      // Also capture for replay if enabled
+      if (ReplayCaptureService.instance.isEnabled) {
+        ReplayCaptureService.instance.captureScreenView(
+          screenName: event.screenName,
+          routePath: event.routeParams?['path'] as String?,
         );
       }
     } catch (e) {

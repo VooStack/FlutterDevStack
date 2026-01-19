@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:voo_devtools_extension/core/models/user_preferences.dart';
+import 'package:voo_logging/voo_logging.dart';
 import 'package:web/web.dart' as web;
 
 /// Service for managing user preferences persistence
@@ -33,10 +34,27 @@ class PreferencesService {
       if (stored != null && stored.isNotEmpty) {
         _preferences = UserPreferences.decode(stored);
         _preferencesController.add(_preferences);
+        VooLogger.debug(
+          'Preferences loaded from storage',
+          category: 'Service',
+          tag: 'preferences_loaded',
+        );
+      } else {
+        VooLogger.debug(
+          'Using default preferences',
+          category: 'Service',
+          tag: 'preferences_default',
+        );
       }
     } catch (e) {
       // If loading fails, use defaults
       _preferences = const UserPreferences();
+      VooLogger.warning(
+        'Failed to load preferences, using defaults',
+        category: 'Service',
+        tag: 'preferences_error',
+        metadata: {'error': e.toString()},
+      );
     }
   }
 

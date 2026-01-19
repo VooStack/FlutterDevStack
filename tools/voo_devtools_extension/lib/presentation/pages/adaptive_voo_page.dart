@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:voo_analytics/voo_analytics.dart';
 import 'package:voo_devtools_extension/core/models/keyboard_shortcut.dart';
 import 'package:voo_devtools_extension/core/services/keyboard_shortcuts_service.dart';
 import 'package:voo_devtools_extension/core/services/plugin_detection_service.dart';
@@ -19,6 +20,8 @@ import 'package:voo_devtools_extension/presentation/pages/performance_tab.dart';
 import 'package:voo_devtools_extension/presentation/pages/analytics_tab.dart';
 import 'package:voo_devtools_extension/presentation/widgets/molecules/export_dialog.dart';
 import 'package:voo_devtools_extension/presentation/widgets/molecules/shortcuts_help_dialog.dart';
+import 'package:voo_logging/voo_logging.dart';
+import 'package:voo_performance/voo_performance.dart';
 import 'package:voo_ui_core/voo_ui_core.dart';
 
 class AdaptiveVooPage extends StatefulWidget {
@@ -92,16 +95,55 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
     _shortcutsService.register(AppShortcuts.exportData.id, _handleExport);
 
     // View
-    _shortcutsService.register(AppShortcuts.toggleTheme.id, () => _themeService.toggleTheme());
+    _shortcutsService.register(AppShortcuts.toggleTheme.id, _handleThemeToggle);
 
     // Help
     _shortcutsService.register(AppShortcuts.showHelp.id, _showShortcutsHelp);
+  }
+
+  void _handleThemeToggle() {
+    final isDark = _themeService.isDarkMode;
+    _themeService.toggleTheme();
+
+    final newTheme = !isDark ? 'dark' : 'light';
+
+    // Dogfooding: Log and track theme toggle
+    VooLogger.info(
+      'Theme toggled to $newTheme',
+      category: 'UI',
+      tag: 'theme_toggled',
+      metadata: {'new_theme': newTheme},
+    );
+
+    // Analytics event for theme toggle
+    VooAnalyticsPlugin.instance.logEvent(
+      'theme_toggled',
+      category: 'UI',
+      parameters: {'new_theme': newTheme},
+    );
   }
 
   void _switchToTab(int index) {
     if (index < _availableTabs.length) {
       setState(() => _selectedIndex = index);
       _saveSelectedIndex();
+
+      final tabName = _availableTabs[index].pluginName;
+
+      // Dogfooding: Log and track tab selection
+      VooLogger.info(
+        'Tab selected: $tabName',
+        category: 'Navigation',
+        tag: 'tab_selected',
+        metadata: {'tab_index': index, 'tab_name': tabName},
+      );
+
+      // Analytics event for tab selection
+      VooAnalyticsPlugin.instance.logEvent(
+        'tab_selected',
+        category: 'Navigation',
+        parameters: {'tab_index': index, 'tab_name': tabName},
+      );
     }
   }
 
@@ -374,7 +416,7 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
                         key: ValueKey(isDark),
                       ),
                     ),
-                    onPressed: () => _themeService.toggleTheme(),
+                    onPressed: _handleThemeToggle,
                     tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
                   );
                 },
@@ -476,6 +518,25 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
   }
 
   void _refreshCurrentTab(String pluginName) {
+    // Dogfooding: Start performance trace for refresh operation
+    final trace = VooPerformancePlugin.instance.newTrace('tab_refresh');
+    trace.putAttribute('plugin_name', pluginName);
+    trace.start();
+
+    // Log and track refresh action
+    VooLogger.info(
+      'Data refreshed: $pluginName',
+      category: 'Action',
+      tag: 'data_refreshed',
+      metadata: {'plugin_name': pluginName},
+    );
+
+    VooAnalyticsPlugin.instance.logEvent(
+      'data_refreshed',
+      category: 'Action',
+      parameters: {'plugin_name': pluginName},
+    );
+
     // Refresh data based on the plugin
     switch (pluginName) {
       case 'voo_logging':
@@ -492,6 +553,9 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
         break;
     }
 
+    // Complete the performance trace
+    trace.stop();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -507,17 +571,31 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Clear Data'),
         content: Text('Clear all ${pluginInfo.name} data?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
+
+              // Dogfooding: Log and track clear action
+              VooLogger.info(
+                'Data cleared: $pluginName',
+                category: 'Action',
+                tag: 'data_cleared',
+                metadata: {'plugin_name': pluginName},
+              );
+
+              VooAnalyticsPlugin.instance.logEvent(
+                'data_cleared',
+                category: 'Action',
+                parameters: {'plugin_name': pluginName},
+              );
 
               // Clear data based on plugin
               switch (pluginName) {
@@ -547,31 +625,61 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
   }
 
   void _exportCurrentTab(String pluginName) {
+    // Dogfooding: Start performance trace for export operation
+    final trace = VooPerformancePlugin.instance.newTrace('data_export');
+    trace.putAttribute('plugin_name', pluginName);
+    trace.start();
+
+    // Log and track export action
+    VooLogger.info(
+      'Data exported: $pluginName',
+      category: 'Action',
+      tag: 'data_exported',
+      metadata: {'plugin_name': pluginName},
+    );
+
+    VooAnalyticsPlugin.instance.logEvent(
+      'data_exported',
+      category: 'Action',
+      parameters: {'plugin_name': pluginName},
+    );
+
+    int itemCount = 0;
     switch (pluginName) {
       case 'voo_logging':
         final state = context.read<LogBloc>().state;
+        itemCount = state.filteredLogs.length;
         ExportDialog.showForLogs(context, state.filteredLogs);
         break;
       case 'voo_network':
         final state = context.read<NetworkBloc>().state;
+        itemCount = state.filteredNetworkRequests.length;
         ExportDialog.showForNetwork(context, state.filteredNetworkRequests);
         break;
       case 'voo_performance':
         final state = context.read<PerformanceBloc>().state;
+        itemCount = state.filteredPerformanceLogs.length;
         ExportDialog.showForPerformance(context, state.filteredPerformanceLogs);
         break;
       case 'voo_analytics':
         final state = context.read<AnalyticsBloc>().state;
+        itemCount = state.filteredEvents.length;
         ExportDialog.showForAnalytics(context, state.filteredEvents);
         break;
       default:
+        trace.stop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Export not available for this tab'),
             behavior: SnackBarBehavior.floating,
           ),
         );
+        return;
     }
+
+    // Complete trace with item count
+    trace.putMetric('item_count', itemCount);
+    trace.stop();
   }
 }
 

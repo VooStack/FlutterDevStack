@@ -8,6 +8,13 @@ import 'package:voo_logging/features/logging/data/services/cloud_sync_service.da
 import 'package:voo_logging/features/logging/domain/utils/pretty_log_formatter.dart';
 import 'package:voo_logging/voo_logging.dart';
 
+/// Callback for external error capture (e.g., replay capture).
+typedef ErrorCaptureCallback = void Function({
+  required String message,
+  String? errorType,
+  String? stackTrace,
+});
+
 class LoggerRepositoryImpl extends LoggerRepository {
   LocalLogStorage? _storage;
   CloudSyncService? _cloudSync;
@@ -20,6 +27,10 @@ class LoggerRepositoryImpl extends LoggerRepository {
   int _logCounter = 0;
   LoggingConfig _config = const LoggingConfig();
   late PrettyLogFormatter _formatter;
+
+  /// Optional callback for external error capture (e.g., session replay).
+  /// Set this to forward error logs to replay capture service.
+  ErrorCaptureCallback? onErrorCaptured;
 
   final _random = Random();
 
@@ -224,6 +235,19 @@ class LoggerRepositoryImpl extends LoggerRepository {
 
     // Queue for cloud sync if enabled
     _cloudSync?.queueLog(entry);
+
+    // Notify external error capture callback for error-level logs
+    if (onErrorCaptured != null && (level == LogLevel.error || level == LogLevel.fatal)) {
+      try {
+        onErrorCaptured!(
+          message: message,
+          errorType: error?.runtimeType.toString(),
+          stackTrace: stackTrace?.toString(),
+        );
+      } catch (_) {
+        // Silent fail - replay capture is optional
+      }
+    }
   }
 
   Map<String, dynamic>? _enrichMetadata(Map<String, dynamic>? userMetadata) {

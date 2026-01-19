@@ -10,6 +10,7 @@ class DetailSection {
   final List<Widget> actions;
   final bool collapsible;
   final bool initiallyExpanded;
+  final int? itemCount;
 
   const DetailSection({
     required this.title,
@@ -17,6 +18,7 @@ class DetailSection {
     this.actions = const [],
     this.collapsible = false,
     this.initiallyExpanded = true,
+    this.itemCount,
   });
 }
 
@@ -191,6 +193,23 @@ class UniversalDetailsPanel extends StatelessWidget {
             color: accentColor ?? theme.colorScheme.primary,
           ),
         ),
+        if (section.itemCount != null) ...[
+          const SizedBox(width: AppTheme.spacingSm),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '${section.itemCount}',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
         const Spacer(),
         ...section.actions,
       ],
