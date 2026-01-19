@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'package:uuid/uuid.dart';
 
 /// Mutable user and session context for Voo SDK.
 ///
@@ -135,9 +135,7 @@ class VooUserContext {
   }
 
   static String _generateSessionId() {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final random = Random().nextInt(999999).toString().padLeft(6, '0');
-    return 'session_${timestamp}_$random';
+    return const Uuid().v4();
   }
 
   @override

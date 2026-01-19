@@ -150,7 +150,9 @@ abstract class BaseSyncService<T> {
   void _startBatchTimer() {
     _batchTimer?.cancel();
     _batchTimer = Timer.periodic(config.batchInterval, (_) {
-      _flushNow();
+      // Call flush() instead of _flushNow() so subclasses can override
+      // to add additional flush behavior (e.g., touch events)
+      flush();
     });
   }
 

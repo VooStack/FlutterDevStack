@@ -1,6 +1,8 @@
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_core/voo_core.dart';
@@ -24,6 +26,10 @@ class AnalyticsCloudSyncConfig extends BaseSyncConfig {
   /// Note: endpoint should already include /api if needed (e.g., 'http://localhost:5001/api')
   String? get eventsEndpoint =>
       endpoint != null ? '$endpoint/v1/telemetry/analytics' : null;
+
+  /// Returns the full endpoint URL for touch events (heatmaps).
+  String? get touchEventsEndpoint =>
+      endpoint != null ? '$endpoint/v1/telemetry/touch-events' : null;
 
   factory AnalyticsCloudSyncConfig.production({
     required String endpoint,
@@ -152,11 +158,111 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
   int get pendingCount => super.pendingCount + _pendingTouchEvents.length;
 
   @override
-  Map<String, dynamic> formatPayload(List<AnalyticsEventData> events) {
-    // Note: Touch events are synced separately or can be added to properties
-    // Clear any pending touch events since they're not part of the standard API
-    _pendingTouchEvents.clear();
+  Future<bool> flush() async {
+    // Flush analytics events via parent class
+    final analyticsResult = await super.flush();
 
+    // Also flush touch events to separate endpoint
+    final touchResult = await _flushTouchEvents();
+
+    return analyticsResult || touchResult;
+  }
+
+  /// Flush pending touch events to the heatmap endpoint.
+  Future<bool> _flushTouchEvents() async {
+    if (_pendingTouchEvents.isEmpty) return false;
+    if (_analyticsConfig.touchEventsEndpoint == null ||
+        _analyticsConfig.apiKey == null) return false;
+
+    // Take up to batchSize events
+    final eventsToSend = <TouchEvent>[];
+    while (eventsToSend.length < _analyticsConfig.batchSize &&
+        _pendingTouchEvents.isNotEmpty) {
+      eventsToSend.add(_pendingTouchEvents.removeFirst());
+    }
+
+    if (eventsToSend.isEmpty) return false;
+
+    try {
+      final context = Voo.context;
+      final screenSize =
+          WidgetsBinding.instance.platformDispatcher.views.first.physicalSize;
+      final devicePixelRatio =
+          WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+      final logicalSize = screenSize / devicePixelRatio;
+
+      final payload = {
+        'sessionId': context?.sessionId ?? Voo.sessionId ?? '',
+        'deviceId': context?.deviceId ?? '',
+        'userId': context?.userId ?? '',
+        'platform': context?.platform ?? 'unknown',
+        'appVersion': context?.appVersion ?? '1.0.0',
+        'events': eventsToSend.map((e) {
+          return {
+            'timestamp': e.timestamp.toIso8601String(),
+            'x': e.position.dx,
+            'y': e.position.dy,
+            'normalizedX': logicalSize.width > 0
+                ? (e.position.dx / logicalSize.width).clamp(0.0, 1.0)
+                : 0.0,
+            'normalizedY': logicalSize.height > 0
+                ? (e.position.dy / logicalSize.height).clamp(0.0, 1.0)
+                : 0.0,
+            'screenName': e.screenName,
+            'routePath': e.route,
+            'screenWidth': logicalSize.width,
+            'screenHeight': logicalSize.height,
+            'widgetType': e.widgetType,
+            'widgetKey': e.widgetKey,
+            'touchType': e.type.name,
+          };
+        }).toList(),
+      };
+
+      final response = await http.post(
+        Uri.parse(_analyticsConfig.touchEventsEndpoint!),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': _analyticsConfig.apiKey!,
+        },
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (kDebugMode) {
+          debugPrint(
+              '[AnalyticsCloudSync] Synced ${eventsToSend.length} touch events');
+        }
+        return true;
+      } else {
+        // Re-queue events on failure (up to limit)
+        for (final event in eventsToSend.reversed) {
+          if (_pendingTouchEvents.length < _analyticsConfig.maxQueueSize) {
+            _pendingTouchEvents.addFirst(event);
+          }
+        }
+        if (kDebugMode) {
+          debugPrint(
+              '[AnalyticsCloudSync] Failed to sync touch events: ${response.statusCode}');
+        }
+        return false;
+      }
+    } catch (e) {
+      // Re-queue events on error (up to limit)
+      for (final event in eventsToSend.reversed) {
+        if (_pendingTouchEvents.length < _analyticsConfig.maxQueueSize) {
+          _pendingTouchEvents.addFirst(event);
+        }
+      }
+      if (kDebugMode) {
+        debugPrint('[AnalyticsCloudSync] Error syncing touch events: $e');
+      }
+      return false;
+    }
+  }
+
+  @override
+  Map<String, dynamic> formatPayload(List<AnalyticsEventData> events) {
     // Use new typed context from Voo.context (preferred)
     final context = Voo.context;
     if (context != null) {

@@ -6,11 +6,13 @@ import 'package:voo_analytics/src/domain/repositories/analytics_repository.dart'
 import 'package:voo_analytics/src/data/repositories/analytics_repository_impl.dart';
 import 'package:voo_analytics/src/presentation/widgets/route_aware_touch_tracker.dart';
 import 'package:voo_analytics/src/data/services/funnel_tracking_service.dart';
+import 'package:voo_analytics/src/data/services/analytics_cloud_sync.dart';
 
 class VooAnalyticsPlugin extends VooPlugin {
   static VooAnalyticsPlugin? _instance;
   AnalyticsRepository? repository;
   AnalyticsRouteObserver? _routeObserver;
+  AnalyticsCloudSyncService? _cloudSyncService;
   bool _initialized = false;
 
   VooAnalyticsPlugin._();
@@ -32,6 +34,11 @@ class VooAnalyticsPlugin extends VooPlugin {
     _routeObserver ??= AnalyticsRouteObserver();
     return _routeObserver!;
   }
+
+  /// Get or set the cloud sync service for sending touch events to backend.
+  AnalyticsCloudSyncService? get cloudSyncService => _cloudSyncService;
+  set cloudSyncService(AnalyticsCloudSyncService? service) =>
+      _cloudSyncService = service;
 
   static Future<void> initialize({
     bool enableTouchTracking = true,

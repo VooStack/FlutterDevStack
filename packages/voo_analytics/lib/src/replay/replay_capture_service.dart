@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:voo_core/voo_core.dart';
 
@@ -30,6 +34,15 @@ class ReplayCaptureConfig {
   /// Whether to capture errors.
   final bool captureErrors;
 
+  /// Whether to capture screenshots at screen transitions.
+  final bool captureScreenshots;
+
+  /// Quality for screenshot compression (0.0 to 1.0).
+  final double screenshotQuality;
+
+  /// Maximum screenshot width (height scales proportionally).
+  final int maxScreenshotWidth;
+
   const ReplayCaptureConfig({
     this.enabled = false,
     this.maxBufferSize = 100,
@@ -39,6 +52,9 @@ class ReplayCaptureConfig {
     this.captureNetwork = true,
     this.captureLogs = false,
     this.captureErrors = true,
+    this.captureScreenshots = true,
+    this.screenshotQuality = 0.7,
+    this.maxScreenshotWidth = 720,
   });
 
   ReplayCaptureConfig copyWith({
@@ -50,6 +66,9 @@ class ReplayCaptureConfig {
     bool? captureNetwork,
     bool? captureLogs,
     bool? captureErrors,
+    bool? captureScreenshots,
+    double? screenshotQuality,
+    int? maxScreenshotWidth,
   }) {
     return ReplayCaptureConfig(
       enabled: enabled ?? this.enabled,
@@ -60,6 +79,9 @@ class ReplayCaptureConfig {
       captureNetwork: captureNetwork ?? this.captureNetwork,
       captureLogs: captureLogs ?? this.captureLogs,
       captureErrors: captureErrors ?? this.captureErrors,
+      captureScreenshots: captureScreenshots ?? this.captureScreenshots,
+      screenshotQuality: screenshotQuality ?? this.screenshotQuality,
+      maxScreenshotWidth: maxScreenshotWidth ?? this.maxScreenshotWidth,
     );
   }
 }
@@ -131,7 +153,20 @@ class ReplayCaptureService {
   String? _currentScreenName;
   bool _isEnabled = false;
 
+  /// Global key for the RepaintBoundary to capture screenshots.
+  /// Set this to the key of a RepaintBoundary wrapping your app content.
+  RenderRepaintBoundary? _repaintBoundary;
+
+  /// Set to true when a screenshot capture is in progress.
+  bool _isCapturing = false;
+
   ReplayCaptureService._();
+
+  /// Set the render object to capture screenshots from.
+  /// This should be a RenderRepaintBoundary from a RepaintBoundary widget.
+  void setRepaintBoundary(RenderRepaintBoundary? boundary) {
+    _repaintBoundary = boundary;
+  }
 
   /// Whether replay capture is currently enabled and active.
   bool get isEnabled => _isEnabled && _config.enabled;
@@ -220,6 +255,144 @@ class ReplayCaptureService {
       screenName: screenName,
       metadata: routePath != null ? {'routePath': routePath} : null,
     ));
+
+    // Also capture screenshot if enabled
+    if (_config.captureScreenshots) {
+      // Delay slightly to let the new screen render
+      Future.delayed(const Duration(milliseconds: 100), () {
+        captureScreenshot(
+          screenName: screenName,
+          captureReason: 'screen_transition',
+        );
+      });
+    }
+  }
+
+  /// Capture a screenshot of the current screen.
+  ///
+  /// The screenshot is captured from the RepaintBoundary set via
+  /// [setRepaintBoundary]. If no boundary is set, this method does nothing.
+  ///
+  /// Screenshots are uploaded to the backend asynchronously.
+  Future<void> captureScreenshot({
+    String? screenName,
+    String captureReason = 'manual',
+  }) async {
+    if (!isEnabled || !_config.captureScreenshots) return;
+    if (_repaintBoundary == null) {
+      if (kDebugMode) {
+        debugPrint('VooReplay: No RepaintBoundary set for screenshot capture');
+      }
+      return;
+    }
+    if (_isCapturing) return; // Prevent concurrent captures
+
+    _isCapturing = true;
+
+    try {
+      final boundary = _repaintBoundary!;
+
+      // Calculate pixel ratio for downscaling
+      final originalWidth = boundary.size.width;
+      final originalHeight = boundary.size.height;
+      final targetWidth = _config.maxScreenshotWidth.toDouble();
+      final pixelRatio = originalWidth > targetWidth
+          ? targetWidth / originalWidth
+          : 1.0;
+
+      // Capture the image
+      final image = await boundary.toImage(pixelRatio: pixelRatio);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+      if (byteData == null) {
+        if (kDebugMode) {
+          debugPrint('VooReplay: Failed to convert image to bytes');
+        }
+        return;
+      }
+
+      final bytes = byteData.buffer.asUint8List();
+      final base64Data = base64Encode(bytes);
+      final contentHash = sha256.convert(bytes).toString();
+
+      final effectiveScreenName = screenName ?? _currentScreenName ?? 'unknown';
+
+      // Upload to backend
+      await _uploadScreenshot(
+        screenName: effectiveScreenName,
+        contentHash: contentHash,
+        base64Data: base64Data,
+        width: image.width,
+        height: image.height,
+        sizeBytes: bytes.length,
+        captureReason: captureReason,
+      );
+
+      if (kDebugMode) {
+        debugPrint(
+          'VooReplay: Captured screenshot for $effectiveScreenName '
+          '(${image.width}x${image.height}, ${bytes.length} bytes)',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('VooReplay: Screenshot capture failed: $e');
+      }
+    } finally {
+      _isCapturing = false;
+    }
+  }
+
+  /// Upload a screenshot to the backend.
+  Future<void> _uploadScreenshot({
+    required String screenName,
+    required String contentHash,
+    required String base64Data,
+    required int width,
+    required int height,
+    required int sizeBytes,
+    required String captureReason,
+  }) async {
+    final sessionId = Voo.sessionId;
+    final context = Voo.context;
+
+    if (sessionId == null || context == null) {
+      if (kDebugMode) {
+        debugPrint('VooReplay: Cannot upload screenshot - no session or context');
+      }
+      return;
+    }
+
+    final url = '${context.config.endpoint}/v1/replay/sessions/$sessionId/screenshots';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': context.config.apiKey,
+        },
+        body: jsonEncode({
+          'screenName': screenName,
+          'contentHash': contentHash,
+          'base64Data': base64Data,
+          'width': width,
+          'height': height,
+          'sizeBytes': sizeBytes,
+          'offsetMs': _calculateOffset(),
+          'capturedAt': DateTime.now().toUtc().toIso8601String(),
+          'captureReason': captureReason,
+        }),
+      );
+
+      if (response.statusCode >= 400) {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('VooReplay: Screenshot upload failed: $e');
+      }
+    }
   }
 
   /// Capture a network request.

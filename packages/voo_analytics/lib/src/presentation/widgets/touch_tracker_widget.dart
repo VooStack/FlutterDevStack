@@ -6,15 +6,24 @@ import 'package:voo_analytics/src/replay/replay_capture_service.dart';
 
 class TouchTrackerWidget extends StatefulWidget {
   final Widget child;
-  final String screenName;
+
+  /// Static screen name (used if screenNameProvider is null)
+  final String? screenName;
+
+  /// Dynamic screen name provider - called on each touch event.
+  /// Use this when the screen name can change (e.g., for app-wide tracking).
+  final String Function()? screenNameProvider;
+
   final bool enabled;
 
   const TouchTrackerWidget({
     super.key,
     required this.child,
-    required this.screenName,
+    this.screenName,
+    this.screenNameProvider,
     this.enabled = true,
-  });
+  }) : assert(screenName != null || screenNameProvider != null,
+            'Either screenName or screenNameProvider must be provided');
 
   @override
   State<TouchTrackerWidget> createState() => _TouchTrackerWidgetState();
@@ -23,6 +32,10 @@ class TouchTrackerWidget extends StatefulWidget {
 class _TouchTrackerWidgetState extends State<TouchTrackerWidget> {
   Offset? _lastPosition;
   Size? _screenSize;
+
+  /// Get the current screen name, either from provider or static value
+  String get _currentScreenName =>
+      widget.screenNameProvider?.call() ?? widget.screenName ?? 'unknown';
 
   void _logTouchEvent(
     Offset position,
@@ -44,20 +57,27 @@ class _TouchTrackerWidgetState extends State<TouchTrackerWidget> {
       _lastPosition = position;
     }
 
+    // Get screen name dynamically at touch time (this is also the route)
+    final screenName = _currentScreenName;
+
     final event = TouchEvent(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       timestamp: DateTime.now(),
       position: effectivePosition,
-      screenName: widget.screenName,
+      screenName: screenName,
       type: type,
       widgetType: widgetType,
       widgetKey: widgetKey,
+      route: screenName, // screenName is derived from route observer
     );
 
     final repository = VooAnalyticsPlugin.instance.repository;
     if (repository is AnalyticsRepositoryImpl) {
       repository.logTouchEvent(event);
     }
+
+    // Queue touch event for cloud sync (for heatmaps)
+    VooAnalyticsPlugin.instance.cloudSyncService?.queueTouchEvent(event);
 
     // Also capture for replay if enabled
     _captureForReplay(effectivePosition, type);
@@ -91,7 +111,7 @@ class _TouchTrackerWidgetState extends State<TouchTrackerWidget> {
       x: normalizedX,
       y: normalizedY,
       touchType: touchTypeStr,
-      screenName: widget.screenName,
+      screenName: _currentScreenName,
     );
   }
 
@@ -175,8 +195,8 @@ class TouchableWidget extends StatelessWidget {
               position.dy + size.height / 2,
             );
 
-            final screenName =
-                ModalRoute.of(context)?.settings.name ?? 'unknown';
+            final routeName = ModalRoute.of(context)?.settings.name;
+            final screenName = routeName ?? 'unknown';
 
             final event = TouchEvent(
               id: DateTime.now().microsecondsSinceEpoch.toString(),
@@ -186,12 +206,16 @@ class TouchableWidget extends StatelessWidget {
               type: TouchType.tap,
               widgetType: widgetType,
               widgetKey: widgetKey,
+              route: routeName,
             );
 
             final repository = VooAnalyticsPlugin.instance.repository;
             if (repository is AnalyticsRepositoryImpl) {
               repository.logTouchEvent(event);
             }
+
+            // Cloud sync for heatmaps
+            VooAnalyticsPlugin.instance.cloudSyncService?.queueTouchEvent(event);
           }
         }
         onTap?.call();
