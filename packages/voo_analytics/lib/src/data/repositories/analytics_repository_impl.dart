@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
@@ -12,7 +13,14 @@ import 'package:voo_analytics/src/domain/entities/heat_map_data.dart';
 import 'package:voo_analytics/src/domain/repositories/analytics_repository.dart';
 
 class AnalyticsRepositoryImpl implements AnalyticsRepository {
-  final List<TouchEvent> _touchEvents = [];
+  /// Touch events queue - uses Queue for O(1) removals when bounded
+  final Queue<TouchEvent> _touchEvents = Queue<TouchEvent>();
+
+  /// Maximum number of touch events to keep in memory
+  static const int _maxTouchEvents = 10000;
+
+  /// Number of events to remove when limit is exceeded
+  static const int _eventsToRemove = 1000;
   final Map<String, dynamic> _events = {};
   final Map<String, String> _userProperties = {};
   String? _userId;
@@ -154,9 +162,11 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
     _touchEvents.add(event);
 
-    // Keep list bounded
-    if (_touchEvents.length > 10000) {
-      _touchEvents.removeRange(0, 1000);
+    // Keep queue bounded with O(1) removals
+    if (_touchEvents.length > _maxTouchEvents) {
+      for (var i = 0; i < _eventsToRemove; i++) {
+        _touchEvents.removeFirst();
+      }
     }
 
     await _saveData();
@@ -302,7 +312,17 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
   @override
   void dispose() {
-    // Clean up resources if needed
+    // Clear all in-memory data to prevent memory leaks
+    _touchEvents.clear();
+    _events.clear();
+    _userProperties.clear();
+    _userId = null;
+    _storageFile = null;
+    _cloudSyncService = null;
+
+    if (kDebugMode) {
+      print('[VooAnalytics] Repository disposed');
+    }
   }
 
   void _sendToDevTools({

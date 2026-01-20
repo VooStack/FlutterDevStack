@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
+import 'package:voo_analytics/src/utils/isolate_processing.dart';
 import 'package:voo_core/voo_core.dart';
 
 /// Configuration for replay capture.
@@ -383,8 +383,11 @@ class ReplayCaptureService {
         return;
       }
 
-      final base64Data = base64Encode(bytes);
-      final contentHash = sha256.convert(bytes).toString();
+      // Process screenshot in isolate to avoid UI jank
+      // This moves base64 encoding and SHA256 hashing off the main thread
+      final result = await IsolateProcessing.processScreenshot(bytes);
+      final base64Data = result.base64Data;
+      final contentHash = result.contentHash;
 
       final effectiveScreenName = screenName ?? _currentScreenName ?? 'unknown';
 
