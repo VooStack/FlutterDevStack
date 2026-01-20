@@ -1,6 +1,6 @@
 name: voo_core
 description: 'Core foundation package for the Voo Flutter ecosystem. Provides plugin architecture and shared utilities.'
-version: 0.4.3
+version: 1.0.0
 homepage: https://voostack.com/packages/voo_core
 repository: https://github.com/voostack/FlutterDevStack/tree/main/packages/voo_core
 issue_tracker: https://github.com/voostack/FlutterDevStack/issues

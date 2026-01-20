@@ -1,3 +1,25 @@
+## 1.0.0
+
+> Note: This release marks the first stable major version with breaking changes.
+
+### Breaking Changes
+- Requires `voo_core: ^1.0.0`
+- Cloud sync now uses shared `BaseSyncService` from voo_core
+
+### New Features
+- **FEAT**: Add breadcrumb service integration for tracking user navigation
+- **FEAT**: Feature toggle support for enabling/disabling logging features dynamically
+- **FEAT**: Revenue tracking integration for logging financial events
+- **FEAT**: CI/CD pipeline logging support
+- **FEAT**: Enhanced batch-level metadata in sync payloads
+
+### Improvements
+- **REFACTOR**: Simplified constructor parameters and improved code readability
+- **ENHANCEMENT**: Better integration with VooUserContext for session tracking
+- **ENHANCEMENT**: Improved memory management and cleanup
+
+---
+
 ## 0.4.11
 
  - **FIX**: Bug fixes and improvements.

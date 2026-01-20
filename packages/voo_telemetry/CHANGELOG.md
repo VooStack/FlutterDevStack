@@ -1,3 +1,26 @@
+## 1.0.0
+
+> Note: This release marks the first stable major version with breaking changes.
+
+### Breaking Changes
+- Requires `voo_core: ^1.0.0`
+- OTLP exporter configuration updates for new DevStack API
+
+### New Features
+- **FEAT**: Enhanced OTLP export with improved batching and reliability
+- **FEAT**: Feature toggle system integration for telemetry services
+- **FEAT**: Add error tracking with fingerprinting support
+- **FEAT**: Improved trace context propagation
+- **FEAT**: Better integration with VooUserContext for session correlation
+
+### Improvements
+- **REFACTOR**: Simplified constructor parameters and improved code readability
+- **ENHANCEMENT**: Better memory management for telemetry buffers
+- **ENHANCEMENT**: Batch-level metadata support for OTLP payloads
+- **ENHANCEMENT**: Improved offline resilience with automatic retry
+
+---
+
 ## 0.2.3
 
  - **FEAT**: add example modules and run configurations for VooFlutter packages.

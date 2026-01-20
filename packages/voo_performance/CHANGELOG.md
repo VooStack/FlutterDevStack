@@ -1,3 +1,28 @@
+## 1.0.0
+
+> Note: This release marks the first stable major version with breaking changes.
+
+### Breaking Changes
+- Requires `voo_core: ^1.0.0`
+- Cloud sync now uses shared `BaseSyncService` from voo_core
+- NetworkMetric constructor updated with additional timing and metadata fields
+
+### New Features
+- **FEAT**: Add app launch metrics tracking for measuring startup performance
+- **FEAT**: Introduce NetworkTiming class for detailed network request timing (DNS, TLS, connection, response)
+- **FEAT**: Enhanced NetworkMetric with additional timing and metadata fields
+- **FEAT**: Add error tracking and cloud sync services integration
+- **FEAT**: Feature toggle support for performance monitoring features
+- **FEAT**: Integration tests for error fingerprinting and app launch metrics
+
+### Improvements
+- **REFACTOR**: Simplified constructor parameters and improved code readability
+- **REFACTOR**: Cloud sync uses shared base classes for consistency
+- **ENHANCEMENT**: Better integration with VooUserContext for session tracking
+- **ENHANCEMENT**: Batch-level metadata support for sync payloads
+
+---
+
 ## 0.4.3
 
  - **FEAT**: add example modules and run configurations for VooFlutter packages.

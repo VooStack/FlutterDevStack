@@ -1,3 +1,32 @@
+## 1.0.0
+
+> Note: This release marks the first stable major version with breaking changes.
+
+### Breaking Changes
+- Requires `voo_core: ^1.0.0`
+- Cloud sync now uses shared `BaseSyncService` from voo_core
+- TouchEvent constructor updated with `position` and `id` parameters
+
+### New Features
+- **FEAT**: Add touch event queue with intelligent memory management
+- **FEAT**: Implement session replay capture functionality for user interaction recording
+- **FEAT**: Add feature toggle system for analytics services with configuration management
+- **FEAT**: Implement user path tracking and funnel tracking services
+- **FEAT**: Add ScreenEngagementService for tracking screen engagement metrics
+- **FEAT**: Add VooTrackable widget for declarative user interaction tracking
+- **FEAT**: Integrate breadcrumb service for tracking user navigation and actions
+- **FEAT**: Add AppUsageService for tracking app usage statistics
+- **FEAT**: Add InstallReferrer service for tracking app installation sources
+- **FEAT**: Revenue tracking integration for e-commerce analytics
+
+### Improvements
+- **REFACTOR**: Simplified constructor parameters and improved code readability
+- **REFACTOR**: Enhanced analytics repository with better memory management
+- **ENHANCEMENT**: Better integration with VooUserContext for session tracking
+- **ENHANCEMENT**: Batch-level metadata support for sync payloads
+
+---
+
 ## 0.4.4
 
  - **FIX**: Add missing `http` dependency to pubspec.yaml.

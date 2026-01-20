@@ -1,3 +1,26 @@
+## 1.0.0
+
+> Note: This release marks the first stable major version with breaking changes.
+
+### Breaking Changes
+- Refactored cloud sync to use shared base classes (`BaseSyncService<T>`)
+- Unified sync configuration across all packages
+
+### New Features
+- **FEAT**: Add VooUserContext for centralized user and session management
+- **FEAT**: Introduce breadcrumb service for tracking user navigation and actions
+- **FEAT**: Add feature toggle system for analytics services with configuration management
+- **FEAT**: Implement error tracking and cloud sync services integration
+- **FEAT**: Add batch-level metadata support for sync payloads
+- **FEAT**: Enhanced sync services with configurable batching, retry, and queue management
+
+### Improvements
+- **REFACTOR**: Cloud sync uses shared base classes for consistency across packages
+- **REFACTOR**: Simplified constructor parameters and improved code readability
+- **ENHANCEMENT**: Better memory management and resource cleanup
+
+---
+
 ## 0.4.3
 
  - **FEAT**: add example modules and run configurations for VooFlutter packages.
