@@ -3,8 +3,11 @@ import 'package:flutter/foundation.dart';
 /// Primary configuration for Voo SDK initialization.
 ///
 /// This is the main configuration class passed to [Voo.initializeApp].
-/// It contains the essential API and project configuration needed for
-/// telemetry sync across all Voo packages.
+/// It contains the essential API configuration needed for telemetry sync.
+///
+/// The API key is the primary identifier - the server derives the project
+/// from the API key, so `projectId` is optional and only used for local
+/// reference or debugging.
 ///
 /// Example usage:
 /// ```dart
@@ -12,8 +15,6 @@ import 'package:flutter/foundation.dart';
 ///   config: VooConfig(
 ///     endpoint: 'https://api.example.com/api',
 ///     apiKey: 'your-api-key',
-///     projectId: 'your-project-id',
-///     organizationId: 'your-org-id',
 ///   ),
 /// );
 /// ```
@@ -26,10 +27,17 @@ class VooConfig {
   final String endpoint;
 
   /// The API key for authenticating telemetry requests.
+  ///
+  /// This is the primary identifier. The server derives the project from
+  /// this key, so explicit projectId is not required.
   final String apiKey;
 
-  /// The project ID to associate telemetry data with.
-  final String projectId;
+  /// The project ID (optional, for local reference only).
+  ///
+  /// The server derives the actual project from the API key, so this field
+  /// is not required for cloud sync. It may be useful for local debugging
+  /// or filtering.
+  final String? projectId;
 
   /// The organization ID (optional, for multi-org support).
   final String? organizationId;
@@ -55,7 +63,7 @@ class VooConfig {
   const VooConfig({
     required this.endpoint,
     required this.apiKey,
-    required this.projectId,
+    this.projectId,
     this.organizationId,
     this.environment = 'development',
     this.enableCloudSync = true,
@@ -67,7 +75,7 @@ class VooConfig {
   factory VooConfig.production({
     required String endpoint,
     required String apiKey,
-    required String projectId,
+    String? projectId,
     String? organizationId,
   }) {
     return VooConfig(
@@ -86,7 +94,7 @@ class VooConfig {
   factory VooConfig.development({
     required String endpoint,
     required String apiKey,
-    required String projectId,
+    String? projectId,
     String? organizationId,
   }) {
     return VooConfig(
@@ -127,9 +135,9 @@ class VooConfig {
 
   /// Whether this configuration is valid for cloud sync.
   ///
-  /// Returns true if all required fields are present.
-  bool get isValid =>
-      endpoint.isNotEmpty && apiKey.isNotEmpty && projectId.isNotEmpty;
+  /// Returns true if endpoint and API key are present.
+  /// The API key is sufficient - the server derives project from it.
+  bool get isValid => endpoint.isNotEmpty && apiKey.isNotEmpty;
 
   /// Creates a copy with the given fields replaced.
   VooConfig copyWith({
@@ -158,7 +166,7 @@ class VooConfig {
   Map<String, dynamic> toJson() => {
         'endpoint': endpoint,
         'apiKey': apiKey,
-        'projectId': projectId,
+        if (projectId != null) 'projectId': projectId,
         if (organizationId != null) 'organizationId': organizationId,
         'environment': environment,
         'enableCloudSync': enableCloudSync,
@@ -171,7 +179,7 @@ class VooConfig {
     return VooConfig(
       endpoint: json['endpoint'] as String? ?? '',
       apiKey: json['apiKey'] as String? ?? '',
-      projectId: json['projectId'] as String? ?? '',
+      projectId: json['projectId'] as String?,
       organizationId: json['organizationId'] as String?,
       environment: json['environment'] as String? ?? 'development',
       enableCloudSync: json['enableCloudSync'] as bool? ?? true,

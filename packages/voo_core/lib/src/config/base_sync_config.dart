@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 /// This class provides common configuration options shared across
 /// all telemetry sync services (logging, analytics, performance).
 ///
+/// The API key is the primary identifier - the server derives the project
+/// from it, so `projectId` is optional.
+///
 /// ## Usage
 ///
 /// Subclasses should extend this class and add any domain-specific
@@ -19,7 +22,6 @@ import 'package:flutter/foundation.dart';
 ///     super.enabled,
 ///     super.endpoint,
 ///     super.apiKey,
-///     super.projectId,
 ///     this.syncMinimumLevel,
 ///     this.prioritizeErrors = true,
 ///   });
@@ -34,9 +36,15 @@ class BaseSyncConfig {
   final String? endpoint;
 
   /// API key for authentication (sent as X-API-Key header).
+  ///
+  /// This is the primary identifier. The server derives the project from
+  /// this key.
   final String? apiKey;
 
-  /// Project ID for multi-project support.
+  /// Project ID (optional, for local reference only).
+  ///
+  /// The server derives the actual project from the API key, so this
+  /// is not required for cloud sync.
   final String? projectId;
 
   /// Number of items to accumulate before sending a batch.
@@ -78,7 +86,7 @@ class BaseSyncConfig {
   const BaseSyncConfig.production({
     required String this.endpoint,
     required String this.apiKey,
-    required String this.projectId,
+    this.projectId,
     this.headers,
   })  : enabled = true,
         batchSize = 100,
@@ -92,7 +100,7 @@ class BaseSyncConfig {
   const BaseSyncConfig.development({
     required String this.endpoint,
     required String this.apiKey,
-    required String this.projectId,
+    this.projectId,
     this.headers,
   })  : enabled = true,
         batchSize = 20,

@@ -1,6 +1,6 @@
 name: voo_logging
 description: 'Zero-config Flutter logging with pretty console output, persistent storage, DevTools integration, and Dio interceptor. Just call VooLogger.info() and it works.'
-version: 1.0.0
+version: 1.1.0
 homepage: https://voostack.com/packages/voo_logging
 repository: https://github.com/voostack/FlutterDevStack/tree/main/packages/voo_logging
 issue_tracker: https://github.com/voostack/FlutterDevStack/issues
@@ -27,7 +27,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  voo_core: ^1.0.0
+  voo_core: ^1.1.0
   voo_toast: ^0.0.6
   json_annotation: ^4.9.0
   equatable: ^2.0.5

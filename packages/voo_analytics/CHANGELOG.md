@@ -1,3 +1,12 @@
+## 1.1.0
+
+### Improvements
+- **ENHANCEMENT**: Make `projectId` optional in `AnalyticsCloudSyncConfig` - the API key is now sufficient for authentication as the server derives the project from it
+- **ENHANCEMENT**: Updated factory constructors (`production`, `development`) to not require `projectId`
+- **DEPS**: Requires `voo_core: ^1.1.0`
+
+---
+
 ## 1.0.0
 
 > Note: This release marks the first stable major version with breaking changes.

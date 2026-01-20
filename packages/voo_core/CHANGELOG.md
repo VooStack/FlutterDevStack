@@ -1,3 +1,12 @@
+## 1.1.0
+
+### Improvements
+- **ENHANCEMENT**: Make `projectId` optional in `VooConfig` and `BaseSyncConfig` - the API key is now sufficient for authentication as the server derives the project from it
+- **ENHANCEMENT**: Updated factory constructors to not require `projectId`
+- **ENHANCEMENT**: Updated `isValid` checks to only require `endpoint` and `apiKey`
+
+---
+
 ## 1.0.0
 
 > Note: This release marks the first stable major version with breaking changes.

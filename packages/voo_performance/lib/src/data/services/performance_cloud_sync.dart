@@ -26,7 +26,7 @@ class PerformanceCloudSyncConfig extends BaseSyncConfig {
   factory PerformanceCloudSyncConfig.production({
     required String endpoint,
     required String apiKey,
-    required String projectId,
+    String? projectId,
   }) =>
       PerformanceCloudSyncConfig(
         enabled: true,
@@ -40,7 +40,7 @@ class PerformanceCloudSyncConfig extends BaseSyncConfig {
   factory PerformanceCloudSyncConfig.development({
     required String endpoint,
     required String apiKey,
-    required String projectId,
+    String? projectId,
   }) =>
       PerformanceCloudSyncConfig(
         enabled: true,

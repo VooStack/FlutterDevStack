@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 
 /// Configuration for cloud sync of logs to a backend API.
 ///
+/// The API key is the primary identifier - the server derives the project
+/// from it, so `projectId` is optional.
+///
 /// ## Basic Setup
 ///
 /// ```dart
@@ -11,7 +14,6 @@ import 'package:flutter/foundation.dart';
 ///       enabled: true,
 ///       endpoint: 'https://api.yourbackend.com',
 ///       apiKey: 'your-api-key',
-///       projectId: 'your-project-id',
 ///     ),
 ///   ),
 /// );
@@ -20,8 +22,7 @@ import 'package:flutter/foundation.dart';
 /// ## Configuration Options
 ///
 /// - [endpoint]: Base URL for the logging API
-/// - [apiKey]: Authentication key for the API
-/// - [projectId]: Project identifier for multi-project support
+/// - [apiKey]: Authentication key for the API (derives project automatically)
 /// - [batchSize]: Number of logs to batch before sending (default: 50)
 /// - [batchInterval]: Time interval for automatic batch flush (default: 30s)
 /// - [maxRetries]: Number of retry attempts on failure (default: 3)
@@ -36,9 +37,14 @@ class CloudSyncConfig {
   final String? endpoint;
 
   /// API key for authentication.
+  ///
+  /// This is the primary identifier. The server derives the project from
+  /// this key, so explicit projectId is not required.
   final String? apiKey;
 
-  /// Project ID for multi-project support.
+  /// Project ID (optional, for local reference only).
+  ///
+  /// The server derives the actual project from the API key.
   final String? projectId;
 
   /// Number of logs to accumulate before sending a batch.
@@ -92,7 +98,7 @@ class CloudSyncConfig {
   factory CloudSyncConfig.production({
     required String endpoint,
     required String apiKey,
-    required String projectId,
+    String? projectId,
   }) =>
       CloudSyncConfig(
         enabled: true,
@@ -109,7 +115,7 @@ class CloudSyncConfig {
   factory CloudSyncConfig.development({
     required String endpoint,
     required String apiKey,
-    required String projectId,
+    String? projectId,
   }) =>
       CloudSyncConfig(
         enabled: true,

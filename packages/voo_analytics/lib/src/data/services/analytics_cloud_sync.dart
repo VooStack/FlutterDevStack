@@ -34,7 +34,7 @@ class AnalyticsCloudSyncConfig extends BaseSyncConfig {
   factory AnalyticsCloudSyncConfig.production({
     required String endpoint,
     required String apiKey,
-    required String projectId,
+    String? projectId,
   }) =>
       AnalyticsCloudSyncConfig(
         enabled: true,
@@ -48,7 +48,7 @@ class AnalyticsCloudSyncConfig extends BaseSyncConfig {
   factory AnalyticsCloudSyncConfig.development({
     required String endpoint,
     required String apiKey,
-    required String projectId,
+    String? projectId,
   }) =>
       AnalyticsCloudSyncConfig(
         enabled: true,
