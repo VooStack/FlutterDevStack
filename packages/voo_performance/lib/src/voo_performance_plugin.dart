@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
+import 'package:voo_performance/src/data/services/performance_cloud_sync.dart';
 import 'package:voo_performance/src/domain/entities/performance_trace.dart';
 import 'package:voo_performance/src/domain/entities/network_metric.dart';
 
@@ -11,6 +12,13 @@ class VooPerformancePlugin extends VooPlugin {
   final Map<String, PerformanceTrace> _activeTraces = {};
   final List<NetworkMetric> _networkMetrics = [];
   final List<PerformanceMetrics> _performanceMetrics = [];
+  PerformanceCloudSyncService? _cloudSyncService;
+
+  /// Get or set the cloud sync service for sending metrics to backend.
+  PerformanceCloudSyncService? get cloudSyncService => _cloudSyncService;
+  set cloudSyncService(PerformanceCloudSyncService? service) {
+    _cloudSyncService = service;
+  }
 
   VooPerformancePlugin._();
 
@@ -127,6 +135,20 @@ class VooPerformancePlugin extends VooPlugin {
 
     if (_networkMetrics.length > 1000) {
       _networkMetrics.removeRange(0, 100);
+    }
+
+    // Queue for cloud sync if available
+    if (_cloudSyncService != null) {
+      _cloudSyncService!.queueNetworkMetric(NetworkMetricData(
+        method: metric.method,
+        url: metric.url,
+        statusCode: metric.statusCode,
+        duration: metric.duration.inMilliseconds,
+        requestSize: metric.requestSize,
+        responseSize: metric.responseSize,
+        timestamp: metric.timestamp,
+        error: metric.metadata?['error'] as String?,
+      ));
     }
 
     // Send to DevTools

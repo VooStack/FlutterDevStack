@@ -10,6 +10,7 @@ import 'package:voo_core/src/models/voo_device_info.dart';
 import 'package:voo_core/src/models/voo_user_context.dart';
 import 'package:voo_core/src/services/voo_breadcrumb_service.dart';
 import 'package:voo_core/src/services/voo_device_info_service.dart';
+import 'package:voo_core/src/services/voo_error_tracking_service.dart';
 
 /// Central initialization and management for all Voo packages.
 /// Works similar to Firebase Core, providing a unified entry point.
@@ -218,6 +219,11 @@ class Voo {
       debugPrint('Voo: Session started: ${_userContext?.sessionId}');
     }
 
+    // Auto-enable error tracking if config is valid
+    if (_config != null && _config!.isValid) {
+      VooErrorTrackingService.instance.enable();
+    }
+
     if (!_initialized) {
       _initialized = true;
     }
@@ -320,6 +326,7 @@ class Voo {
     _deviceInfo = null;
     _userContext = null;
     VooDeviceInfoService.reset();
+    VooErrorTrackingService.instance.reset();
   }
 
   /// Check if a plugin is registered.

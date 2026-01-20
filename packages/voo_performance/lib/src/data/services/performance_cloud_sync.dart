@@ -1,7 +1,6 @@
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:voo_core/voo_core.dart';
 
 /// Configuration for cloud sync of performance metrics.
@@ -146,6 +145,48 @@ class NetworkMetricData {
         'timestamp': timestamp.toIso8601String(),
         'error': error,
       };
+
+  /// Converts network metric to a PerformanceMetricData for API submission.
+  /// The API expects MetricEntry format with type, value, unit, etc.
+  PerformanceMetricData toPerformanceMetric() {
+    // Extract endpoint path from URL (remove host/protocol)
+    String endpointPath;
+    try {
+      final uri = Uri.parse(url);
+      endpointPath = uri.path;
+      if (uri.query.isNotEmpty) {
+        endpointPath += '?${uri.query}';
+      }
+    } catch (_) {
+      endpointPath = url;
+    }
+
+    return PerformanceMetricData(
+      name: 'http.request.duration',
+      metricType: 'timer',
+      value: duration.toDouble(),
+      unit: 'ms',
+      timestamp: timestamp,
+      source: 'backend', // Network requests are backend metrics
+      endpoint: endpointPath,
+      tags: {
+        'method': method,
+        if (statusCode != null) 'statusCode': statusCode.toString(),
+        if (requestSize != null) 'requestSize': requestSize.toString(),
+        if (responseSize != null) 'responseSize': responseSize.toString(),
+        if (error != null) 'error': error!,
+        'host': _extractHost(url),
+      },
+    );
+  }
+
+  String _extractHost(String url) {
+    try {
+      return Uri.parse(url).host;
+    } catch (_) {
+      return 'unknown';
+    }
+  }
 }
 
 /// Service for syncing performance metrics to a cloud backend.
@@ -184,20 +225,49 @@ class PerformanceCloudSyncService
       _pendingNetworkMetrics.removeFirst();
     }
 
+    // Trigger flush when we have enough network metrics
     if (_pendingNetworkMetrics.length >= _perfConfig.batchSize) {
-      flush();
+      flushNetworkMetrics();
     }
+  }
+
+  /// Flush network metrics immediately.
+  /// Network metrics are converted to performance metrics in the flush() override.
+  Future<void> flushNetworkMetrics() async {
+    if (_pendingNetworkMetrics.isEmpty) return;
+    if (!_perfConfig.enabled || !_perfConfig.isValid) return;
+
+    // Just call flush - the override handles conversion
+    await flush();
   }
 
   @override
   int get pendingCount => super.pendingCount + _pendingNetworkMetrics.length;
 
+  /// Override flush to include any pending network metrics.
+  @override
+  Future<bool> flush() async {
+    // Convert any pending network metrics to performance metrics first
+    if (_pendingNetworkMetrics.isNotEmpty) {
+      final networkAsPerformance = _pendingNetworkMetrics
+          .map((nm) => nm.toPerformanceMetric())
+          .toList();
+      _pendingNetworkMetrics.clear();
+
+      // Queue them as regular performance metrics
+      for (final metric in networkAsPerformance) {
+        queueItem(metric);
+      }
+    }
+
+    // Now flush all metrics (including converted network metrics)
+    return super.flush();
+  }
+
   @override
   Map<String, dynamic> formatPayload(List<PerformanceMetricData> metrics) {
-    // Note: Network metrics are synced separately or converted to standard metrics
-    // Clear pending network metrics since they need different handling
-    _pendingNetworkMetrics.clear();
-
+    // Network metrics are converted via flushNetworkMetrics() and added to the
+    // regular metrics queue, so they're already included in `metrics` param.
     // Use new typed context from Voo.context (preferred)
     final context = Voo.context;
     if (context != null) {

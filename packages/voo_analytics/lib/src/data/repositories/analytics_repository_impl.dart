@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:voo_analytics/src/data/services/analytics_cloud_sync.dart';
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_analytics/src/domain/entities/heat_map_data.dart';
 import 'package:voo_analytics/src/domain/repositories/analytics_repository.dart';
@@ -16,6 +17,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
   final Map<String, String> _userProperties = {};
   String? _userId;
   File? _storageFile;
+  AnalyticsCloudSyncService? _cloudSyncService;
 
   @override
   final bool enableTouchTracking;
@@ -25,6 +27,11 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
   @override
   final bool enableUserProperties;
+
+  /// Set the cloud sync service for sending events to the backend.
+  set cloudSyncService(AnalyticsCloudSyncService? service) {
+    _cloudSyncService = service;
+  }
 
   AnalyticsRepositoryImpl({
     this.enableTouchTracking = true,
@@ -113,6 +120,16 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     (_events[name] as List).add(event);
 
     await _saveData();
+
+    // Queue for cloud sync if available
+    if (_cloudSyncService != null) {
+      _cloudSyncService!.queueEvent(AnalyticsEventData(
+        eventName: name,
+        timestamp: timestamp,
+        parameters: parameters,
+        category: parameters?['category'] as String? ?? 'general',
+      ));
+    }
 
     // Send to DevTools
     _sendToDevTools(

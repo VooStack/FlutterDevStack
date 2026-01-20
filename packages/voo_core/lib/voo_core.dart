@@ -22,6 +22,9 @@ export 'package:voo_core/src/services/voo_runtime_metrics_service.dart';
 // Services - Breadcrumb Trail
 export 'package:voo_core/src/services/voo_breadcrumb_service.dart';
 
+// Services - Error Tracking
+export 'package:voo_core/src/services/voo_error_tracking_service.dart';
+
 // Exceptions
 export 'package:voo_core/src/exceptions/voo_exception.dart';
 

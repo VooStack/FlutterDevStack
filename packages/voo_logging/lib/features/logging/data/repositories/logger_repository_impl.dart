@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:math';
 
+import 'package:voo_core/voo_core.dart';
 import 'package:voo_logging/features/logging/data/datasources/local_log_storage.dart';
 import 'package:voo_logging/features/logging/data/services/cloud_sync_service.dart';
 import 'package:voo_logging/features/logging/domain/utils/pretty_log_formatter.dart';
@@ -236,16 +237,30 @@ class LoggerRepositoryImpl extends LoggerRepository {
     // Queue for cloud sync if enabled
     _cloudSync?.queueLog(entry);
 
-    // Notify external error capture callback for error-level logs
-    if (onErrorCaptured != null && (level == LogLevel.error || level == LogLevel.fatal)) {
-      try {
-        onErrorCaptured!(
+    // Notify error tracking for error-level logs
+    if (level == LogLevel.error || level == LogLevel.fatal) {
+      // Always submit to VooErrorTrackingService if enabled (automatic)
+      if (VooErrorTrackingService.instance.isEnabled) {
+        VooErrorTrackingService.instance.submitError(
           message: message,
           errorType: error?.runtimeType.toString(),
           stackTrace: stackTrace?.toString(),
+          severity: level == LogLevel.fatal ? 'critical' : 'high',
+          isFatal: level == LogLevel.fatal,
         );
-      } catch (_) {
-        // Silent fail - replay capture is optional
+      }
+
+      // Also notify any custom error capture callback (e.g., replay capture)
+      if (onErrorCaptured != null) {
+        try {
+          onErrorCaptured!(
+            message: message,
+            errorType: error?.runtimeType.toString(),
+            stackTrace: stackTrace?.toString(),
+          );
+        } catch (_) {
+          // Silent fail - replay capture is optional
+        }
       }
     }
   }

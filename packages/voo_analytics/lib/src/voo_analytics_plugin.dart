@@ -35,10 +35,15 @@ class VooAnalyticsPlugin extends VooPlugin {
     return _routeObserver!;
   }
 
-  /// Get or set the cloud sync service for sending touch events to backend.
+  /// Get or set the cloud sync service for sending events to backend.
   AnalyticsCloudSyncService? get cloudSyncService => _cloudSyncService;
-  set cloudSyncService(AnalyticsCloudSyncService? service) =>
-      _cloudSyncService = service;
+  set cloudSyncService(AnalyticsCloudSyncService? service) {
+    _cloudSyncService = service;
+    // Also wire up to the repository so events are queued for sync
+    if (repository is AnalyticsRepositoryImpl) {
+      (repository as AnalyticsRepositoryImpl).cloudSyncService = service;
+    }
+  }
 
   static Future<void> initialize({
     bool enableTouchTracking = true,
