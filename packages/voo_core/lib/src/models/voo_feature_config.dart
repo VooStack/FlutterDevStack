@@ -38,6 +38,15 @@ class VooFeatureConfig {
   /// Enable performance metrics tracking.
   final bool performanceEnabled;
 
+  /// Enable logs/logging feature.
+  final bool logsEnabled;
+
+  /// Enable revenue tracking and analytics.
+  final bool revenueEnabled;
+
+  /// Enable CI/CD pipelines feature.
+  final bool pipelinesEnabled;
+
   /// When this config was last updated on the server.
   final DateTime? updatedAt;
 
@@ -55,6 +64,9 @@ class VooFeatureConfig {
     this.appUsageEnabled = false,
     this.screenEngagementEnabled = false,
     this.performanceEnabled = false,
+    this.logsEnabled = false,
+    this.revenueEnabled = false,
+    this.pipelinesEnabled = false,
     this.updatedAt,
     this.cachedAt,
   });
@@ -85,6 +97,12 @@ class VooFeatureConfig {
         return screenEngagementEnabled;
       case VooFeature.performance:
         return performanceEnabled;
+      case VooFeature.logs:
+        return logsEnabled;
+      case VooFeature.revenue:
+        return revenueEnabled;
+      case VooFeature.pipelines:
+        return pipelinesEnabled;
     }
   }
 
@@ -99,7 +117,10 @@ class VooFeatureConfig {
       attributionEnabled ||
       appUsageEnabled ||
       screenEngagementEnabled ||
-      performanceEnabled;
+      performanceEnabled ||
+      logsEnabled ||
+      revenueEnabled ||
+      pipelinesEnabled;
 
   /// Create from JSON response from the server.
   factory VooFeatureConfig.fromJson(Map<String, dynamic> json) {
@@ -114,6 +135,9 @@ class VooFeatureConfig {
       appUsageEnabled: json['appUsageEnabled'] as bool? ?? false,
       screenEngagementEnabled: json['screenEngagementEnabled'] as bool? ?? false,
       performanceEnabled: json['performanceEnabled'] as bool? ?? false,
+      logsEnabled: json['logsEnabled'] as bool? ?? false,
+      revenueEnabled: json['revenueEnabled'] as bool? ?? false,
+      pipelinesEnabled: json['pipelinesEnabled'] as bool? ?? false,
       updatedAt: json['updatedAt'] != null
           ? DateTime.tryParse(json['updatedAt'] as String)
           : null,
@@ -136,6 +160,9 @@ class VooFeatureConfig {
       'appUsageEnabled': appUsageEnabled,
       'screenEngagementEnabled': screenEngagementEnabled,
       'performanceEnabled': performanceEnabled,
+      'logsEnabled': logsEnabled,
+      'revenueEnabled': revenueEnabled,
+      'pipelinesEnabled': pipelinesEnabled,
       if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
       if (cachedAt != null) 'cachedAt': cachedAt!.toIso8601String(),
     };
@@ -154,6 +181,9 @@ class VooFeatureConfig {
       appUsageEnabled: appUsageEnabled,
       screenEngagementEnabled: screenEngagementEnabled,
       performanceEnabled: performanceEnabled,
+      logsEnabled: logsEnabled,
+      revenueEnabled: revenueEnabled,
+      pipelinesEnabled: pipelinesEnabled,
       updatedAt: updatedAt,
       cachedAt: cachedAt,
     );
@@ -172,6 +202,9 @@ class VooFeatureConfig {
     if (appUsageEnabled) enabled.add('appUsage');
     if (screenEngagementEnabled) enabled.add('screenEngagement');
     if (performanceEnabled) enabled.add('performance');
+    if (logsEnabled) enabled.add('logs');
+    if (revenueEnabled) enabled.add('revenue');
+    if (pipelinesEnabled) enabled.add('pipelines');
     return 'VooFeatureConfig(enabled: [${enabled.join(', ')}])';
   }
 
@@ -188,7 +221,10 @@ class VooFeatureConfig {
         other.attributionEnabled == attributionEnabled &&
         other.appUsageEnabled == appUsageEnabled &&
         other.screenEngagementEnabled == screenEngagementEnabled &&
-        other.performanceEnabled == performanceEnabled;
+        other.performanceEnabled == performanceEnabled &&
+        other.logsEnabled == logsEnabled &&
+        other.revenueEnabled == revenueEnabled &&
+        other.pipelinesEnabled == pipelinesEnabled;
   }
 
   @override
@@ -204,6 +240,9 @@ class VooFeatureConfig {
       appUsageEnabled,
       screenEngagementEnabled,
       performanceEnabled,
+      logsEnabled,
+      revenueEnabled,
+      pipelinesEnabled,
     );
   }
 }

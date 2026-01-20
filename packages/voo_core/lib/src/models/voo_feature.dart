@@ -32,4 +32,13 @@ enum VooFeature {
 
   /// Performance metrics tracking.
   performance,
+
+  /// Logs/logging feature.
+  logs,
+
+  /// Revenue tracking and analytics.
+  revenue,
+
+  /// CI/CD pipelines feature.
+  pipelines,
 }

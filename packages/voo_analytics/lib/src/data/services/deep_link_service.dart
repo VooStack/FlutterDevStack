@@ -130,6 +130,9 @@ class DeepLinkService {
       } else {
         _currentAttribution = attribution;
       }
+
+      // Update user context with attribution
+      _updateUserContext(attribution);
     }
 
     // Add breadcrumb (always, for debugging)
@@ -143,9 +146,6 @@ class DeepLinkService {
         if (uri.queryParameters.isNotEmpty) 'params': uri.queryParameters,
       },
     ));
-
-    // Update user context with attribution
-    _updateUserContext(attribution);
 
     // Emit the link for navigation handling
     _linkController.add(uri);
