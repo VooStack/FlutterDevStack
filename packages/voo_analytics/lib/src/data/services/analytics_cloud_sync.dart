@@ -136,12 +136,20 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
   String get endpoint => _analyticsConfig.eventsEndpoint ?? '';
 
   /// Queue an analytics event for syncing.
+  ///
+  /// Does nothing if the analytics feature is disabled at the project level.
   void queueEvent(AnalyticsEventData event) {
+    // Check project-level feature toggle
+    if (!Voo.featureConfig.isEnabled(VooFeature.analytics)) return;
     queueItem(event);
   }
 
   /// Queue a touch event for syncing.
+  ///
+  /// Does nothing if the touch tracking feature is disabled at the project level.
   void queueTouchEvent(TouchEvent event) {
+    // Check project-level feature toggle
+    if (!Voo.featureConfig.isEnabled(VooFeature.touchTracking)) return;
     if (!_analyticsConfig.enabled || !_analyticsConfig.isValid) return;
 
     _pendingTouchEvents.add(event);

@@ -20,7 +20,7 @@ import 'package:voo_core/src/config/base_sync_config.dart';
 ///       : super(config: config, serviceName: 'Logging');
 ///
 ///   @override
-///   String get endpoint => '${config.endpoint}/api/v1/telemetry/logs';
+///   String get endpoint => '${config.endpoint}/v1/telemetry/logs';
 ///
 ///   @override
 ///   Map<String, dynamic> formatPayload(List<LogEntry> items) => {

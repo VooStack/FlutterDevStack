@@ -176,7 +176,19 @@ class ReplayCaptureService {
   }
 
   /// Whether replay capture is currently enabled and active.
-  bool get isEnabled => _isEnabled && _config.enabled;
+  ///
+  /// Returns false if:
+  /// - The service is not enabled locally
+  /// - The local config has `enabled` set to false
+  /// - The project-level feature toggle for session replay is disabled
+  bool get isEnabled {
+    // Check project-level feature toggle first
+    if (!Voo.featureConfig.isEnabled(VooFeature.sessionReplay)) {
+      return false;
+    }
+    // Then check local config
+    return _isEnabled && _config.enabled;
+  }
 
   /// Current configuration.
   ReplayCaptureConfig get config => _config;

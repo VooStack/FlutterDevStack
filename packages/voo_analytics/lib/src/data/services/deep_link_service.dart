@@ -119,17 +119,20 @@ class DeepLinkService {
 
   /// Handle an incoming deep link.
   void _handleIncomingLink(Uri uri) {
-    // Extract attribution from the link
-    final attribution = VooAttribution.fromDeepLink(uri);
+    // Only track attribution if the feature is enabled
+    if (Voo.featureConfig.isEnabled(VooFeature.attribution)) {
+      // Extract attribution from the link
+      final attribution = VooAttribution.fromDeepLink(uri);
 
-    // Merge with existing attribution (keeps first touch)
-    if (_currentAttribution != null) {
-      _currentAttribution = _currentAttribution!.merge(attribution);
-    } else {
-      _currentAttribution = attribution;
+      // Merge with existing attribution (keeps first touch)
+      if (_currentAttribution != null) {
+        _currentAttribution = _currentAttribution!.merge(attribution);
+      } else {
+        _currentAttribution = attribution;
+      }
     }
 
-    // Add breadcrumb
+    // Add breadcrumb (always, for debugging)
     Voo.addBreadcrumb(VooBreadcrumb(
       type: VooBreadcrumbType.custom,
       category: 'deep_link',

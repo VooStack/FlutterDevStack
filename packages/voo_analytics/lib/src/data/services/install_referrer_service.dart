@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:voo_core/voo_core.dart';
 
 /// Install referrer data from the app store.
 ///
@@ -271,7 +272,14 @@ class InstallReferrerService {
   ///
   /// This should be called early in app startup.
   /// The referrer data is cached and will not change during the app session.
+  /// Returns null if the attribution feature is disabled at the project level.
   static Future<InstallReferrer?> initialize() async {
+    // Check project-level feature toggle
+    if (!Voo.featureConfig.isEnabled(VooFeature.attribution)) {
+      _initialized = true;
+      return null;
+    }
+
     if (_initialized && _cachedReferrer != null) {
       return _cachedReferrer;
     }

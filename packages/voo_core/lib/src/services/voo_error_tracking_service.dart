@@ -5,7 +5,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:voo_core/src/models/voo_context.dart';
+import 'package:voo_core/src/models/voo_feature.dart';
 import 'package:voo_core/src/services/voo_breadcrumb_service.dart';
+import 'package:voo_core/src/services/voo_feature_config_service.dart';
 import 'package:voo_core/src/voo.dart';
 
 /// Callback type for external error capture (e.g., from VooLogger).
@@ -18,7 +20,7 @@ typedef VooErrorCaptureCallback = void Function({
 /// Service for automatically submitting errors to the error tracking endpoint.
 ///
 /// This service is automatically enabled when [Voo.initializeApp()] is called.
-/// It submits errors to `POST /api/v1/errors/{projectId}` for the Error Tracking
+/// It submits errors to `POST {endpoint}/v1/errors/{projectId}` for the Error Tracking
 /// dashboard.
 ///
 /// ## Automatic Setup
@@ -109,6 +111,10 @@ class VooErrorTrackingService {
     bool includeBreadcrumbs = true,
   }) async {
     if (!_enabled) return;
+    // Check project-level feature toggle
+    if (!VooFeatureConfigService.instance.isEnabled(VooFeature.errorTracking)) {
+      return;
+    }
 
     final context = Voo.context;
     if (context == null) {
@@ -158,7 +164,8 @@ class VooErrorTrackingService {
     bool includeBreadcrumbs = true,
   }) async {
     try {
-      final url = '${context.config.endpoint}/api/v1/errors/$projectId';
+      // Use telemetry errors endpoint (API key authenticated)
+      final url = '${context.config.endpoint}/v1/telemetry/errors';
 
       // Collect breadcrumbs for error context
       List<Map<String, dynamic>>? breadcrumbsJson;
@@ -169,11 +176,12 @@ class VooErrorTrackingService {
         }
       }
 
-      final payload = {
+      // Build error entry matching ErrorEntry DTO
+      final errorEntry = {
         'message': message,
         'type': errorType ?? 'UnknownError',
         'severity': severity,
-        if (stackTrace != null) 'stackTrace': stackTrace,
+        'stackTrace': stackTrace ?? '',
         if (source != null) 'source': source,
         if (method != null) 'method': method,
         if (lineNumber != null) 'lineNumber': lineNumber,
@@ -183,7 +191,12 @@ class VooErrorTrackingService {
         },
         'isFatal': isFatal,
         'timestamp': DateTime.now().toIso8601String(),
-        if (Voo.sessionId != null) 'sessionId': Voo.sessionId,
+      };
+
+      // Build batch request matching ErrorsBatchRequest DTO
+      final payload = {
+        'errors': [errorEntry],
+        'sessionId': Voo.sessionId ?? '',
         'deviceId': context.deviceId,
         'platform': _getPlatform(),
         'appVersion': context.appVersion,

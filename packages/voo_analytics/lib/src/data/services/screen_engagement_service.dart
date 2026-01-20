@@ -131,6 +131,8 @@ class ScreenEngagementService {
   /// Start tracking engagement for a new screen.
   static void startTracking(String screenName) {
     if (!_initialized) initialize();
+    // Check project-level feature toggle
+    if (!Voo.featureConfig.isEnabled(VooFeature.screenEngagement)) return;
 
     // If there's an active screen, stop tracking it first
     if (instance._currentScreen != null) {

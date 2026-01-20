@@ -185,6 +185,9 @@ class VooNavigationObserver extends NavigatorObserver {
 
   /// Log a screen view analytics event.
   void _logScreenView(ScreenViewEvent event) {
+    // Check project-level feature toggle
+    if (!Voo.featureConfig.isEnabled(VooFeature.screenViews)) return;
+
     try {
       if (VooAnalyticsPlugin.instance.isInitialized) {
         VooAnalyticsPlugin.instance.logEvent(
@@ -193,7 +196,7 @@ class VooNavigationObserver extends NavigatorObserver {
         );
       }
 
-      // Also capture for replay if enabled
+      // Also capture for replay if enabled (replay has its own feature check)
       if (ReplayCaptureService.instance.isEnabled) {
         ReplayCaptureService.instance.captureScreenView(
           screenName: event.screenName,

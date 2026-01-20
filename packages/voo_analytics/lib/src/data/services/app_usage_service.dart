@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:voo_core/voo_core.dart';
 
 /// Represents usage statistics for an installed app.
 @immutable
@@ -242,8 +243,16 @@ class VooAppUsageService {
   static bool get hasPermission => _hasPermission;
 
   /// Initialize the service.
+  ///
+  /// Does nothing if the app usage feature is disabled at the project level.
   static Future<void> initialize() async {
     if (_initialized) return;
+
+    // Check project-level feature toggle
+    if (!Voo.featureConfig.isEnabled(VooFeature.appUsage)) {
+      _initialized = true;
+      return;
+    }
 
     if (!Platform.isAndroid) {
       if (kDebugMode) {

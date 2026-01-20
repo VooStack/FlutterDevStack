@@ -9,6 +9,8 @@ export 'package:voo_core/src/models/voo_context.dart';
 export 'package:voo_core/src/models/voo_device_info.dart';
 export 'package:voo_core/src/models/voo_user_context.dart';
 export 'package:voo_core/src/models/voo_breadcrumb.dart';
+export 'package:voo_core/src/models/voo_feature.dart';
+export 'package:voo_core/src/models/voo_feature_config.dart';
 
 // Services - Device Info Collection
 export 'package:voo_core/src/services/voo_device_info_service.dart';
@@ -24,6 +26,9 @@ export 'package:voo_core/src/services/voo_breadcrumb_service.dart';
 
 // Services - Error Tracking
 export 'package:voo_core/src/services/voo_error_tracking_service.dart';
+
+// Services - Feature Configuration
+export 'package:voo_core/src/services/voo_feature_config_service.dart';
 
 // Exceptions
 export 'package:voo_core/src/exceptions/voo_exception.dart';

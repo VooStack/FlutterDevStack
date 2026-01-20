@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:voo_core/src/voo_options.dart';
 import 'package:voo_core/src/voo_plugin.dart';
 import 'package:voo_core/src/exceptions/voo_exception.dart';
@@ -7,10 +8,12 @@ import 'package:voo_core/src/models/voo_breadcrumb.dart';
 import 'package:voo_core/src/models/voo_config.dart';
 import 'package:voo_core/src/models/voo_context.dart';
 import 'package:voo_core/src/models/voo_device_info.dart';
+import 'package:voo_core/src/models/voo_feature.dart';
 import 'package:voo_core/src/models/voo_user_context.dart';
 import 'package:voo_core/src/services/voo_breadcrumb_service.dart';
 import 'package:voo_core/src/services/voo_device_info_service.dart';
 import 'package:voo_core/src/services/voo_error_tracking_service.dart';
+import 'package:voo_core/src/services/voo_feature_config_service.dart';
 
 /// Central initialization and management for all Voo packages.
 /// Works similar to Firebase Core, providing a unified entry point.
@@ -65,6 +68,20 @@ class Voo {
 
   /// User and session context (mutable).
   static VooUserContext? get userContext => _userContext;
+
+  /// Feature configuration service.
+  ///
+  /// Use this to check if specific features are enabled before collecting data.
+  /// All features are disabled by default (privacy-first).
+  ///
+  /// Example:
+  /// ```dart
+  /// if (Voo.featureConfig.isEnabled(VooFeature.sessionReplay)) {
+  ///   // Capture session replay data
+  /// }
+  /// ```
+  static VooFeatureConfigService get featureConfig =>
+      VooFeatureConfigService.instance;
 
   /// Combined context for child packages.
   ///
@@ -224,6 +241,14 @@ class Voo {
       VooErrorTrackingService.instance.enable();
     }
 
+    // Initialize feature config service to fetch and cache feature toggles
+    if (_config != null && _config!.isValid) {
+      await VooFeatureConfigService.instance.initialize(_config!);
+    }
+
+    // Register lifecycle observer for feature config refresh on app foreground
+    WidgetsBinding.instance.addObserver(_VooLifecycleObserver());
+
     if (!_initialized) {
       _initialized = true;
     }
@@ -327,6 +352,7 @@ class Voo {
     _userContext = null;
     VooDeviceInfoService.reset();
     VooErrorTrackingService.instance.reset();
+    VooFeatureConfigService.instance.reset();
   }
 
   /// Check if a plugin is registered.
@@ -380,6 +406,17 @@ class VooApp {
     // Notify plugins about app deletion
     for (final plugin in Voo._plugins.values) {
       await plugin.onAppDeleted(this);
+    }
+  }
+}
+
+/// Lifecycle observer that refreshes feature config on app foreground.
+class _VooLifecycleObserver extends WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh feature config when app comes to foreground
+      VooFeatureConfigService.instance.onAppResume();
     }
   }
 }

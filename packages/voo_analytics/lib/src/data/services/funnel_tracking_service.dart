@@ -122,6 +122,8 @@ class FunnelTrackingService {
   /// This is called automatically by VooAnalyticsPlugin.
   static void onEvent(String eventName, Map<String, dynamic>? params) {
     if (!_initialized) return;
+    // Check project-level feature toggle
+    if (!Voo.featureConfig.isEnabled(VooFeature.funnelTracking)) return;
 
     final refs = instance._eventToSteps[eventName];
     if (refs == null || refs.isEmpty) return;
