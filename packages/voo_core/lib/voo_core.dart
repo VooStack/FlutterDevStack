@@ -12,6 +12,10 @@ export 'package:voo_core/src/models/voo_breadcrumb.dart';
 export 'package:voo_core/src/models/voo_feature.dart';
 export 'package:voo_core/src/models/voo_feature_config.dart';
 
+// Models - Pure Dart Foundation Types
+export 'package:voo_core/src/models/voo_point.dart';
+export 'package:voo_core/src/models/voo_size.dart';
+
 // Services - Device Info Collection
 export 'package:voo_core/src/services/voo_device_info_service.dart';
 
@@ -35,6 +39,8 @@ export 'package:voo_core/src/exceptions/voo_exception.dart';
 
 // Utilities
 export 'package:voo_core/src/utils/platform_utils.dart';
+export 'package:voo_core/src/utils/flutter_type_extensions.dart';
+export 'package:voo_core/src/utils/map_equality.dart';
 
 // Interceptors
 export 'package:voo_core/src/interceptors/base_interceptor.dart';

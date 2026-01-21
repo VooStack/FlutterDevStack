@@ -1,10 +1,12 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
-import 'package:voo_analytics/src/domain/entities/touch_event.dart';
+import 'package:voo_analytics/src/domain/entities/heat_map_point.dart';
+import 'package:voo_core/src/models/voo_size.dart';
+
+export 'heat_map_point.dart';
 
 class HeatMapData extends Equatable {
   final String screenName;
-  final Size screenSize;
+  final VooSize screenSize;
   final List<HeatMapPoint> points;
   final DateTime startDate;
   final DateTime endDate;
@@ -34,7 +36,7 @@ class HeatMapData extends Equatable {
   factory HeatMapData.fromMap(Map<String, dynamic> map) {
     return HeatMapData(
       screenName: map['screen_name'] as String,
-      screenSize: Size(
+      screenSize: VooSize(
         (map['screen_width'] as num).toDouble(),
         (map['screen_height'] as num).toDouble(),
       ),
@@ -56,46 +58,4 @@ class HeatMapData extends Equatable {
     endDate,
     totalEvents,
   ];
-}
-
-class HeatMapPoint extends Equatable {
-  final Offset position;
-  final double intensity;
-  final int count;
-  final TouchType primaryType;
-
-  const HeatMapPoint({
-    required this.position,
-    required this.intensity,
-    required this.count,
-    required this.primaryType,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'x': position.dx,
-      'y': position.dy,
-      'intensity': intensity,
-      'count': count,
-      'primary_type': primaryType.name,
-    };
-  }
-
-  factory HeatMapPoint.fromMap(Map<String, dynamic> map) {
-    return HeatMapPoint(
-      position: Offset(
-        (map['x'] as num).toDouble(),
-        (map['y'] as num).toDouble(),
-      ),
-      intensity: (map['intensity'] as num).toDouble(),
-      count: map['count'] as int,
-      primaryType: TouchType.values.firstWhere(
-        (e) => e.name == map['primary_type'],
-        orElse: () => TouchType.tap,
-      ),
-    );
-  }
-
-  @override
-  List<Object> get props => [position, intensity, count, primaryType];
 }

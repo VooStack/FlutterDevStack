@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:voo_analytics/src/data/services/analytics_cloud_sync.dart';
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
+import 'package:voo_core/src/models/voo_point.dart';
 
 void main() {
   group('AnalyticsCloudSyncService Integration Tests', () {
@@ -92,7 +93,7 @@ void main() {
       for (var i = 0; i < 3; i++) {
         syncService.queueTouchEvent(TouchEvent(
           id: 'test-touch-$i',
-          position: Offset(i * 10.0, i * 20.0),
+          position: VooPoint(i * 10.0, i * 20.0),
           screenName: 'TestScreen',
           type: TouchType.tap,
           timestamp: DateTime.now(),

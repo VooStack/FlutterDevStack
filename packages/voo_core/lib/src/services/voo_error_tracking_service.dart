@@ -125,7 +125,7 @@ class VooErrorTrackingService {
     }
 
     final projectId = context.config.projectId;
-    if (projectId.isEmpty) {
+    if (projectId == null || projectId.isEmpty) {
       if (kDebugMode) {
         debugPrint('VooErrorTracking: Cannot submit - no projectId');
       }
@@ -135,7 +135,7 @@ class VooErrorTrackingService {
     // Don't await - fire and forget
     _submitErrorAsync(
       context: context,
-      projectId: projectId,
+      projectId: projectId,  // Now guaranteed non-null after check
       message: message,
       errorType: errorType,
       stackTrace: stackTrace,

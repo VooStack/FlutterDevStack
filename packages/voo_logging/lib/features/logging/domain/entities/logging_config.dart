@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:voo_core/src/utils/map_equality.dart';
 import 'package:voo_logging/features/logging/domain/utils/pretty_log_formatter.dart';
 import 'package:voo_logging/voo_logging.dart';
 
@@ -40,7 +40,6 @@ import 'package:voo_logging/voo_logging.dart';
 /// - [LoggingConfig.development] - All features enabled, verbose logging
 /// - [LoggingConfig.production] - Minimal output, warnings+ only
 /// - [LoggingConfig.minimal] - Zero-config defaults
-@immutable
 class LoggingConfig {
   final bool enablePrettyLogs;
   final bool showEmojis;
@@ -203,7 +202,7 @@ class LoggingConfig {
         other.minimumLevel == minimumLevel &&
         other.enabled == enabled &&
         other.enableDevToolsJson == enableDevToolsJson &&
-        mapEquals(other.logTypeConfigs, logTypeConfigs) &&
+        mapsEqual(other.logTypeConfigs, logTypeConfigs) &&
         other.maxLogs == maxLogs &&
         other.retentionDays == retentionDays &&
         other.autoCleanup == autoCleanup &&

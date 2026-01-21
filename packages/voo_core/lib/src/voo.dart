@@ -9,6 +9,9 @@ import 'package:voo_core/src/models/voo_config.dart';
 import 'package:voo_core/src/models/voo_context.dart';
 import 'package:voo_core/src/models/voo_device_info.dart';
 import 'package:voo_core/src/models/voo_feature.dart';
+import 'package:voo_core/src/voo_app.dart';
+
+export 'voo_app.dart';
 import 'package:voo_core/src/models/voo_user_context.dart';
 import 'package:voo_core/src/services/voo_breadcrumb_service.dart';
 import 'package:voo_core/src/services/voo_device_info_service.dart';
@@ -253,7 +256,7 @@ class Voo {
       _initialized = true;
     }
 
-    final app = VooApp._(name: name, options: _options!, config: _config);
+    final app = VooApp(name: name, options: _options!, config: _config);
     _apps[name] = app;
 
     // Notify all registered plugins about the new app
@@ -369,44 +372,10 @@ class Voo {
       );
     }
   }
-}
 
-/// Represents a Voo application instance.
-class VooApp {
-  final String name;
-  final VooOptions options;
-  final VooConfig? config;
-  final Map<String, dynamic> _data = {};
-
-  VooApp._({required this.name, required this.options, this.config});
-
-  /// Check if this is the default app.
-  bool get isDefault => name == Voo._defaultAppName;
-
-  /// Store custom data associated with this app.
-  void setData(String key, dynamic value) {
-    _data[key] = value;
-  }
-
-  /// Retrieve custom data associated with this app.
-  T? getData<T>(String key) {
-    return _data[key] as T?;
-  }
-
-  /// Dispose this app.
-  Future<void> dispose() async {
-    _data.clear();
-  }
-
-  /// Delete this app.
-  Future<void> delete() async {
-    await dispose();
-    Voo._apps.remove(name);
-
-    // Notify plugins about app deletion
-    for (final plugin in Voo._plugins.values) {
-      await plugin.onAppDeleted(this);
-    }
+  /// Remove an app from the registry (internal use by VooApp.delete()).
+  static void removeApp(String name) {
+    _apps.remove(name);
   }
 }
 

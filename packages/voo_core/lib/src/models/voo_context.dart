@@ -49,7 +49,7 @@ class VooContext {
   String get appVersion => deviceInfo.appVersion;
 
   /// The project ID.
-  String get projectId => config.projectId;
+  String? get projectId => config.projectId;
 
   /// The organization ID, if set.
   String? get organizationId => config.organizationId;
@@ -128,7 +128,7 @@ class VooContext {
   Map<String, String> toHeaders() => {
         'Content-Type': 'application/json',
         'X-API-Key': config.apiKey,
-        'X-Project-Id': config.projectId,
+        if (config.projectId != null) 'X-Project-Id': config.projectId!,
         if (config.organizationId != null)
           'X-Organization-Id': config.organizationId!,
         'X-Session-Id': userContext.sessionId,

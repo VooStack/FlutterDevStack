@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
 
-import '../models/funnel.dart';
-import '../../voo_analytics_plugin.dart';
+import 'package:voo_analytics/src/data/models/funnel.dart';
+import 'package:voo_analytics/src/data/services/funnel_event.dart';
+import 'package:voo_analytics/src/voo_analytics_plugin.dart';
+
+export 'funnel_event.dart';
 
 /// Service for tracking user progress through conversion funnels.
 ///
@@ -422,34 +425,4 @@ class _FunnelStepRef {
   final VooFunnelStep step;
 
   _FunnelStepRef({required this.funnelId, required this.step});
-}
-
-/// Types of funnel events.
-enum FunnelEventType {
-  /// A step in the funnel was completed.
-  stepCompleted,
-
-  /// The entire funnel was completed.
-  completed,
-
-  /// The funnel was abandoned.
-  abandoned,
-}
-
-/// Event emitted by the funnel tracking service.
-@immutable
-class FunnelEvent {
-  final FunnelEventType type;
-  final String funnelId;
-  final String? stepId;
-  final VooFunnelProgress progress;
-  final String? reason;
-
-  const FunnelEvent({
-    required this.type,
-    required this.funnelId,
-    this.stepId,
-    required this.progress,
-    this.reason,
-  });
 }

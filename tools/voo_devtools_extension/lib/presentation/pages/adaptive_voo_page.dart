@@ -6,18 +6,19 @@ import 'package:voo_devtools_extension/core/services/keyboard_shortcuts_service.
 import 'package:voo_devtools_extension/core/services/plugin_detection_service.dart';
 import 'package:voo_devtools_extension/core/services/preferences_service.dart';
 import 'package:voo_devtools_extension/core/services/theme_service.dart';
+import 'package:voo_devtools_extension/domain/repositories/devtools_log_repository.dart';
+import 'package:voo_devtools_extension/presentation/blocs/analytics_bloc.dart';
+import 'package:voo_devtools_extension/presentation/blocs/analytics_event.dart';
 import 'package:voo_devtools_extension/presentation/blocs/log_bloc.dart';
 import 'package:voo_devtools_extension/presentation/blocs/log_event.dart';
 import 'package:voo_devtools_extension/presentation/blocs/network_bloc.dart';
 import 'package:voo_devtools_extension/presentation/blocs/network_event.dart';
 import 'package:voo_devtools_extension/presentation/blocs/performance_bloc.dart';
 import 'package:voo_devtools_extension/presentation/blocs/performance_event.dart';
-import 'package:voo_devtools_extension/presentation/blocs/analytics_bloc.dart';
-import 'package:voo_devtools_extension/presentation/blocs/analytics_event.dart';
+import 'package:voo_devtools_extension/presentation/pages/analytics_tab.dart';
 import 'package:voo_devtools_extension/presentation/pages/logs_tab.dart';
 import 'package:voo_devtools_extension/presentation/pages/network_tab.dart';
 import 'package:voo_devtools_extension/presentation/pages/performance_tab.dart';
-import 'package:voo_devtools_extension/presentation/pages/analytics_tab.dart';
 import 'package:voo_devtools_extension/presentation/widgets/molecules/export_dialog.dart';
 import 'package:voo_devtools_extension/presentation/widgets/molecules/shortcuts_help_dialog.dart';
 import 'package:voo_logging/voo_logging.dart';
@@ -46,6 +47,13 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
   final _themeService = ThemeService();
   List<TabInfo> _availableTabs = [];
 
+  // BLoCs - created locally in this page
+  LogBloc? _logBloc;
+  NetworkBloc? _networkBloc;
+  PerformanceBloc? _performanceBloc;
+  AnalyticsBloc? _analyticsBloc;
+  bool _blocsInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -54,9 +62,42 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeBlocsIfNeeded();
+  }
+
+  void _initializeBlocsIfNeeded() {
+    if (_blocsInitialized) return;
+
+    final repository = context.read<DevToolsLogRepository>();
+
+    // Create BLoCs locally based on available plugins
+    if (widget.pluginStatus['voo_logging'] == true) {
+      _logBloc = LogBloc(repository: repository)..add(LoadLogs());
+    }
+    if (widget.pluginStatus['voo_analytics'] == true) {
+      _analyticsBloc = AnalyticsBloc(repository: repository)
+        ..add(LoadAnalyticsEvents());
+    }
+    if (widget.pluginStatus['voo_performance'] == true) {
+      _networkBloc = NetworkBloc(repository: repository)..add(LoadNetworkLogs());
+      _performanceBloc = PerformanceBloc(repository: repository)
+        ..add(LoadPerformanceLogs());
+    }
+
+    _blocsInitialized = true;
+  }
+
+  @override
   void dispose() {
     _focusNode.dispose();
     _shortcutsService.unregisterAll();
+    // Dispose BLoCs created in this page
+    _logBloc?.close();
+    _networkBloc?.close();
+    _performanceBloc?.close();
+    _analyticsBloc?.close();
     super.dispose();
   }
 
@@ -188,8 +229,25 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
       return _buildNoPluginsView(context);
     }
 
-    // Wrap with Focus to capture keyboard shortcuts
-    return Focus(
+    // Build BlocProvider list based on available BLoCs
+    final providers = <BlocProvider>[];
+    if (_logBloc != null) {
+      providers.add(BlocProvider<LogBloc>.value(value: _logBloc!));
+    }
+    if (_networkBloc != null) {
+      providers.add(BlocProvider<NetworkBloc>.value(value: _networkBloc!));
+    }
+    if (_performanceBloc != null) {
+      providers.add(BlocProvider<PerformanceBloc>.value(value: _performanceBloc!));
+    }
+    if (_analyticsBloc != null) {
+      providers.add(BlocProvider<AnalyticsBloc>.value(value: _analyticsBloc!));
+    }
+
+    // Wrap with MultiBlocProvider for local BLoC provision
+    return MultiBlocProvider(
+      providers: providers,
+      child: Focus(
       focusNode: _focusNode,
       autofocus: true,
       onKeyEvent: _handleKeyEvent,
@@ -340,6 +398,7 @@ class _AdaptiveVooPageState extends State<AdaptiveVooPage> {
             ),
           ),
         ],
+      ),
       ),
       ),
     );

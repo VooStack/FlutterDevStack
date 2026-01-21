@@ -5,6 +5,7 @@ import 'package:voo_core/voo_core.dart';
 import 'package:voo_analytics/src/domain/repositories/analytics_repository.dart';
 import 'package:voo_analytics/src/data/repositories/analytics_repository_impl.dart';
 import 'package:voo_analytics/src/presentation/widgets/route_aware_touch_tracker.dart';
+import 'package:voo_analytics/src/presentation/widgets/analytics_route_observer.dart';
 import 'package:voo_analytics/src/data/services/funnel_tracking_service.dart';
 import 'package:voo_analytics/src/data/services/analytics_cloud_sync.dart';
 

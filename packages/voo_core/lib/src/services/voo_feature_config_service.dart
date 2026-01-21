@@ -6,9 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
-import '../models/voo_config.dart';
-import '../models/voo_feature.dart';
-import '../models/voo_feature_config.dart';
+import 'package:voo_core/src/models/voo_config.dart';
+import 'package:voo_core/src/models/voo_feature.dart';
+import 'package:voo_core/src/models/voo_feature_config.dart';
 
 /// Service for managing SDK feature configuration.
 ///

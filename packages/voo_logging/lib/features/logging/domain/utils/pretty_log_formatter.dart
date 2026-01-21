@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:voo_logging/voo_logging.dart';
 
 class PrettyLogFormatter {
@@ -299,18 +298,10 @@ class PrettyLogFormatter {
   }
 
   bool _supportsAnsiColors() {
-    // Web and mobile platforms don't support ANSI colors in their consoles
-    if (kIsWeb) {
-      return false;
-    }
-
-    if (defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS) {
-      return false;
-    }
-
-    // Desktop platforms (macOS, Linux, Windows) typically support ANSI colors
-    // in development terminals
+    // ANSI color support is controlled by the showColors config option.
+    // The caller should set showColors: false for platforms that don't support
+    // ANSI escape codes (web, mobile). Desktop terminals typically support them.
+    // This keeps the domain layer free of Flutter dependencies.
     return true;
   }
 

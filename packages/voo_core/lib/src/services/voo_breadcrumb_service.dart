@@ -2,7 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
-import '../models/voo_breadcrumb.dart';
+import 'package:voo_core/src/models/voo_breadcrumb.dart';
 
 /// Service for managing the breadcrumb trail.
 ///

@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:voo_analytics/src/data/services/analytics_cloud_sync.dart';
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_analytics/src/domain/entities/heat_map_data.dart';
+import 'package:voo_core/src/models/voo_point.dart';
 import 'package:voo_analytics/src/domain/repositories/analytics_repository.dart';
 
 class AnalyticsRepositoryImpl implements AnalyticsRepository {
@@ -251,7 +252,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       for (final event in events) {
         points.add(
           HeatMapPoint(
-            position: Offset(event.x, event.y),
+            position: VooPoint(event.x, event.y),
             intensity: 1.0,
             count: 1,
             primaryType: TouchType.tap,

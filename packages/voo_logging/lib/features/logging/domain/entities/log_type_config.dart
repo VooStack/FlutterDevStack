@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:voo_logging/voo_logging.dart';
 
-@immutable
 class LogTypeConfig {
   final bool enableConsoleOutput;
   final bool enableDevToolsOutput;

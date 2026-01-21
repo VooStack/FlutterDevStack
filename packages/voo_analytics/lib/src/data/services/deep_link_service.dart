@@ -4,7 +4,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
 
-import '../models/attribution.dart';
+import 'package:voo_analytics/src/data/models/attribution.dart';
 
 /// Service for handling deep links and app links.
 ///

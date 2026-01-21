@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Configuration for cloud sync of logs to a backend API.
 ///
 /// The API key is the primary identifier - the server derives the project
@@ -28,7 +26,6 @@ import 'package:flutter/foundation.dart';
 /// - [maxRetries]: Number of retry attempts on failure (default: 3)
 /// - [retryDelay]: Delay between retries (default: 1s)
 /// - [syncMinimumLevel]: Only sync logs at or above this level
-@immutable
 class CloudSyncConfig {
   /// Whether cloud sync is enabled.
   final bool enabled;

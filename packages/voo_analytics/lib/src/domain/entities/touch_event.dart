@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
+import 'package:voo_core/src/models/voo_point.dart';
 
 class TouchEvent extends Equatable {
   final String id;
   final DateTime timestamp;
-  final Offset position;
+  final VooPoint position;
   final String screenName;
   final String? widgetType;
   final String? widgetKey;
@@ -25,15 +25,15 @@ class TouchEvent extends Equatable {
   });
 
   // Convenience getters for coordinates
-  double get x => position.dx;
-  double get y => position.dy;
+  double get x => position.x;
+  double get y => position.y;
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'timestamp': timestamp.toIso8601String(),
-      'x': position.dx,
-      'y': position.dy,
+      'x': position.x,
+      'y': position.y,
       'screen_name': screenName,
       if (widgetType != null) 'widget_type': widgetType,
       if (widgetKey != null) 'widget_key': widgetKey,
@@ -47,7 +47,7 @@ class TouchEvent extends Equatable {
     return TouchEvent(
       id: map['id'] as String,
       timestamp: DateTime.parse(map['timestamp'] as String),
-      position: Offset(
+      position: VooPoint(
         (map['x'] as num).toDouble(),
         (map['y'] as num).toDouble(),
       ),
