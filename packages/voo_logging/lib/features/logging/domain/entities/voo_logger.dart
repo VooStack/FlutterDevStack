@@ -85,12 +85,7 @@ class VooLogger {
   /// This is the recommended way to explicitly initialize VooLogger when you
   /// need custom configuration. For zero-config usage, just call logging
   /// methods directly - they auto-initialize with [LoggingConfig.minimal()].
-  static Future<void> ensureInitialized({
-    String? appName,
-    String? appVersion,
-    String? userId,
-    LoggingConfig? config,
-  }) async {
+  static Future<void> ensureInitialized({String? appName, String? appVersion, String? userId, LoggingConfig? config}) async {
     await initialize(appName: appName, appVersion: appVersion, userId: userId, config: config);
   }
 
@@ -209,11 +204,7 @@ class VooLogger {
     await instance._repository.fatal(message, error: error, stackTrace: stackTrace, category: category, tag: tag, metadata: metadata);
 
     if (shouldNotify) {
-      VooToast.showError(
-        message: message,
-        title: category ?? 'Fatal Error',
-        duration: const Duration(seconds: 10),
-      );
+      VooToast.showError(message: message, title: category ?? 'Fatal Error', duration: const Duration(seconds: 10));
     }
   }
 

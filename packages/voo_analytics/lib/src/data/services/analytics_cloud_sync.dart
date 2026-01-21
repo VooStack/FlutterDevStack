@@ -24,40 +24,16 @@ class AnalyticsCloudSyncConfig extends BaseSyncConfig {
 
   /// Returns the full endpoint URL for analytics ingestion.
   /// Note: endpoint should already include /api if needed (e.g., 'http://localhost:5001/api')
-  String? get eventsEndpoint =>
-      endpoint != null ? '$endpoint/v1/telemetry/analytics' : null;
+  String? get eventsEndpoint => endpoint != null ? '$endpoint/v1/telemetry/analytics' : null;
 
   /// Returns the full endpoint URL for touch events (heatmaps).
-  String? get touchEventsEndpoint =>
-      endpoint != null ? '$endpoint/v1/telemetry/touch-events' : null;
+  String? get touchEventsEndpoint => endpoint != null ? '$endpoint/v1/telemetry/touch-events' : null;
 
-  factory AnalyticsCloudSyncConfig.production({
-    required String endpoint,
-    required String apiKey,
-    String? projectId,
-  }) =>
-      AnalyticsCloudSyncConfig(
-        enabled: true,
-        endpoint: endpoint,
-        apiKey: apiKey,
-        projectId: projectId,
-        batchSize: 100,
-        batchInterval: const Duration(seconds: 60),
-      );
+  factory AnalyticsCloudSyncConfig.production({required String endpoint, required String apiKey, String? projectId}) =>
+      AnalyticsCloudSyncConfig(enabled: true, endpoint: endpoint, apiKey: apiKey, projectId: projectId, batchSize: 100, batchInterval: const Duration(seconds: 60));
 
-  factory AnalyticsCloudSyncConfig.development({
-    required String endpoint,
-    required String apiKey,
-    String? projectId,
-  }) =>
-      AnalyticsCloudSyncConfig(
-        enabled: true,
-        endpoint: endpoint,
-        apiKey: apiKey,
-        projectId: projectId,
-        batchSize: 20,
-        batchInterval: const Duration(seconds: 15),
-      );
+  factory AnalyticsCloudSyncConfig.development({required String endpoint, required String apiKey, String? projectId}) =>
+      AnalyticsCloudSyncConfig(enabled: true, endpoint: endpoint, apiKey: apiKey, projectId: projectId, batchSize: 20, batchInterval: const Duration(seconds: 15));
 
   AnalyticsCloudSyncConfig copyWith({
     bool? enabled,
@@ -69,18 +45,17 @@ class AnalyticsCloudSyncConfig extends BaseSyncConfig {
     int? maxRetries,
     Duration? timeout,
     int? maxQueueSize,
-  }) =>
-      AnalyticsCloudSyncConfig(
-        enabled: enabled ?? this.enabled,
-        endpoint: endpoint ?? this.endpoint,
-        apiKey: apiKey ?? this.apiKey,
-        projectId: projectId ?? this.projectId,
-        batchSize: batchSize ?? this.batchSize,
-        batchInterval: batchInterval ?? this.batchInterval,
-        maxRetries: maxRetries ?? this.maxRetries,
-        timeout: timeout ?? this.timeout,
-        maxQueueSize: maxQueueSize ?? this.maxQueueSize,
-      );
+  }) => AnalyticsCloudSyncConfig(
+    enabled: enabled ?? this.enabled,
+    endpoint: endpoint ?? this.endpoint,
+    apiKey: apiKey ?? this.apiKey,
+    projectId: projectId ?? this.projectId,
+    batchSize: batchSize ?? this.batchSize,
+    batchInterval: batchInterval ?? this.batchInterval,
+    maxRetries: maxRetries ?? this.maxRetries,
+    timeout: timeout ?? this.timeout,
+    maxQueueSize: maxQueueSize ?? this.maxQueueSize,
+  );
 }
 
 /// Analytics event data for cloud sync.
@@ -93,25 +68,17 @@ class AnalyticsEventData {
   final String? label;
   final double? value;
 
-  AnalyticsEventData({
-    required this.eventName,
-    this.category = 'general',
-    required this.timestamp,
-    this.parameters,
-    this.action,
-    this.label,
-    this.value,
-  });
+  AnalyticsEventData({required this.eventName, this.category = 'general', required this.timestamp, this.parameters, this.action, this.label, this.value});
 
   Map<String, dynamic> toJson() => {
-        'name': eventName,
-        'category': category,
-        'action': action,
-        'label': label,
-        'value': value,
-        'properties': parameters ?? {},
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'name': eventName,
+    'category': category,
+    'action': action,
+    'label': label,
+    'value': value,
+    'properties': parameters ?? {},
+    'timestamp': timestamp.toIso8601String(),
+  };
 }
 
 /// Service for syncing analytics events to a cloud backend.
@@ -124,13 +91,7 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
   /// Separate queue for touch events.
   final Queue<TouchEvent> _pendingTouchEvents = Queue();
 
-  AnalyticsCloudSyncService({
-    required AnalyticsCloudSyncConfig super.config,
-    super.client,
-  })  : _analyticsConfig = config,
-        super(
-          serviceName: 'AnalyticsCloudSync',
-        );
+  AnalyticsCloudSyncService({required AnalyticsCloudSyncConfig super.config, super.client}) : _analyticsConfig = config, super(serviceName: 'AnalyticsCloudSync');
 
   @override
   String get endpoint => _analyticsConfig.eventsEndpoint ?? '';
@@ -179,13 +140,11 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
   /// Flush pending touch events to the heatmap endpoint.
   Future<bool> _flushTouchEvents() async {
     if (_pendingTouchEvents.isEmpty) return false;
-    if (_analyticsConfig.touchEventsEndpoint == null ||
-        _analyticsConfig.apiKey == null) return false;
+    if (_analyticsConfig.touchEventsEndpoint == null || _analyticsConfig.apiKey == null) return false;
 
     // Take up to batchSize events
     final eventsToSend = <TouchEvent>[];
-    while (eventsToSend.length < _analyticsConfig.batchSize &&
-        _pendingTouchEvents.isNotEmpty) {
+    while (eventsToSend.length < _analyticsConfig.batchSize && _pendingTouchEvents.isNotEmpty) {
       eventsToSend.add(_pendingTouchEvents.removeFirst());
     }
 
@@ -193,10 +152,8 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
 
     try {
       final context = Voo.context;
-      final screenSize =
-          WidgetsBinding.instance.platformDispatcher.views.first.physicalSize;
-      final devicePixelRatio =
-          WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+      final screenSize = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize;
+      final devicePixelRatio = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
       final logicalSize = screenSize / devicePixelRatio;
 
       final payload = {
@@ -210,12 +167,8 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
             'timestamp': e.timestamp.toIso8601String(),
             'x': e.position.dx,
             'y': e.position.dy,
-            'normalizedX': logicalSize.width > 0
-                ? (e.position.dx / logicalSize.width).clamp(0.0, 1.0)
-                : 0.0,
-            'normalizedY': logicalSize.height > 0
-                ? (e.position.dy / logicalSize.height).clamp(0.0, 1.0)
-                : 0.0,
+            'normalizedX': logicalSize.width > 0 ? (e.position.dx / logicalSize.width).clamp(0.0, 1.0) : 0.0,
+            'normalizedY': logicalSize.height > 0 ? (e.position.dy / logicalSize.height).clamp(0.0, 1.0) : 0.0,
             'screenName': e.screenName,
             'routePath': e.route,
             'screenWidth': logicalSize.width,
@@ -229,17 +182,13 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
 
       final response = await http.post(
         Uri.parse(_analyticsConfig.touchEventsEndpoint!),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': _analyticsConfig.apiKey!,
-        },
+        headers: {'Content-Type': 'application/json', 'X-API-Key': _analyticsConfig.apiKey!},
         body: jsonEncode(payload),
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (kDebugMode) {
-          debugPrint(
-              '[AnalyticsCloudSync] Synced ${eventsToSend.length} touch events');
+          debugPrint('[AnalyticsCloudSync] Synced ${eventsToSend.length} touch events');
         }
         return true;
       } else {
@@ -250,8 +199,7 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
           }
         }
         if (kDebugMode) {
-          debugPrint(
-              '[AnalyticsCloudSync] Failed to sync touch events: ${response.statusCode}');
+          debugPrint('[AnalyticsCloudSync] Failed to sync touch events: ${response.statusCode}');
         }
         return false;
       }
@@ -274,10 +222,7 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
     // Use new typed context from Voo.context (preferred)
     final context = Voo.context;
     if (context != null) {
-      return {
-        'events': events.map((e) => e.toJson()).toList(),
-        ...context.toSyncPayload(),
-      };
+      return {'events': events.map((e) => e.toJson()).toList(), ...context.toSyncPayload()};
     }
 
     // Fallback: Legacy customConfig extraction (backwards compatibility)
@@ -290,14 +235,7 @@ class AnalyticsCloudSyncService extends BaseSyncService<AnalyticsEventData> {
     final appVersion = vooConfig['appVersion'] as String? ?? '1.0.0';
 
     // API expects EventsBatchRequest structure
-    return {
-      'events': events.map((e) => e.toJson()).toList(),
-      'sessionId': sessionId,
-      'userId': userId,
-      'deviceId': deviceId,
-      'platform': platform,
-      'appVersion': appVersion,
-    };
+    return {'events': events.map((e) => e.toJson()).toList(), 'sessionId': sessionId, 'userId': userId, 'deviceId': deviceId, 'platform': platform, 'appVersion': appVersion};
   }
 
   @override

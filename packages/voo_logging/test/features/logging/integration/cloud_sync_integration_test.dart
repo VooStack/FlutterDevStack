@@ -24,11 +24,7 @@ void main() {
       syncService.dispose();
     });
 
-    MockClient createMockClient({
-      int statusCode = 200,
-      Duration? delay,
-      int? failCount,
-    }) {
+    MockClient createMockClient({int statusCode = 200, Duration? delay, int? failCount}) {
       int failuresRemaining = failCount ?? 0;
 
       return MockClient((request) async {
@@ -40,12 +36,7 @@ void main() {
 
         // Capture request data
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        capturedRequests.add({
-          'url': request.url.toString(),
-          'method': request.method,
-          'headers': request.headers,
-          'body': body,
-        });
+        capturedRequests.add({'url': request.url.toString(), 'method': request.method, 'headers': request.headers, 'body': body});
 
         // Simulate failures
         if (failuresRemaining > 0) {
@@ -57,24 +48,12 @@ void main() {
       });
     }
 
-    LogEntry createTestLog({
-      LogLevel level = LogLevel.info,
-      String message = 'Test message',
-      String? category,
-    }) => LogEntry(
-        id: 'test_${DateTime.now().millisecondsSinceEpoch}',
-        timestamp: DateTime.now(),
-        message: message,
-        level: level,
-        category: category,
-      );
+    LogEntry createTestLog({LogLevel level = LogLevel.info, String message = 'Test message', String? category}) =>
+        LogEntry(id: 'test_${DateTime.now().millisecondsSinceEpoch}', timestamp: DateTime.now(), message: message, level: level, category: category);
 
     test('should not sync when disabled', () async {
       const config = CloudSyncConfig();
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient());
       syncService.initialize();
 
       // Queue multiple logs
@@ -97,13 +76,10 @@ void main() {
         apiKey: 'test-api-key',
         projectId: 'test-project',
         batchSize: 5,
-        batchInterval: const Duration(hours: 1), // Long interval to test batch size trigger
+        batchInterval: Duration(hours: 1), // Long interval to test batch size trigger
       );
 
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient());
       syncService.initialize();
 
       // Queue exactly batch size logs
@@ -120,18 +96,9 @@ void main() {
     });
 
     test('should include correct headers and API key', () async {
-      const config = CloudSyncConfig(
-        enabled: true,
-        endpoint: 'https://api.test.com',
-        apiKey: 'my-secret-key',
-        projectId: 'project-123',
-        batchSize: 1,
-      );
+      const config = CloudSyncConfig(enabled: true, endpoint: 'https://api.test.com', apiKey: 'my-secret-key', projectId: 'project-123', batchSize: 1);
 
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient());
       syncService.initialize();
 
       syncService.queueLog(createTestLog());
@@ -145,18 +112,9 @@ void main() {
     });
 
     test('should prioritize error logs', () async {
-      const config = CloudSyncConfig(
-        enabled: true,
-        endpoint: 'https://api.test.com',
-        apiKey: 'test-key',
-        projectId: 'test',
-        batchSize: 10,
-      );
+      const config = CloudSyncConfig(enabled: true, endpoint: 'https://api.test.com', apiKey: 'test-key', projectId: 'test', batchSize: 10);
 
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient());
       syncService.initialize();
 
       // Queue some regular logs
@@ -186,14 +144,11 @@ void main() {
         projectId: 'test',
         batchSize: 1,
         maxRetries: 2,
-        retryDelay: const Duration(milliseconds: 10),
+        retryDelay: Duration(milliseconds: 10),
       );
 
       // Fail first 2 requests, then succeed
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(failCount: 2),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient(failCount: 2));
       syncService.initialize();
 
       syncService.queueLog(createTestLog());
@@ -214,10 +169,7 @@ void main() {
         syncMinimumLevel: 'warning',
       );
 
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient());
       syncService.initialize();
 
       // Queue logs below minimum level
@@ -248,13 +200,10 @@ void main() {
         projectId: 'test',
         batchSize: 100,
         maxQueueSize: 5,
-        batchInterval: const Duration(hours: 1),
+        batchInterval: Duration(hours: 1),
       );
 
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient());
       syncService.initialize();
 
       // Queue more than max queue size
@@ -267,18 +216,9 @@ void main() {
     });
 
     test('should format log entries correctly', () async {
-      const config = CloudSyncConfig(
-        enabled: true,
-        endpoint: 'https://api.test.com',
-        apiKey: 'test-key',
-        projectId: 'test',
-        batchSize: 1,
-      );
+      const config = CloudSyncConfig(enabled: true, endpoint: 'https://api.test.com', apiKey: 'test-key', projectId: 'test', batchSize: 1);
 
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient());
       syncService.initialize();
 
       final testLog = LogEntry(
@@ -305,13 +245,7 @@ void main() {
     });
 
     test('should update status correctly', () async {
-      const config = CloudSyncConfig(
-        enabled: true,
-        endpoint: 'https://api.test.com',
-        apiKey: 'test-key',
-        projectId: 'test',
-        batchSize: 1,
-      );
+      const config = CloudSyncConfig(enabled: true, endpoint: 'https://api.test.com', apiKey: 'test-key', projectId: 'test', batchSize: 1);
 
       syncService = CloudSyncService(
         config: config,
@@ -330,21 +264,11 @@ void main() {
     });
 
     test('should call error callback on failure', () async {
-      const config = CloudSyncConfig(
-        enabled: true,
-        endpoint: 'https://api.test.com',
-        apiKey: 'test-key',
-        projectId: 'test',
-        batchSize: 1,
-        maxRetries: 0,
-      );
+      const config = CloudSyncConfig(enabled: true, endpoint: 'https://api.test.com', apiKey: 'test-key', projectId: 'test', batchSize: 1, maxRetries: 0);
 
       final errors = <String>[];
 
-      syncService = CloudSyncService(
-        config: config,
-        client: createMockClient(statusCode: 500),
-      );
+      syncService = CloudSyncService(config: config, client: createMockClient(statusCode: 500));
       syncService.onError = (error, retry) => errors.add(error);
       syncService.initialize();
 
@@ -362,11 +286,7 @@ void main() {
       const invalidConfig = CloudSyncConfig(enabled: true);
       expect(invalidConfig.isValid, false);
 
-      const validConfig = CloudSyncConfig(
-        enabled: true,
-        endpoint: 'https://api.test.com',
-        apiKey: 'key',
-      );
+      const validConfig = CloudSyncConfig(enabled: true, endpoint: 'https://api.test.com', apiKey: 'key');
       expect(validConfig.isValid, true);
 
       const disabledConfig = CloudSyncConfig();
@@ -374,18 +294,12 @@ void main() {
     });
 
     test('should generate correct log endpoint', () {
-      const config = CloudSyncConfig(
-        endpoint: 'https://api.devstack.io/api',
-      );
+      const config = CloudSyncConfig(endpoint: 'https://api.devstack.io/api');
       expect(config.logEndpoint, 'https://api.devstack.io/api/v1/telemetry/logs');
     });
 
     test('production preset should have correct defaults', () {
-      final config = CloudSyncConfig.production(
-        endpoint: 'https://api.test.com',
-        apiKey: 'key',
-        projectId: 'project',
-      );
+      final config = CloudSyncConfig.production(endpoint: 'https://api.test.com', apiKey: 'key', projectId: 'project');
 
       expect(config.enabled, true);
       expect(config.batchSize, 100);
@@ -396,11 +310,7 @@ void main() {
     });
 
     test('development preset should have smaller batches', () {
-      final config = CloudSyncConfig.development(
-        endpoint: 'https://api.test.com',
-        apiKey: 'key',
-        projectId: 'project',
-      );
+      final config = CloudSyncConfig.development(endpoint: 'https://api.test.com', apiKey: 'key', projectId: 'project');
 
       expect(config.enabled, true);
       expect(config.batchSize, 10);

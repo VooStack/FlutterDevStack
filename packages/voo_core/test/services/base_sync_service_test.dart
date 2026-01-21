@@ -12,14 +12,9 @@ class TestItem {
   final String message;
   final DateTime timestamp;
 
-  TestItem({required this.id, required this.message, DateTime? timestamp})
-      : timestamp = timestamp ?? DateTime.now();
+  TestItem({required this.id, required this.message, DateTime? timestamp}) : timestamp = timestamp ?? DateTime.now();
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'message': message,
-        'timestamp': timestamp.toIso8601String(),
-      };
+  Map<String, dynamic> toJson() => {'id': id, 'message': message, 'timestamp': timestamp.toIso8601String()};
 }
 
 /// Concrete implementation of BaseSyncService for testing.
@@ -29,14 +24,7 @@ class TestSyncService extends BaseSyncService<TestItem> {
   bool shouldFilterItems = false;
   bool shouldFlushImmediatelyFlag = false;
 
-  TestSyncService({
-    required super.config,
-    super.client,
-    String? endpoint,
-  })  : _endpoint = endpoint ?? 'https://api.test.com/test',
-        super(
-          serviceName: 'TestSyncService',
-        );
+  TestSyncService({required super.config, super.client, String? endpoint}) : _endpoint = endpoint ?? 'https://api.test.com/test', super(serviceName: 'TestSyncService');
 
   @override
   String get endpoint => _endpoint;
@@ -44,10 +32,7 @@ class TestSyncService extends BaseSyncService<TestItem> {
   @override
   Map<String, dynamic> formatPayload(List<TestItem> items) {
     sentItems.addAll(items);
-    return {
-      'projectId': config.projectId,
-      'items': items.map((e) => e.toJson()).toList(),
-    };
+    return {'projectId': config.projectId, 'items': items.map((e) => e.toJson()).toList()};
   }
 
   @override
@@ -74,12 +59,7 @@ void main() {
     int requestCount = 0;
     List<http.Request> capturedRequests = [];
 
-    BaseSyncConfig createValidConfig({
-      int batchSize = 5,
-      Duration batchInterval = const Duration(seconds: 30),
-      int maxRetries = 3,
-      int maxQueueSize = 100,
-    }) {
+    BaseSyncConfig createValidConfig({int batchSize = 5, Duration batchInterval = const Duration(seconds: 30), int maxRetries = 3, int maxQueueSize = 100}) {
       return BaseSyncConfig(
         enabled: true,
         endpoint: 'https://api.test.com',
@@ -92,12 +72,7 @@ void main() {
       );
     }
 
-    MockClient createMockClient({
-      int statusCode = 200,
-      String body = '{"success": true}',
-      Duration? delay,
-      bool Function(http.Request)? shouldFail,
-    }) {
+    MockClient createMockClient({int statusCode = 200, String body = '{"success": true}', Duration? delay, bool Function(http.Request)? shouldFail}) {
       return MockClient((request) async {
         capturedRequests.add(request);
         requestCount++;
@@ -126,10 +101,7 @@ void main() {
     group('initialization', () {
       test('should initialize with valid config', () {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
 
         syncService.initialize();
 
@@ -139,10 +111,7 @@ void main() {
 
       test('should set status to disabled with invalid config', () {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: const BaseSyncConfig(enabled: false),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: const BaseSyncConfig(enabled: false), client: mockClient);
 
         syncService.initialize();
 
@@ -152,10 +121,7 @@ void main() {
       test('should set status to disabled when endpoint is missing', () {
         mockClient = createMockClient();
         syncService = TestSyncService(
-          config: const BaseSyncConfig(
-            enabled: true,
-            apiKey: 'key',
-          ),
+          config: const BaseSyncConfig(enabled: true, apiKey: 'key'),
           client: mockClient,
         );
 
@@ -168,10 +134,7 @@ void main() {
     group('queueItem', () {
       test('should queue items when enabled', () {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -181,10 +144,7 @@ void main() {
 
       test('should not queue items when disabled', () {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: const BaseSyncConfig(enabled: false),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: const BaseSyncConfig(enabled: false), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -194,10 +154,7 @@ void main() {
 
       test('should enforce max queue size', () {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(maxQueueSize: 3, batchSize: 10),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(maxQueueSize: 3, batchSize: 10), client: mockClient);
         syncService.initialize();
 
         for (var i = 0; i < 5; i++) {
@@ -209,10 +166,7 @@ void main() {
 
       test('should auto-flush when batch size reached', () async {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(batchSize: 3),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(batchSize: 3), client: mockClient);
         syncService.initialize();
 
         for (var i = 0; i < 3; i++) {
@@ -227,10 +181,7 @@ void main() {
 
       test('should respect shouldQueueItem filter', () {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.shouldFilterItems = true;
         syncService.initialize();
 
@@ -245,17 +196,10 @@ void main() {
     group('queueItems', () {
       test('should queue multiple items at once', () {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.initialize();
 
-        syncService.queueItems([
-          TestItem(id: '1', message: 'test 1'),
-          TestItem(id: '2', message: 'test 2'),
-          TestItem(id: '3', message: 'test 3'),
-        ]);
+        syncService.queueItems([TestItem(id: '1', message: 'test 1'), TestItem(id: '2', message: 'test 2'), TestItem(id: '3', message: 'test 3')]);
 
         expect(syncService.pendingCount, equals(3));
       });
@@ -264,10 +208,7 @@ void main() {
     group('flush', () {
       test('should send queued items', () async {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -280,10 +221,7 @@ void main() {
 
       test('should return true when queue is empty', () async {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.initialize();
 
         final result = await syncService.flush();
@@ -294,10 +232,7 @@ void main() {
 
       test('should include correct headers', () async {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -311,10 +246,7 @@ void main() {
 
       test('should format payload correctly', () async {
         mockClient = createMockClient();
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -339,10 +271,7 @@ void main() {
           return http.Response('{"success": true}', 200);
         });
 
-        syncService = TestSyncService(
-          config: createValidConfig(maxRetries: 3),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(maxRetries: 3), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -354,10 +283,7 @@ void main() {
 
       test('should fail after max retries exceeded', () async {
         mockClient = createMockClient(statusCode: 500);
-        syncService = TestSyncService(
-          config: createValidConfig(maxRetries: 2),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(maxRetries: 2), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -369,10 +295,7 @@ void main() {
 
       test('should re-queue items on failure', () async {
         mockClient = createMockClient(statusCode: 500);
-        syncService = TestSyncService(
-          config: createValidConfig(maxRetries: 0),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(maxRetries: 0), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -386,10 +309,7 @@ void main() {
       test('should update status during sync', () async {
         final statusChanges = <SyncStatus>[];
         mockClient = createMockClient(delay: const Duration(milliseconds: 50));
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.onStatusChanged = (status) => statusChanges.add(status);
         syncService.initialize();
 
@@ -403,10 +323,7 @@ void main() {
       test('should set error status on failure', () async {
         final statusChanges = <SyncStatus>[];
         mockClient = createMockClient(statusCode: 500);
-        syncService = TestSyncService(
-          config: createValidConfig(maxRetries: 0),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(maxRetries: 0), client: mockClient);
         syncService.onStatusChanged = (status) => statusChanges.add(status);
         syncService.initialize();
 
@@ -418,10 +335,7 @@ void main() {
 
       test('should track consecutive failures', () async {
         mockClient = createMockClient(statusCode: 500);
-        syncService = TestSyncService(
-          config: createValidConfig(maxRetries: 0),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(maxRetries: 0), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test'));
@@ -439,10 +353,7 @@ void main() {
           return http.Response('{"success": true}', 200);
         });
 
-        syncService = TestSyncService(
-          config: createValidConfig(maxRetries: 0),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(maxRetries: 0), client: mockClient);
         syncService.initialize();
 
         // First request fails
@@ -461,10 +372,7 @@ void main() {
       test('should call onError callback on failure', () async {
         final errors = <String>[];
         mockClient = createMockClient(statusCode: 500);
-        syncService = TestSyncService(
-          config: createValidConfig(maxRetries: 1),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(maxRetries: 1), client: mockClient);
         syncService.onError = (error, retry) => errors.add('$error:$retry');
         syncService.initialize();
 
@@ -536,10 +444,7 @@ void main() {
     group('concurrent sync prevention', () {
       test('should prevent concurrent sync operations', () async {
         mockClient = createMockClient(delay: const Duration(milliseconds: 100));
-        syncService = TestSyncService(
-          config: createValidConfig(),
-          client: mockClient,
-        );
+        syncService = TestSyncService(config: createValidConfig(), client: mockClient);
         syncService.initialize();
 
         syncService.queueItem(TestItem(id: '1', message: 'test 1'));

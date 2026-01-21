@@ -65,28 +65,18 @@ class VooInteractionEvent {
   });
 
   /// Get the interaction type name.
-  String get typeName => type == VooInteractionType.custom
-      ? (customType ?? 'custom')
-      : type.name;
+  String get typeName => type == VooInteractionType.custom ? (customType ?? 'custom') : type.name;
 
   Map<String, dynamic> toJson() => {
-        'type': typeName,
-        if (elementId != null) 'element_id': elementId,
-        if (elementType != null) 'element_type': elementType,
-        if (screenName != null) 'screen_name': screenName,
-        if (localPosition != null)
-          'local_position': {
-            'x': localPosition!.dx,
-            'y': localPosition!.dy,
-          },
-        if (globalPosition != null)
-          'global_position': {
-            'x': globalPosition!.dx,
-            'y': globalPosition!.dy,
-          },
-        'timestamp': timestamp.toIso8601String(),
-        if (customParams != null) ...customParams!,
-      };
+    'type': typeName,
+    if (elementId != null) 'element_id': elementId,
+    if (elementType != null) 'element_type': elementType,
+    if (screenName != null) 'screen_name': screenName,
+    if (localPosition != null) 'local_position': {'x': localPosition!.dx, 'y': localPosition!.dy},
+    if (globalPosition != null) 'global_position': {'x': globalPosition!.dx, 'y': globalPosition!.dy},
+    'timestamp': timestamp.toIso8601String(),
+    if (customParams != null) ...customParams!,
+  };
 
   @override
   String toString() => 'VooInteractionEvent($typeName on $elementId)';

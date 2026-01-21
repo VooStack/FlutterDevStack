@@ -46,11 +46,7 @@ class VooAnalyticsPlugin extends VooPlugin {
     }
   }
 
-  static Future<void> initialize({
-    bool enableTouchTracking = true,
-    bool enableEventLogging = true,
-    bool enableUserProperties = true,
-  }) async {
+  static Future<void> initialize({bool enableTouchTracking = true, bool enableEventLogging = true, bool enableUserProperties = true}) async {
     final plugin = instance;
 
     if (plugin._initialized) {
@@ -58,17 +54,10 @@ class VooAnalyticsPlugin extends VooPlugin {
     }
 
     if (!Voo.isInitialized) {
-      throw const VooException(
-        'Voo.initializeApp() must be called before initializing VooAnalytics',
-        code: 'core-not-initialized',
-      );
+      throw const VooException('Voo.initializeApp() must be called before initializing VooAnalytics', code: 'core-not-initialized');
     }
 
-    plugin.repository = AnalyticsRepositoryImpl(
-      enableTouchTracking: enableTouchTracking,
-      enableEventLogging: enableEventLogging,
-      enableUserProperties: enableUserProperties,
-    );
+    plugin.repository = AnalyticsRepositoryImpl(enableTouchTracking: enableTouchTracking, enableEventLogging: enableEventLogging, enableUserProperties: enableUserProperties);
 
     await plugin.repository!.initialize();
 
@@ -76,22 +65,13 @@ class VooAnalyticsPlugin extends VooPlugin {
     plugin._initialized = true;
 
     if (kDebugMode) {
-      debugPrint(
-        '[VooAnalytics] Initialized with touch tracking: $enableTouchTracking',
-      );
+      debugPrint('[VooAnalytics] Initialized with touch tracking: $enableTouchTracking');
     }
   }
 
-  Future<void> logEvent(
-    String name, {
-    String? category,
-    Map<String, dynamic>? parameters,
-  }) async {
+  Future<void> logEvent(String name, {String? category, Map<String, dynamic>? parameters}) async {
     if (!_initialized) {
-      throw const VooException(
-        'VooAnalytics not initialized. Call initialize() first.',
-        code: 'not-initialized',
-      );
+      throw const VooException('VooAnalytics not initialized. Call initialize() first.', code: 'not-initialized');
     }
 
     // Add category to parameters if provided
@@ -114,10 +94,7 @@ class VooAnalyticsPlugin extends VooPlugin {
   /// Consider using [Voo.setUserProperty] directly for a unified approach.
   Future<void> setUserProperty(String name, String value) async {
     if (!_initialized) {
-      throw const VooException(
-        'VooAnalytics not initialized. Call initialize() first.',
-        code: 'not-initialized',
-      );
+      throw const VooException('VooAnalytics not initialized. Call initialize() first.', code: 'not-initialized');
     }
     // Forward to Voo central context
     Voo.setUserProperty(name, value);
@@ -130,25 +107,16 @@ class VooAnalyticsPlugin extends VooPlugin {
   /// Consider using [Voo.setUserId] directly for a unified approach.
   Future<void> setUserId(String userId) async {
     if (!_initialized) {
-      throw const VooException(
-        'VooAnalytics not initialized. Call initialize() first.',
-        code: 'not-initialized',
-      );
+      throw const VooException('VooAnalytics not initialized. Call initialize() first.', code: 'not-initialized');
     }
     // Forward to Voo central context
     Voo.setUserId(userId);
     await repository!.setUserId(userId);
   }
 
-  Future<Map<String, dynamic>> getHeatMapData({
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
+  Future<Map<String, dynamic>> getHeatMapData({DateTime? startDate, DateTime? endDate}) async {
     if (!_initialized) {
-      throw const VooException(
-        'VooAnalytics not initialized. Call initialize() first.',
-        code: 'not-initialized',
-      );
+      throw const VooException('VooAnalytics not initialized. Call initialize() first.', code: 'not-initialized');
     }
     return repository!.getHeatMapData(startDate: startDate, endDate: endDate);
   }

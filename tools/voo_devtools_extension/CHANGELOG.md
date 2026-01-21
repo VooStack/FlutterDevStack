@@ -1,5 +1,9 @@
 ## 1.1.1
 
+### 🎉 Features
+* Enhanced `AdaptiveVooPage` to initialize BLoCs dynamically based on available plugins
+* Improved `AppWrapper` to provide repository for page-level BLoC creation
+
 ### 🐛 Bug Fixes
 * Fixed network request status display issue where completed requests with status codes (e.g., 200) remained showing as "Pending"
   * Corrected the merge logic in NetworkRequestModel to properly update isComplete and isInProgress flags based on merged status code

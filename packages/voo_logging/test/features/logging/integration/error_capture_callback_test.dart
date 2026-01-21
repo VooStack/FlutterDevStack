@@ -11,28 +11,11 @@ void main() {
       repository = LoggerRepositoryImpl();
 
       // Set up the error capture callback
-      repository.onErrorCaptured = ({
-        required String message,
-        String? errorType,
-        String? stackTrace,
-      }) {
-        capturedErrors.add({
-          'message': message,
-          'errorType': errorType,
-          'stackTrace': stackTrace,
-        });
+      repository.onErrorCaptured = ({required String message, String? errorType, String? stackTrace}) {
+        capturedErrors.add({'message': message, 'errorType': errorType, 'stackTrace': stackTrace});
       };
 
-      await repository.initialize(
-        appName: 'TestApp',
-        appVersion: '1.0.0',
-        config: const LoggingConfig(
-          minimumLevel: LogLevel.verbose,
-          enablePrettyLogs: false,
-          // Disable storage for tests
-          logTypeConfigs: {},
-        ),
-      );
+      await repository.initialize(appName: 'TestApp', appVersion: '1.0.0', config: const LoggingConfig(enablePrettyLogs: false));
     });
 
     tearDown(() {
@@ -78,11 +61,8 @@ void main() {
     });
 
     test('callback receives error type from error object', () async {
-      final testError = FormatException('Invalid format');
-      await repository.error(
-        'Test error with exception',
-        error: testError,
-      );
+      const testError = FormatException('Invalid format');
+      await repository.error('Test error with exception', error: testError);
 
       expect(capturedErrors.length, 1);
       expect(capturedErrors.first['message'], 'Test error with exception');
@@ -91,10 +71,7 @@ void main() {
 
     test('callback receives stack trace when provided', () async {
       final testStackTrace = StackTrace.current;
-      await repository.error(
-        'Test error with stack',
-        stackTrace: testStackTrace,
-      );
+      await repository.error('Test error with stack', stackTrace: testStackTrace);
 
       expect(capturedErrors.length, 1);
       expect(capturedErrors.first['message'], 'Test error with stack');
@@ -106,11 +83,7 @@ void main() {
       final testError = ArgumentError('Invalid argument');
       final testStackTrace = StackTrace.current;
 
-      await repository.error(
-        'Complete error test',
-        error: testError,
-        stackTrace: testStackTrace,
-      );
+      await repository.error('Complete error test', error: testError, stackTrace: testStackTrace);
 
       expect(capturedErrors.length, 1);
       expect(capturedErrors.first['message'], 'Complete error test');
@@ -147,11 +120,7 @@ void main() {
     });
 
     test('callback exception does not break logging', () async {
-      repository.onErrorCaptured = ({
-        required String message,
-        String? errorType,
-        String? stackTrace,
-      }) {
+      repository.onErrorCaptured = ({required String message, String? errorType, String? stackTrace}) {
         throw Exception('Callback failure');
       };
 
@@ -168,11 +137,7 @@ void main() {
 
       // Change callback
       final secondCallbackErrors = <String>[];
-      repository.onErrorCaptured = ({
-        required String message,
-        String? errorType,
-        String? stackTrace,
-      }) {
+      repository.onErrorCaptured = ({required String message, String? errorType, String? stackTrace}) {
         secondCallbackErrors.add(message);
       };
 
@@ -192,26 +157,12 @@ void main() {
     setUp(() async {
       capturedErrors = [];
 
-      await VooLogger.initialize(
-        appName: 'TestApp',
-        config: const LoggingConfig(
-          minimumLevel: LogLevel.verbose,
-          enablePrettyLogs: false,
-        ),
-      );
+      await VooLogger.initialize(appName: 'TestApp', config: const LoggingConfig(enablePrettyLogs: false));
 
       // Access repository and set callback
       final repo = VooLogger.instance.repository as LoggerRepositoryImpl;
-      repo.onErrorCaptured = ({
-        required String message,
-        String? errorType,
-        String? stackTrace,
-      }) {
-        capturedErrors.add({
-          'message': message,
-          'errorType': errorType,
-          'stackTrace': stackTrace,
-        });
+      repo.onErrorCaptured = ({required String message, String? errorType, String? stackTrace}) {
+        capturedErrors.add({'message': message, 'errorType': errorType, 'stackTrace': stackTrace});
       };
     });
 
@@ -245,11 +196,7 @@ void main() {
   group('ErrorCaptureCallback TypeDef', () {
     test('typedef matches expected signature', () {
       // Create a function that matches the typedef
-      void testCallback({
-        required String message,
-        String? errorType,
-        String? stackTrace,
-      }) {
+      void testCallback({required String message, String? errorType, String? stackTrace}) {
         // No-op
       }
 
@@ -264,11 +211,7 @@ void main() {
 
       expect(nullableCallback, isNull);
 
-      nullableCallback = ({
-        required String message,
-        String? errorType,
-        String? stackTrace,
-      }) {
+      nullableCallback = ({required String message, String? errorType, String? stackTrace}) {
         // Assigned callback
       };
 

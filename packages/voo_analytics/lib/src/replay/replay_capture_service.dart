@@ -97,27 +97,18 @@ class ReplayEventCapture {
   final String? touchType;
   final Map<String, dynamic>? metadata;
 
-  ReplayEventCapture({
-    required this.eventType,
-    required this.timestamp,
-    required this.offsetMs,
-    this.screenName,
-    this.x,
-    this.y,
-    this.touchType,
-    this.metadata,
-  });
+  ReplayEventCapture({required this.eventType, required this.timestamp, required this.offsetMs, this.screenName, this.x, this.y, this.touchType, this.metadata});
 
   Map<String, dynamic> toJson() => {
-        'eventType': eventType,
-        'timestamp': timestamp.toIso8601String(),
-        'offsetMs': offsetMs,
-        if (screenName != null) 'screenName': screenName,
-        if (x != null) 'x': x,
-        if (y != null) 'y': y,
-        if (touchType != null) 'touchType': touchType,
-        if (metadata != null) 'metadata': metadata,
-      };
+    'eventType': eventType,
+    'timestamp': timestamp.toIso8601String(),
+    'offsetMs': offsetMs,
+    if (screenName != null) 'screenName': screenName,
+    if (x != null) 'x': x,
+    if (y != null) 'y': y,
+    if (touchType != null) 'touchType': touchType,
+    if (metadata != null) 'metadata': metadata,
+  };
 }
 
 /// Service for capturing session replay events.
@@ -241,30 +232,24 @@ class ReplayCaptureService {
   }
 
   /// Capture a touch event.
-  void captureTouch({
-    required double x,
-    required double y,
-    String? touchType,
-    String? screenName,
-  }) {
+  void captureTouch({required double x, required double y, String? touchType, String? screenName}) {
     if (!isEnabled || !_config.captureTouches) return;
 
-    _addEvent(ReplayEventCapture(
-      eventType: 'touch',
-      timestamp: DateTime.now(),
-      offsetMs: _calculateOffset(),
-      screenName: screenName ?? _currentScreenName,
-      x: x,
-      y: y,
-      touchType: touchType ?? 'tap',
-    ));
+    _addEvent(
+      ReplayEventCapture(
+        eventType: 'touch',
+        timestamp: DateTime.now(),
+        offsetMs: _calculateOffset(),
+        screenName: screenName ?? _currentScreenName,
+        x: x,
+        y: y,
+        touchType: touchType ?? 'tap',
+      ),
+    );
   }
 
   /// Capture a screen view transition.
-  void captureScreenView({
-    required String screenName,
-    String? routePath,
-  }) {
+  void captureScreenView({required String screenName, String? routePath}) {
     if (!isEnabled || !_config.captureScreenViews) {
       if (kDebugMode) {
         debugPrint('VooReplay: captureScreenView skipped - isEnabled: $isEnabled, captureScreenViews: ${_config.captureScreenViews}');
@@ -278,13 +263,15 @@ class ReplayCaptureService {
       debugPrint('VooReplay: captureScreenView - screenName: $screenName, routePath: $routePath');
     }
 
-    _addEvent(ReplayEventCapture(
-      eventType: 'screenView',
-      timestamp: DateTime.now(),
-      offsetMs: _calculateOffset(),
-      screenName: screenName,
-      metadata: routePath != null ? {'routePath': routePath} : null,
-    ));
+    _addEvent(
+      ReplayEventCapture(
+        eventType: 'screenView',
+        timestamp: DateTime.now(),
+        offsetMs: _calculateOffset(),
+        screenName: screenName,
+        metadata: routePath != null ? {'routePath': routePath} : null,
+      ),
+    );
 
     // Also capture screenshot if enabled
     if (_config.captureScreenshots) {
@@ -293,10 +280,7 @@ class ReplayCaptureService {
       }
       // Delay slightly to let the new screen render
       Future.delayed(const Duration(milliseconds: 100), () {
-        captureScreenshot(
-          screenName: screenName,
-          captureReason: 'screen_transition',
-        );
+        captureScreenshot(screenName: screenName, captureReason: 'screen_transition');
       });
     }
   }
@@ -307,10 +291,7 @@ class ReplayCaptureService {
   /// [setRepaintBoundary]. If no boundary is set, this method does nothing.
   ///
   /// Screenshots are uploaded to the backend asynchronously.
-  Future<void> captureScreenshot({
-    String? screenName,
-    String captureReason = 'manual',
-  }) async {
+  Future<void> captureScreenshot({String? screenName, String captureReason = 'manual'}) async {
     if (!isEnabled || !_config.captureScreenshots) {
       if (kDebugMode) {
         debugPrint('VooReplay: Screenshot capture skipped - enabled: $isEnabled, captureScreenshots: ${_config.captureScreenshots}');
@@ -355,9 +336,7 @@ class ReplayCaptureService {
       }
 
       final targetWidth = _config.maxScreenshotWidth.toDouble();
-      final pixelRatio = originalWidth > targetWidth
-          ? targetWidth / originalWidth
-          : 1.0;
+      final pixelRatio = originalWidth > targetWidth ? targetWidth / originalWidth : 1.0;
 
       if (kDebugMode) {
         debugPrint('VooReplay: Capturing screenshot - size: ${originalWidth}x$originalHeight, pixelRatio: $pixelRatio');
@@ -449,16 +428,13 @@ class ReplayCaptureService {
     final url = '${context.config.endpoint}/v1/replay/sessions/$sessionId/screenshots';
 
     if (kDebugMode) {
-      debugPrint('VooReplay: Uploading screenshot to $url (${sizeBytes} bytes, base64 length: ${base64Data.length})');
+      debugPrint('VooReplay: Uploading screenshot to $url ($sizeBytes bytes, base64 length: ${base64Data.length})');
     }
 
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': context.config.apiKey,
-        },
+        headers: {'Content-Type': 'application/json', 'X-API-Key': context.config.apiKey},
         body: jsonEncode({
           'screenName': screenName,
           'contentHash': contentHash,
@@ -492,104 +468,70 @@ class ReplayCaptureService {
   }
 
   /// Capture a network request.
-  void captureNetwork({
-    required String method,
-    required String url,
-    int? statusCode,
-    int? durationMs,
-    bool isError = false,
-  }) {
+  void captureNetwork({required String method, required String url, int? statusCode, int? durationMs, bool isError = false}) {
     if (!isEnabled || !_config.captureNetwork) return;
 
-    _addEvent(ReplayEventCapture(
-      eventType: 'network',
-      timestamp: DateTime.now(),
-      offsetMs: _calculateOffset(),
-      screenName: _currentScreenName,
-      metadata: {
-        'method': method,
-        'url': url,
-        if (statusCode != null) 'statusCode': statusCode,
-        if (durationMs != null) 'durationMs': durationMs,
-        'isError': isError,
-      },
-    ));
+    _addEvent(
+      ReplayEventCapture(
+        eventType: 'network',
+        timestamp: DateTime.now(),
+        offsetMs: _calculateOffset(),
+        screenName: _currentScreenName,
+        metadata: {'method': method, 'url': url, if (statusCode != null) 'statusCode': statusCode, if (durationMs != null) 'durationMs': durationMs, 'isError': isError},
+      ),
+    );
   }
 
   /// Capture an error.
-  void captureError({
-    required String message,
-    String? errorType,
-    String? stackTrace,
-  }) {
+  void captureError({required String message, String? errorType, String? stackTrace}) {
     if (!isEnabled || !_config.captureErrors) return;
 
-    _addEvent(ReplayEventCapture(
-      eventType: 'error',
-      timestamp: DateTime.now(),
-      offsetMs: _calculateOffset(),
-      screenName: _currentScreenName,
-      metadata: {
-        'message': message,
-        if (errorType != null) 'errorType': errorType,
-        if (stackTrace != null) 'stackTrace': stackTrace,
-      },
-    ));
+    _addEvent(
+      ReplayEventCapture(
+        eventType: 'error',
+        timestamp: DateTime.now(),
+        offsetMs: _calculateOffset(),
+        screenName: _currentScreenName,
+        metadata: {'message': message, if (errorType != null) 'errorType': errorType, if (stackTrace != null) 'stackTrace': stackTrace},
+      ),
+    );
   }
 
   /// Capture a log entry.
-  void captureLog({
-    required String level,
-    required String message,
-    String? category,
-  }) {
+  void captureLog({required String level, required String message, String? category}) {
     if (!isEnabled || !_config.captureLogs) return;
 
-    _addEvent(ReplayEventCapture(
-      eventType: 'log',
-      timestamp: DateTime.now(),
-      offsetMs: _calculateOffset(),
-      screenName: _currentScreenName,
-      metadata: {
-        'level': level,
-        'message': message,
-        if (category != null) 'category': category,
-      },
-    ));
+    _addEvent(
+      ReplayEventCapture(
+        eventType: 'log',
+        timestamp: DateTime.now(),
+        offsetMs: _calculateOffset(),
+        screenName: _currentScreenName,
+        metadata: {'level': level, 'message': message, if (category != null) 'category': category},
+      ),
+    );
   }
 
   /// Capture a lifecycle event (app foreground/background).
-  void captureLifecycle({
-    required String state,
-  }) {
+  void captureLifecycle({required String state}) {
     if (!isEnabled) return;
 
-    _addEvent(ReplayEventCapture(
-      eventType: 'lifecycle',
-      timestamp: DateTime.now(),
-      offsetMs: _calculateOffset(),
-      screenName: _currentScreenName,
-      metadata: {'state': state},
-    ));
+    _addEvent(ReplayEventCapture(eventType: 'lifecycle', timestamp: DateTime.now(), offsetMs: _calculateOffset(), screenName: _currentScreenName, metadata: {'state': state}));
   }
 
   /// Capture a custom event.
-  void captureCustom({
-    required String name,
-    Map<String, dynamic>? data,
-  }) {
+  void captureCustom({required String name, Map<String, dynamic>? data}) {
     if (!isEnabled) return;
 
-    _addEvent(ReplayEventCapture(
-      eventType: 'custom',
-      timestamp: DateTime.now(),
-      offsetMs: _calculateOffset(),
-      screenName: _currentScreenName,
-      metadata: {
-        'name': name,
-        if (data != null) ...data,
-      },
-    ));
+    _addEvent(
+      ReplayEventCapture(
+        eventType: 'custom',
+        timestamp: DateTime.now(),
+        offsetMs: _calculateOffset(),
+        screenName: _currentScreenName,
+        metadata: {'name': name, if (data != null) ...data},
+      ),
+    );
   }
 
   void _addEvent(ReplayEventCapture event) {
@@ -608,10 +550,7 @@ class ReplayCaptureService {
 
   void _startFlushTimer() {
     _flushTimer?.cancel();
-    _flushTimer = Timer.periodic(
-      Duration(milliseconds: _config.flushIntervalMs),
-      (_) => _flush(),
-    );
+    _flushTimer = Timer.periodic(Duration(milliseconds: _config.flushIntervalMs), (_) => _flush());
   }
 
   Future<void> _flush() async {
@@ -633,9 +572,7 @@ class ReplayCaptureService {
 
     try {
       // Build payload
-      final payload = {
-        'events': events.map((e) => e.toJson()).toList(),
-      };
+      final payload = {'events': events.map((e) => e.toJson()).toList()};
 
       // Send to backend
       await _sendToBackend(sessionId, payload);
@@ -656,24 +593,14 @@ class ReplayCaptureService {
     }
   }
 
-  Future<void> _sendToBackend(
-    String sessionId,
-    Map<String, dynamic> payload,
-  ) async {
+  Future<void> _sendToBackend(String sessionId, Map<String, dynamic> payload) async {
     final context = Voo.context;
     if (context == null) return;
 
     final url = '${context.config.endpoint}/v1/replay/sessions/$sessionId/events';
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': context.config.apiKey,
-        },
-        body: jsonEncode(payload),
-      );
+      final response = await http.post(Uri.parse(url), headers: {'Content-Type': 'application/json', 'X-API-Key': context.config.apiKey}, body: jsonEncode(payload));
 
       if (response.statusCode >= 400) {
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
@@ -715,21 +642,9 @@ class ReplayCaptureService {
   /// final repo = VooLogger.instance.repository as LoggerRepositoryImpl;
   /// repo.onErrorCaptured = ReplayCaptureService.instance.createErrorCaptureCallback();
   /// ```
-  void Function({
-    required String message,
-    String? errorType,
-    String? stackTrace,
-  }) createErrorCaptureCallback() {
-    return ({
-      required String message,
-      String? errorType,
-      String? stackTrace,
-    }) {
-      captureError(
-        message: message,
-        errorType: errorType,
-        stackTrace: stackTrace,
-      );
+  void Function({required String message, String? errorType, String? stackTrace}) createErrorCaptureCallback() {
+    return ({required String message, String? errorType, String? stackTrace}) {
+      captureError(message: message, errorType: errorType, stackTrace: stackTrace);
     };
   }
 }

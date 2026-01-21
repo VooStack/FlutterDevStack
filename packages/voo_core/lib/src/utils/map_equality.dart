@@ -2,6 +2,7 @@
 ///
 /// This function compares two maps for deep equality without
 /// requiring Flutter dependencies.
+library;
 
 /// Compares two maps for shallow equality.
 ///
@@ -57,8 +58,7 @@ bool listsDeepEqual(List<dynamic>? a, List<dynamic>? b) {
     final valueB = b[i];
 
     if (valueA is Map && valueB is Map) {
-      if (!mapsDeepEqual(valueA as Map<dynamic, dynamic>,
-          valueB as Map<dynamic, dynamic>)) {
+      if (!mapsDeepEqual(valueA, valueB)) {
         return false;
       }
     } else if (valueA is List && valueB is List) {

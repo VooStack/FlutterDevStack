@@ -12,14 +12,7 @@ class HeatMapData extends Equatable {
   final DateTime endDate;
   final int totalEvents;
 
-  const HeatMapData({
-    required this.screenName,
-    required this.screenSize,
-    required this.points,
-    required this.startDate,
-    required this.endDate,
-    required this.totalEvents,
-  });
+  const HeatMapData({required this.screenName, required this.screenSize, required this.points, required this.startDate, required this.endDate, required this.totalEvents});
 
   Map<String, dynamic> toMap() {
     return {
@@ -36,13 +29,8 @@ class HeatMapData extends Equatable {
   factory HeatMapData.fromMap(Map<String, dynamic> map) {
     return HeatMapData(
       screenName: map['screen_name'] as String,
-      screenSize: VooSize(
-        (map['screen_width'] as num).toDouble(),
-        (map['screen_height'] as num).toDouble(),
-      ),
-      points: (map['points'] as List)
-          .map((p) => HeatMapPoint.fromMap(p as Map<String, dynamic>))
-          .toList(),
+      screenSize: VooSize((map['screen_width'] as num).toDouble(), (map['screen_height'] as num).toDouble()),
+      points: (map['points'] as List).map((p) => HeatMapPoint.fromMap(p as Map<String, dynamic>)).toList(),
       startDate: DateTime.parse(map['start_date'] as String),
       endDate: DateTime.parse(map['end_date'] as String),
       totalEvents: map['total_events'] as int,
@@ -50,12 +38,5 @@ class HeatMapData extends Equatable {
   }
 
   @override
-  List<Object> get props => [
-    screenName,
-    screenSize,
-    points,
-    startDate,
-    endDate,
-    totalEvents,
-  ];
+  List<Object> get props => [screenName, screenSize, points, startDate, endDate, totalEvents];
 }

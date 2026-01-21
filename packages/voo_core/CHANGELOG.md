@@ -1,3 +1,19 @@
+## 1.1.1
+
+### New Features
+- **FEAT**: Add `VooPoint` model for cross-platform point representation
+- **FEAT**: Add `VooSize` model for cross-platform size representation
+- **FEAT**: Add `VooApp` class for enhanced app lifecycle management
+- **FEAT**: Add `flutter_type_extensions.dart` for Flutter type conversions
+- **FEAT**: Add `map_equality.dart` utility for deep map comparison
+- **FEAT**: Add `platform_detection.dart` for comprehensive platform detection
+
+### Improvements
+- **REFACTOR**: Enhanced `Voo` initialization with better plugin management
+- **REFACTOR**: Improved service classes with better null safety
+
+---
+
 ## 1.1.0
 
 ### Improvements

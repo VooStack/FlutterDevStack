@@ -35,11 +35,7 @@ class VooPerformancePlugin extends VooPlugin {
 
   bool get isInitialized => _initialized;
 
-  static Future<void> initialize({
-    bool enableNetworkMonitoring = true,
-    bool enableTraceMonitoring = true,
-    bool enableAutoAppStartTrace = true,
-  }) async {
+  static Future<void> initialize({bool enableNetworkMonitoring = true, bool enableTraceMonitoring = true, bool enableAutoAppStartTrace = true}) async {
     final plugin = instance;
 
     if (plugin._initialized) {
@@ -47,10 +43,7 @@ class VooPerformancePlugin extends VooPlugin {
     }
 
     if (!Voo.isInitialized) {
-      throw const VooException(
-        'Voo.initializeApp() must be called before initializing VooPerformance',
-        code: 'core-not-initialized',
-      );
+      throw const VooException('Voo.initializeApp() must be called before initializing VooPerformance', code: 'core-not-initialized');
     }
 
     // Set initialized flag before creating traces
@@ -69,18 +62,13 @@ class VooPerformancePlugin extends VooPlugin {
     }
 
     if (kDebugMode) {
-      debugPrint(
-        '[VooPerformance] Initialized with network monitoring: $enableNetworkMonitoring',
-      );
+      debugPrint('[VooPerformance] Initialized with network monitoring: $enableNetworkMonitoring');
     }
   }
 
   PerformanceTrace newTrace(String name) {
     if (!_initialized) {
-      throw const VooException(
-        'VooPerformance not initialized. Call initialize() first.',
-        code: 'not-initialized',
-      );
+      throw const VooException('VooPerformance not initialized. Call initialize() first.', code: 'not-initialized');
     }
 
     final trace = PerformanceTrace(name: name, startTime: DateTime.now());
@@ -102,11 +90,7 @@ class VooPerformancePlugin extends VooPlugin {
     final metrics = PerformanceMetrics(
       timestamp: trace.startTime,
       duration: trace.duration ?? Duration.zero,
-      customMetrics: {
-        'name': trace.name,
-        ...trace.attributes,
-        if (trace.metrics.isNotEmpty) 'metrics': trace.metrics,
-      },
+      customMetrics: {'name': trace.name, ...trace.attributes, if (trace.metrics.isNotEmpty) 'metrics': trace.metrics},
     );
 
     _performanceMetrics.add(metrics);
@@ -139,16 +123,18 @@ class VooPerformancePlugin extends VooPlugin {
 
     // Queue for cloud sync if available
     if (_cloudSyncService != null) {
-      _cloudSyncService!.queueNetworkMetric(NetworkMetricData(
-        method: metric.method,
-        url: metric.url,
-        statusCode: metric.statusCode,
-        duration: metric.duration.inMilliseconds,
-        requestSize: metric.requestSize,
-        responseSize: metric.responseSize,
-        timestamp: metric.timestamp,
-        error: metric.metadata?['error'] as String?,
-      ));
+      _cloudSyncService!.queueNetworkMetric(
+        NetworkMetricData(
+          method: metric.method,
+          url: metric.url,
+          statusCode: metric.statusCode,
+          duration: metric.duration.inMilliseconds,
+          requestSize: metric.requestSize,
+          responseSize: metric.responseSize,
+          timestamp: metric.timestamp,
+          error: metric.metadata?['error'] as String?,
+        ),
+      );
     }
 
     // Send to DevTools
@@ -169,11 +155,7 @@ class VooPerformancePlugin extends VooPlugin {
     );
   }
 
-  void _sendToDevTools({
-    required String category,
-    required String message,
-    Map<String, dynamic>? metadata,
-  }) {
+  void _sendToDevTools({required String category, required String message, Map<String, dynamic>? metadata}) {
     try {
       final timestamp = DateTime.now();
 
@@ -206,35 +188,17 @@ class VooPerformancePlugin extends VooPlugin {
   }
 
   Map<String, dynamic> getMetricsSummary() {
-    final avgResponseTime = _networkMetrics.isEmpty
-        ? 0
-        : _networkMetrics
-                  .map((m) => m.duration.inMilliseconds)
-                  .reduce((a, b) => a + b) /
-              _networkMetrics.length;
+    final avgResponseTime = _networkMetrics.isEmpty ? 0 : _networkMetrics.map((m) => m.duration.inMilliseconds).reduce((a, b) => a + b) / _networkMetrics.length;
 
-    final errorRate = _networkMetrics.isEmpty
-        ? 0
-        : _networkMetrics.where((m) => m.statusCode >= 400).length /
-              _networkMetrics.length;
+    final errorRate = _networkMetrics.isEmpty ? 0 : _networkMetrics.where((m) => m.statusCode >= 400).length / _networkMetrics.length;
 
     return {
-      'network': {
-        'total_requests': _networkMetrics.length,
-        'average_response_time_ms': avgResponseTime,
-        'error_rate': errorRate,
-      },
-      'traces': {
-        'total_traces': _performanceMetrics.length,
-        'active_traces': _activeTraces.length,
-      },
+      'network': {'total_requests': _networkMetrics.length, 'average_response_time_ms': avgResponseTime, 'error_rate': errorRate},
+      'traces': {'total_traces': _performanceMetrics.length, 'active_traces': _activeTraces.length},
     };
   }
 
-  List<NetworkMetric> getNetworkMetrics({
-    DateTime? startDate,
-    DateTime? endDate,
-  }) {
+  List<NetworkMetric> getNetworkMetrics({DateTime? startDate, DateTime? endDate}) {
     return _networkMetrics.where((metric) {
       if (startDate != null && metric.timestamp.isBefore(startDate)) {
         return false;
@@ -281,10 +245,6 @@ class VooPerformancePlugin extends VooPlugin {
 
   @override
   Map<String, dynamic> getInfo() {
-    return {
-      ...super.getInfo(),
-      'initialized': _initialized,
-      'metrics': getMetricsSummary(),
-    };
+    return {...super.getInfo(), 'initialized': _initialized, 'metrics': getMetricsSummary()};
   }
 }

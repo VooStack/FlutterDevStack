@@ -1,3 +1,23 @@
+## 1.1.1
+
+### New Features
+- **FEAT**: Add `VooFunnelProgress`, `VooFunnelStep`, `VooFunnelStepCompletion` models for enhanced funnel tracking
+- **FEAT**: Add `VooPathNode` and `VooUserPathBuilder` for user path analytics
+- **FEAT**: Add `HeatMapPoint` entity for improved heat map data representation
+- **FEAT**: Add `ScreenViewEvent` and `VooInteractionEvent` presentation models
+- **FEAT**: Add `AnalyticsRouteObserver` widget for route-aware analytics tracking
+- **FEAT**: Add `TouchableWidget` for declarative touch tracking
+
+### Improvements
+- **REFACTOR**: Simplified `Funnel` and `UserPath` models with cleaner architecture
+- **REFACTOR**: Enhanced `FunnelTrackingService` with `FunnelEvent` support
+- **REFACTOR**: Improved `NavigationObserver` with better screen view tracking
+- **REFACTOR**: Simplified `HeatMapData` and `TouchEvent` entities
+- **REFACTOR**: Enhanced `VooTrackable` widget with improved tracking logic
+- **REFACTOR**: Removed deprecated `RouteAwareTouchTracker` (replaced by `AnalyticsRouteObserver`)
+
+---
+
 ## 1.1.0
 
 ### Improvements

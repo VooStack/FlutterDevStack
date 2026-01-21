@@ -1,3 +1,21 @@
+## 1.1.1
+
+### New Features
+- **FEAT**: Add new example UI components with modular tab-based architecture
+  - `ToggleOption` widget for toggle settings in configuration
+  - `CategoriesTab` for categorized logging actions
+  - `ConfigTab` for logging presets and options
+  - `NetworkTab` for network request logging
+  - `QuickLogTab` for quick log level actions
+  - `StatsTab` for log statistics and configuration info
+- **FEAT**: Add reusable UI components (`CategoryButton`, `CodeExample`, `ConfigInfo`, `ConfigRow`, `DemoTabButton`, `LogButton`, `LogEntryWidget`, `LogStreamWidget`, `PresetButton`, `SectionTitle`, `StatCard`, `StatChip`)
+
+### Improvements
+- **REFACTOR**: Simplified logging configuration entities (removed unnecessary immutability annotations)
+- **ENHANCEMENT**: Refactored example app main.dart for cleaner architecture
+
+---
+
 ## 1.1.0
 
 ### Improvements

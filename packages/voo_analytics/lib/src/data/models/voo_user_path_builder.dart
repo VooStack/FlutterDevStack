@@ -16,12 +16,7 @@ class VooUserPathBuilder {
   Map<String, dynamic>? _currentRouteParams;
   final List<String> _currentEvents = [];
 
-  VooUserPathBuilder({
-    required this.sessionId,
-    this.userId,
-    DateTime? startTime,
-    this.attribution,
-  }) : startTime = startTime ?? DateTime.now();
+  VooUserPathBuilder({required this.sessionId, this.userId, DateTime? startTime, this.attribution}) : startTime = startTime ?? DateTime.now();
 
   /// Call when entering a new screen.
   void enterScreen(String screenName, {Map<String, dynamic>? routeParams}) {
@@ -64,24 +59,23 @@ class VooUserPathBuilder {
   void _completeCurrentScreen({String? nextScreen, required String exitType}) {
     if (_currentScreen == null || _currentEnterTime == null) return;
 
-    _nodes.add(VooPathNode(
-      screenName: _currentScreen!,
-      enterTime: _currentEnterTime!,
-      duration: DateTime.now().difference(_currentEnterTime!),
-      interactionCount: _currentInteractions,
-      nextScreen: nextScreen,
-      exitType: exitType,
-      scrollDepth: _currentScrollDepth,
-      routeParams: _currentRouteParams,
-      events: _currentEvents.isNotEmpty ? List.from(_currentEvents) : null,
-    ));
+    _nodes.add(
+      VooPathNode(
+        screenName: _currentScreen!,
+        enterTime: _currentEnterTime!,
+        duration: DateTime.now().difference(_currentEnterTime!),
+        interactionCount: _currentInteractions,
+        nextScreen: nextScreen,
+        exitType: exitType,
+        scrollDepth: _currentScrollDepth,
+        routeParams: _currentRouteParams,
+        events: _currentEvents.isNotEmpty ? List.from(_currentEvents) : null,
+      ),
+    );
   }
 
   /// Build the final user path.
-  VooUserPath build({
-    bool endedWithConversion = false,
-    String? conversionEvent,
-  }) {
+  VooUserPath build({bool endedWithConversion = false, String? conversionEvent}) {
     // Complete current screen if still active
     if (_currentScreen != null) {
       _completeCurrentScreen(exitType: 'session_end');

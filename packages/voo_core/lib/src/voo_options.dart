@@ -59,8 +59,7 @@ class VooOptions {
   const VooOptions({
     this.enableDebugLogging = kDebugMode,
     this.autoRegisterPlugins = true,
-    @Deprecated('Use VooConfig for API/sync config. Device info is now auto-collected.')
-    this.customConfig = const {},
+    @Deprecated('Use VooConfig for API/sync config. Device info is now auto-collected.') this.customConfig = const {},
     this.initializationTimeout = const Duration(seconds: 10),
     this.appName,
     this.appVersion,
@@ -73,8 +72,7 @@ class VooOptions {
   VooOptions copyWith({
     bool? enableDebugLogging,
     bool? autoRegisterPlugins,
-    @Deprecated('Use VooConfig instead')
-    Map<String, dynamic>? customConfig,
+    @Deprecated('Use VooConfig instead') Map<String, dynamic>? customConfig,
     Duration? initializationTimeout,
     String? appName,
     String? appVersion,
@@ -88,47 +86,24 @@ class VooOptions {
       autoRegisterPlugins: autoRegisterPlugins ?? this.autoRegisterPlugins,
       // ignore: deprecated_member_use_from_same_package
       customConfig: customConfig ?? this.customConfig,
-      initializationTimeout:
-          initializationTimeout ?? this.initializationTimeout,
+      initializationTimeout: initializationTimeout ?? this.initializationTimeout,
       appName: appName ?? this.appName,
       appVersion: appVersion ?? this.appVersion,
       environment: environment ?? this.environment,
-      enableLocalPersistence:
-          enableLocalPersistence ?? this.enableLocalPersistence,
+      enableLocalPersistence: enableLocalPersistence ?? this.enableLocalPersistence,
       maxLocalStorageMB: maxLocalStorageMB ?? this.maxLocalStorageMB,
-      autoCollectDeviceInfo:
-          autoCollectDeviceInfo ?? this.autoCollectDeviceInfo,
+      autoCollectDeviceInfo: autoCollectDeviceInfo ?? this.autoCollectDeviceInfo,
     );
   }
 
   /// Create options for production environment.
-  factory VooOptions.production({
-    String? appName,
-    String? appVersion,
-    bool autoCollectDeviceInfo = true,
-  }) {
-    return VooOptions(
-      enableDebugLogging: false,
-      environment: 'production',
-      appName: appName,
-      appVersion: appVersion,
-      autoCollectDeviceInfo: autoCollectDeviceInfo,
-    );
+  factory VooOptions.production({String? appName, String? appVersion, bool autoCollectDeviceInfo = true}) {
+    return VooOptions(enableDebugLogging: false, environment: 'production', appName: appName, appVersion: appVersion, autoCollectDeviceInfo: autoCollectDeviceInfo);
   }
 
   /// Create options for development environment.
-  factory VooOptions.development({
-    String? appName,
-    String? appVersion,
-    bool autoCollectDeviceInfo = true,
-  }) {
-    return VooOptions(
-      enableDebugLogging: true,
-      environment: 'development',
-      appName: appName,
-      appVersion: appVersion,
-      autoCollectDeviceInfo: autoCollectDeviceInfo,
-    );
+  factory VooOptions.development({String? appName, String? appVersion, bool autoCollectDeviceInfo = true}) {
+    return VooOptions(enableDebugLogging: true, environment: 'development', appName: appName, appVersion: appVersion, autoCollectDeviceInfo: autoCollectDeviceInfo);
   }
 
   @override

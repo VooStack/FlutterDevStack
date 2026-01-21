@@ -83,8 +83,7 @@ class Voo {
   ///   // Capture session replay data
   /// }
   /// ```
-  static VooFeatureConfigService get featureConfig =>
-      VooFeatureConfigService.instance;
+  static VooFeatureConfigService get featureConfig => VooFeatureConfigService.instance;
 
   /// Combined context for child packages.
   ///
@@ -94,11 +93,7 @@ class Voo {
     if (_config == null || _deviceInfo == null || _userContext == null) {
       return null;
     }
-    return VooContext(
-      config: _config!,
-      deviceInfo: _deviceInfo!,
-      userContext: _userContext!,
-    );
+    return VooContext(config: _config!, deviceInfo: _deviceInfo!, userContext: _userContext!);
   }
 
   // New: User context convenience methods
@@ -153,35 +148,13 @@ class Voo {
   }
 
   /// Add a navigation breadcrumb.
-  static void addNavigationBreadcrumb({
-    required String from,
-    required String to,
-    String action = 'push',
-    Map<String, dynamic>? routeParams,
-  }) {
-    VooBreadcrumbService.addNavigationBreadcrumb(
-      from: from,
-      to: to,
-      action: action,
-      routeParams: routeParams,
-    );
+  static void addNavigationBreadcrumb({required String from, required String to, String action = 'push', Map<String, dynamic>? routeParams}) {
+    VooBreadcrumbService.addNavigationBreadcrumb(from: from, to: to, action: action, routeParams: routeParams);
   }
 
   /// Add an HTTP request breadcrumb.
-  static void addHttpBreadcrumb({
-    required String method,
-    required String url,
-    int? statusCode,
-    int? durationMs,
-    bool isError = false,
-  }) {
-    VooBreadcrumbService.addHttpBreadcrumb(
-      method: method,
-      url: url,
-      statusCode: statusCode,
-      durationMs: durationMs,
-      isError: isError,
-    );
+  static void addHttpBreadcrumb({required String method, required String url, int? statusCode, int? durationMs, bool isError = false}) {
+    VooBreadcrumbService.addHttpBreadcrumb(method: method, url: url, statusCode: statusCode, durationMs: durationMs, isError: isError);
   }
 
   /// Get recent breadcrumbs for error context.
@@ -204,11 +177,7 @@ class Voo {
   ///
   /// For backwards compatibility, you can still use [VooOptions] with
   /// [customConfig], but this is deprecated.
-  static Future<VooApp> initializeApp({
-    String name = _defaultAppName,
-    VooConfig? config,
-    VooOptions? options,
-  }) async {
+  static Future<VooApp> initializeApp({String name = _defaultAppName, VooConfig? config, VooOptions? options}) async {
     if (_apps.containsKey(name)) {
       return _apps[name]!;
     }
@@ -278,10 +247,7 @@ class Voo {
   static VooApp app([String name = _defaultAppName]) {
     final app = _apps[name];
     if (app == null) {
-      throw VooException(
-        'App "$name" not found. Available apps: ${_apps.keys.join(", ")}',
-        code: 'app-not-found',
-      );
+      throw VooException('App "$name" not found. Available apps: ${_apps.keys.join(", ")}', code: 'app-not-found');
     }
     return app;
   }
@@ -292,10 +258,7 @@ class Voo {
   /// Register a plugin to be initialized with Voo apps.
   static Future<void> registerPlugin(VooPlugin plugin) async {
     if (_plugins.containsKey(plugin.name)) {
-      throw VooException(
-        'Plugin ${plugin.name} is already registered',
-        code: 'plugin-already-registered',
-      );
+      throw VooException('Plugin ${plugin.name} is already registered', code: 'plugin-already-registered');
     }
 
     _plugins[plugin.name] = plugin;
@@ -366,10 +329,7 @@ class Voo {
   /// Ensure a plugin is registered, throw if not.
   static void ensurePluginRegistered<T extends VooPlugin>(String pluginName) {
     if (!isPluginRegistered<T>()) {
-      throw VooException(
-        'Plugin "$pluginName" is not registered. Please register it first.',
-        code: 'plugin-not-registered',
-      );
+      throw VooException('Plugin "$pluginName" is not registered. Please register it first.', code: 'plugin-not-registered');
     }
   }
 

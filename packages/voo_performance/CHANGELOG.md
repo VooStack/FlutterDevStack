@@ -1,3 +1,13 @@
+## 1.1.1
+
+### New Features
+- **FEAT**: Add `NetworkTimingBuilder` for incremental network timing tracking with builder pattern
+
+### Improvements
+- **REFACTOR**: Simplified `NetworkTiming` entity with cleaner implementation
+
+---
+
 ## 1.1.0
 
 ### Improvements
