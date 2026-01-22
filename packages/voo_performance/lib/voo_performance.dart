@@ -9,3 +9,8 @@ export 'src/data/services/performance_cloud_sync.dart';
 export 'src/data/services/fps_monitor_service.dart';
 export 'src/data/services/app_launch_service.dart';
 export 'src/data/services/memory_monitor_service.dart';
+
+// OTEL components
+export 'src/otel/otel_performance_trace.dart';
+export 'src/otel/otel_context_propagator.dart';
+export 'src/otel/semantic_conventions.dart';

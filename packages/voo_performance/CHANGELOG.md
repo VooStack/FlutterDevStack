@@ -1,3 +1,50 @@
+## 2.0.0
+
+> **BREAKING CHANGE**: Full migration to OpenTelemetry (OTEL) as the default telemetry export mechanism.
+
+### Breaking Changes
+- **REMOVED**: `PerformanceCloudSyncService` and `PerformanceCloudSyncConfig` are no longer used
+- **REMOVED**: `VooPerformancePlugin.cloudSyncService` property
+- **REMOVED**: `VooPerformancePlugin.enableOtel()` method - OTEL is now auto-enabled
+- **CHANGED**: All traces automatically exported via OTLP when `Voo.context` is available
+
+### New Features
+- **FEAT**: Auto-enable OTEL export via `Voo.context` - no manual configuration needed
+- **FEAT**: Traces automatically exported to `/v1/traces` OTLP endpoint
+- **FEAT**: Metrics automatically exported to `/v1/metrics` OTLP endpoint
+- **FEAT**: `OtelPerformanceTrace` wraps spans with W3C trace context for distributed tracing
+- **FEAT**: Built-in OTEL metrics: `OtelFpsMetric`, `OtelMemoryMetric`, `OtelAppLaunchMetric`
+- **FEAT**: HTTP semantic conventions for network traces
+
+### Migration Guide
+
+```dart
+// Before (1.x)
+_performanceCloudSync = PerformanceCloudSyncService(
+  config: PerformanceCloudSyncConfig(...),
+);
+_performanceCloudSync.initialize();
+await VooPerformancePlugin.initialize();
+VooPerformancePlugin.instance.cloudSyncService = _performanceCloudSync;
+
+// After (2.0) - OTEL auto-enabled via Voo.context
+await Voo.initializeApp(
+  config: VooConfig(
+    endpoint: 'https://api.example.com',
+    apiKey: 'your-key',
+  ),
+);
+await VooPerformancePlugin.initialize(); // OTEL auto-configured!
+
+// Traces are now OTEL spans
+final trace = VooPerformancePlugin.instance.newTrace('my_operation');
+trace.start();
+// ... do work ...
+trace.stop(); // Automatically exported via OTLP
+```
+
+---
+
 ## 1.1.1
 
 ### New Features

@@ -135,7 +135,7 @@ class VooNavigationObserver extends NavigatorObserver {
 
     // Log screen view analytics event
     if (logScreenViews) {
-      _logScreenView(event);
+      _logScreenView(event, navigationAction: action);
     }
 
     // Notify callback
@@ -147,12 +147,23 @@ class VooNavigationObserver extends NavigatorObserver {
   }
 
   /// Log a screen view analytics event.
-  void _logScreenView(ScreenViewEvent event) {
+  void _logScreenView(ScreenViewEvent event, {String? navigationAction}) {
     // Check project-level feature toggle
     if (!Voo.featureConfig.isEnabled(VooFeature.screenViews)) return;
 
     try {
       if (VooAnalyticsPlugin.instance.isInitialized) {
+        // Record as OTEL span if enabled
+        if (VooAnalyticsPlugin.instance.otelEnabled) {
+          VooAnalyticsPlugin.instance.recordScreenView(
+            screenName: event.screenName,
+            screenClass: event.screenClass,
+            previousScreen: event.previousScreen,
+            routeParams: event.routeParams,
+            navigationAction: navigationAction ?? 'navigation',
+          );
+        }
+
         VooAnalyticsPlugin.instance.logEvent(
           'screen_view',
           parameters: event.toJson(),

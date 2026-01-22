@@ -55,9 +55,7 @@ class TouchableWidget extends StatelessWidget {
             if (repository is AnalyticsRepositoryImpl) {
               repository.logTouchEvent(event);
             }
-
-            // Cloud sync for heatmaps
-            VooAnalyticsPlugin.instance.cloudSyncService?.queueTouchEvent(event);
+            // Touch events are now exported via OTEL
           }
         }
         onTap?.call();

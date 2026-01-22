@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:voo_logging/core/domain/enums/log_level.dart';
 import 'package:voo_logging/features/logging/data/services/cloud_sync_service.dart';
 import 'package:voo_logging/features/logging/domain/entities/cloud_sync_config.dart';
 import 'package:voo_logging/features/logging/domain/entities/log_entry.dart';
-import 'package:voo_logging/core/domain/enums/log_level.dart';
 
 void main() {
   group('Error Fingerprinting Integration Tests', () {

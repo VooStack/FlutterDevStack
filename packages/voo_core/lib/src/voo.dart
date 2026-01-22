@@ -8,7 +8,6 @@ import 'package:voo_core/src/models/voo_breadcrumb.dart';
 import 'package:voo_core/src/models/voo_config.dart';
 import 'package:voo_core/src/models/voo_context.dart';
 import 'package:voo_core/src/models/voo_device_info.dart';
-import 'package:voo_core/src/models/voo_feature.dart';
 import 'package:voo_core/src/voo_app.dart';
 
 export 'voo_app.dart';

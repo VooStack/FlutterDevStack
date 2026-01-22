@@ -2,9 +2,14 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
-import 'package:voo_performance/src/data/services/performance_cloud_sync.dart';
+import 'package:voo_telemetry/voo_telemetry.dart';
 import 'package:voo_performance/src/domain/entities/performance_trace.dart';
 import 'package:voo_performance/src/domain/entities/network_metric.dart';
+import 'package:voo_performance/src/otel/otel_performance_trace.dart';
+import 'package:voo_performance/src/otel/semantic_conventions.dart';
+import 'package:voo_performance/src/otel/metrics/otel_fps_metric.dart';
+import 'package:voo_performance/src/otel/metrics/otel_memory_metric.dart';
+import 'package:voo_performance/src/otel/metrics/otel_app_launch_metric.dart';
 
 class VooPerformancePlugin extends VooPlugin {
   static VooPerformancePlugin? _instance;
@@ -12,13 +17,17 @@ class VooPerformancePlugin extends VooPlugin {
   final Map<String, PerformanceTrace> _activeTraces = {};
   final List<NetworkMetric> _networkMetrics = [];
   final List<PerformanceMetrics> _performanceMetrics = [];
-  PerformanceCloudSyncService? _cloudSyncService;
 
-  /// Get or set the cloud sync service for sending metrics to backend.
-  PerformanceCloudSyncService? get cloudSyncService => _cloudSyncService;
-  set cloudSyncService(PerformanceCloudSyncService? service) {
-    _cloudSyncService = service;
-  }
+  // OTEL integration
+  Tracer? _otelTracer;
+  Meter? _otelMeter;
+  OtelFpsMetric? _fpsMetric;
+  OtelMemoryMetric? _memoryMetric;
+  OtelAppLaunchMetric? _appLaunchMetric;
+  bool _otelEnabled = false;
+
+  /// Check if OTEL is enabled.
+  bool get isOtelEnabled => _otelEnabled;
 
   VooPerformancePlugin._();
 
@@ -50,6 +59,17 @@ class VooPerformancePlugin extends VooPlugin {
     plugin._initialized = true;
     await Voo.registerPlugin(plugin);
 
+    // Auto-enable OTEL when Voo.context is available
+    final vooContext = Voo.context;
+    if (vooContext != null && vooContext.canSync) {
+      await plugin._autoEnableOtel(
+        endpoint: vooContext.config.endpoint,
+        apiKey: vooContext.config.apiKey,
+        serviceName: 'voo-performance',
+        serviceVersion: Voo.deviceInfo?.appVersion ?? '1.0.0',
+      );
+    }
+
     if (enableAutoAppStartTrace) {
       final appStartTrace = plugin.newTrace('app_start');
       appStartTrace.start();
@@ -62,26 +82,137 @@ class VooPerformancePlugin extends VooPlugin {
     }
 
     if (kDebugMode) {
-      debugPrint('[VooPerformance] Initialized with network monitoring: $enableNetworkMonitoring');
+      debugPrint('[VooPerformance] Initialized (OTEL: ${plugin._otelEnabled})');
     }
   }
 
+  /// Internal method to enable OTEL (auto-called during initialize).
+  Future<void> _autoEnableOtel({
+    required String endpoint,
+    required String apiKey,
+    String serviceName = 'voo-performance',
+    String serviceVersion = '1.0.0',
+  }) async {
+    // Initialize VooTelemetry if not already done
+    if (!VooTelemetry.isInitialized) {
+      await VooTelemetry.initialize(
+        endpoint: endpoint,
+        apiKey: apiKey,
+        serviceName: serviceName,
+        serviceVersion: serviceVersion,
+      );
+    }
+
+    // Get tracer and meter
+    _otelTracer = VooTelemetry.instance.getTracer('voo-performance');
+    _otelMeter = VooTelemetry.instance.getMeter('voo-performance');
+
+    // Initialize OTEL metrics
+    _fpsMetric = OtelFpsMetric(_otelMeter!);
+    _fpsMetric!.initialize();
+
+    _memoryMetric = OtelMemoryMetric(_otelMeter!);
+    _memoryMetric!.initialize();
+
+    _appLaunchMetric = OtelAppLaunchMetric(_otelTracer!, _otelMeter!);
+    _appLaunchMetric!.initialize();
+
+    _otelEnabled = true;
+
+    if (kDebugMode) {
+      debugPrint('[VooPerformance] OTEL auto-enabled with endpoint: $endpoint');
+    }
+  }
+
+  /// Get the OTEL Tracer (available when OTEL is auto-enabled).
+  Tracer? get otelTracer => _otelTracer;
+
+  /// Get the OTEL Meter (available after enableOtel is called).
+  Meter? get otelMeter => _otelMeter;
+
+  /// Get the FPS metric recorder (available after enableOtel is called).
+  OtelFpsMetric? get fpsMetric => _fpsMetric;
+
+  /// Get the Memory metric recorder (available after enableOtel is called).
+  OtelMemoryMetric? get memoryMetric => _memoryMetric;
+
+  /// Get the App Launch metric recorder (available after enableOtel is called).
+  OtelAppLaunchMetric? get appLaunchMetric => _appLaunchMetric;
+
+  /// Create a new performance trace.
+  ///
+  /// When OTEL is enabled, this returns an [OtelPerformanceTrace] that
+  /// automatically exports to the OTLP endpoint. Otherwise, it returns
+  /// a standard [PerformanceTrace] for local tracking.
   PerformanceTrace newTrace(String name) {
     if (!_initialized) {
       throw const VooException('VooPerformance not initialized. Call initialize() first.', code: 'not-initialized');
     }
 
+    // Use OTEL-backed trace when enabled
+    if (_otelEnabled && _otelTracer != null) {
+      final otelTrace = OtelPerformanceTrace.create(
+        tracer: _otelTracer!,
+        name: name,
+        kind: SpanKind.internal,
+      );
+      otelTrace.setStopCallback(recordTrace);
+      _activeTraces[otelTrace.id] = otelTrace;
+      return otelTrace;
+    }
+
+    // Fallback to standard trace
     final trace = PerformanceTrace(name: name, startTime: DateTime.now());
     trace.setStopCallback(recordTrace);
     _activeTraces[trace.id] = trace;
     return trace;
   }
 
+  /// Create a new HTTP trace with CLIENT span kind for distributed tracing.
+  ///
+  /// When OTEL is enabled, this creates a span with proper HTTP semantic
+  /// conventions and W3C trace context for distributed tracing.
   PerformanceTrace newHttpTrace(String url, String method) {
+    if (!_initialized) {
+      throw const VooException('VooPerformance not initialized. Call initialize() first.', code: 'not-initialized');
+    }
+
+    // Use OTEL-backed trace with CLIENT kind when enabled
+    if (_otelEnabled && _otelTracer != null) {
+      final otelTrace = OtelPerformanceTrace.create(
+        tracer: _otelTracer!,
+        name: HttpSemanticConventions.getHttpSpanName(method),
+        kind: SpanKind.client,
+        attributes: {
+          HttpSemanticConventions.httpRequestMethod: method,
+          HttpSemanticConventions.urlFull: url,
+        },
+      );
+      otelTrace.setStopCallback(recordTrace);
+      _activeTraces[otelTrace.id] = otelTrace;
+      return otelTrace;
+    }
+
+    // Fallback to standard trace
     final trace = newTrace('http_$method');
     trace.putAttribute('url', url);
     trace.putAttribute('method', method);
     return trace;
+  }
+
+  /// Create an OTEL span directly (only available when OTEL is enabled).
+  ///
+  /// This provides direct access to the underlying OTEL Span API for
+  /// advanced use cases like span links and custom span events.
+  Span? newOtelSpan(
+    String name, {
+    SpanKind kind = SpanKind.internal,
+    Map<String, dynamic>? attributes,
+  }) {
+    if (!_otelEnabled || _otelTracer == null) {
+      return null;
+    }
+    return _otelTracer!.startSpan(name, kind: kind, attributes: attributes);
   }
 
   Future<void> recordTrace(PerformanceTrace trace) async {
@@ -121,21 +252,8 @@ class VooPerformancePlugin extends VooPlugin {
       _networkMetrics.removeRange(0, 100);
     }
 
-    // Queue for cloud sync if available
-    if (_cloudSyncService != null) {
-      _cloudSyncService!.queueNetworkMetric(
-        NetworkMetricData(
-          method: metric.method,
-          url: metric.url,
-          statusCode: metric.statusCode,
-          duration: metric.duration.inMilliseconds,
-          requestSize: metric.requestSize,
-          responseSize: metric.responseSize,
-          timestamp: metric.timestamp,
-          error: metric.metadata?['error'] as String?,
-        ),
-      );
-    }
+    // Network metrics are now exported via OTEL traces
+    // CloudSync is deprecated and no longer used
 
     // Send to DevTools
     _sendToDevTools(

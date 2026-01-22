@@ -66,6 +66,9 @@ class LoggingConfig {
   /// Cloud sync configuration for sending logs to a backend API.
   final CloudSyncConfig? cloudSync;
 
+  /// OpenTelemetry configuration for OTLP log export.
+  final OtelLoggingConfig? otelConfig;
+
   const LoggingConfig({
     this.enablePrettyLogs = true,
     this.showEmojis = true,
@@ -82,6 +85,7 @@ class LoggingConfig {
     this.retentionDays,
     this.autoCleanup = true,
     this.cloudSync,
+    this.otelConfig,
   });
 
   factory LoggingConfig.production() => const LoggingConfig(
@@ -164,6 +168,7 @@ class LoggingConfig {
     int? retentionDays,
     bool? autoCleanup,
     CloudSyncConfig? cloudSync,
+    OtelLoggingConfig? otelConfig,
   }) => LoggingConfig(
     enablePrettyLogs: enablePrettyLogs ?? this.enablePrettyLogs,
     showEmojis: showEmojis ?? this.showEmojis,
@@ -180,6 +185,7 @@ class LoggingConfig {
     retentionDays: retentionDays ?? this.retentionDays,
     autoCleanup: autoCleanup ?? this.autoCleanup,
     cloudSync: cloudSync ?? this.cloudSync,
+    otelConfig: otelConfig ?? this.otelConfig,
   );
 
   LoggingConfig withLogTypeConfig(LogType type, LogTypeConfig config) {
@@ -206,7 +212,8 @@ class LoggingConfig {
         other.maxLogs == maxLogs &&
         other.retentionDays == retentionDays &&
         other.autoCleanup == autoCleanup &&
-        other.cloudSync == cloudSync;
+        other.cloudSync == cloudSync &&
+        other.otelConfig == otelConfig;
   }
 
   @override
@@ -226,5 +233,6 @@ class LoggingConfig {
     retentionDays,
     autoCleanup,
     cloudSync,
+    otelConfig,
   );
 }

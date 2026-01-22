@@ -2,6 +2,9 @@ import 'package:voo_core/voo_core.dart';
 import 'package:voo_performance/src/voo_performance_plugin.dart';
 import 'package:voo_performance/src/domain/entities/network_metric.dart';
 import 'package:voo_performance/src/domain/entities/performance_trace.dart';
+import 'package:voo_performance/src/otel/otel_performance_trace.dart';
+import 'package:voo_performance/src/otel/otel_context_propagator.dart';
+import 'package:voo_performance/src/otel/semantic_conventions.dart';
 
 class PerformanceDioInterceptor extends BaseInterceptor {
   @override
@@ -9,10 +12,14 @@ class PerformanceDioInterceptor extends BaseInterceptor {
   final bool trackTraces;
   final bool trackMetrics;
 
+  /// Enable W3C Trace Context propagation for distributed tracing.
+  final bool propagateContext;
+
   PerformanceDioInterceptor({
     this.enabled = true,
     this.trackTraces = true,
     this.trackMetrics = true,
+    this.propagateContext = true,
   });
 
   @override
@@ -163,10 +170,12 @@ class VooPerformanceDioInterceptor {
     bool enabled = true,
     bool trackTraces = true,
     bool trackMetrics = true,
+    bool propagateContext = true,
   }) : interceptor = PerformanceDioInterceptor(
          enabled: enabled,
          trackTraces: trackTraces,
          trackMetrics: trackMetrics,
+         propagateContext: propagateContext,
        );
 
   void onRequest(dynamic options, dynamic handler) {
@@ -202,6 +211,23 @@ class VooPerformanceDioInterceptor {
       if (options.extra is Map && metadata['performance_trace'] != null) {
         (options.extra as Map)['performance_trace'] =
             metadata['performance_trace'];
+      }
+
+      // Inject W3C Trace Context headers for distributed tracing
+      if (interceptor.propagateContext && metadata['performance_trace'] != null) {
+        final trace = metadata['performance_trace'];
+        if (trace is OtelPerformanceTrace) {
+          final propagatedHeaders = OtelContextPropagator.injectContext(
+            trace.spanContext,
+            headers,
+          );
+          // Update request headers with trace context
+          propagatedHeaders.forEach((key, value) {
+            if (options.headers is Map) {
+              (options.headers as Map)[key] = value;
+            }
+          });
+        }
       }
     } catch (_) {}
 
@@ -243,6 +269,19 @@ class VooPerformanceDioInterceptor {
         contentLength = int.tryParse(contentLengthHeader);
       }
 
+      // Set OTEL span status based on HTTP status code
+      if (trace is OtelPerformanceTrace) {
+        trace.otelSpan.setAttribute(HttpSemanticConventions.httpResponseStatusCode, statusCode);
+        if (contentLength != null) {
+          trace.otelSpan.setAttribute(HttpSemanticConventions.httpResponseBodySize, contentLength);
+        }
+        if (HttpSemanticConventions.isErrorStatus(statusCode)) {
+          trace.setStatusError(description: HttpSemanticConventions.getErrorDescription(statusCode));
+        } else {
+          trace.setStatusOk();
+        }
+      }
+
       interceptor.onResponse(
         statusCode: statusCode,
         url: url,
@@ -273,6 +312,14 @@ class VooPerformanceDioInterceptor {
         trace = extra['performance_trace'] as PerformanceTrace?;
       }
 
+      // Record exception on OTEL span
+      if (trace is OtelPerformanceTrace) {
+        final errorObject = error.error ?? error;
+        final stackTrace = error.stackTrace as StackTrace?;
+        trace.recordException(errorObject, stackTrace);
+        trace.setStatusError(description: error.message?.toString() ?? 'Request failed');
+      }
+
       if (error.response != null) {
         final duration = startTime != null
             ? DateTime.now().difference(startTime)
@@ -287,6 +334,11 @@ class VooPerformanceDioInterceptor {
               headers[key.toString()] = values.first?.toString() ?? '';
             }
           });
+        }
+
+        // Set HTTP status on OTEL span
+        if (trace is OtelPerformanceTrace) {
+          trace.otelSpan.setAttribute(HttpSemanticConventions.httpResponseStatusCode, statusCode);
         }
 
         interceptor.onResponse(

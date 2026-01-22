@@ -1,4 +1,3 @@
-import 'package:voo_logging/features/logging/data/repositories/logger_repository_impl.dart';
 import 'package:voo_logging/voo_logging.dart';
 import 'package:voo_toast/voo_toast.dart';
 

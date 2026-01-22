@@ -77,8 +77,7 @@ class _TouchTrackerWidgetState extends State<TouchTrackerWidget> {
       repository.logTouchEvent(event);
     }
 
-    // Queue touch event for cloud sync (for heatmaps)
-    VooAnalyticsPlugin.instance.cloudSyncService?.queueTouchEvent(event);
+    // Touch events are now exported via OTEL in TouchEventMetrics
 
     // Also capture for replay if enabled
     _captureForReplay(effectivePosition, type);

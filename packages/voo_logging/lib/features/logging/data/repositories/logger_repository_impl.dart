@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
 import 'package:voo_logging/features/logging/data/datasources/local_log_storage.dart';
-import 'package:voo_logging/features/logging/data/services/cloud_sync_service.dart';
 import 'package:voo_logging/features/logging/domain/utils/pretty_log_formatter.dart';
+import 'package:voo_logging/src/otel/otel_log_exporter.dart';
+import 'package:voo_logging/src/otel/trace_context_provider.dart';
 import 'package:voo_logging/voo_logging.dart';
 
 /// Callback for external error capture (e.g., replay capture).
@@ -18,7 +20,6 @@ typedef ErrorCaptureCallback = void Function({
 
 class LoggerRepositoryImpl extends LoggerRepository {
   LocalLogStorage? _storage;
-  CloudSyncService? _cloudSync;
   String? _currentUserId;
   String? _currentSessionId;
   LogLevel _minimumLevel = LogLevel.debug;
@@ -29,20 +30,20 @@ class LoggerRepositoryImpl extends LoggerRepository {
   LoggingConfig _config = const LoggingConfig();
   late PrettyLogFormatter _formatter;
 
+  /// OTEL log exporter for OTLP export.
+  OtelLogExporter? _otelExporter;
+
+  /// Trace context provider for correlation.
+  TraceContextProvider? _traceContextProvider;
+
   /// Optional callback for external error capture (e.g., session replay).
   /// Set this to forward error logs to replay capture service.
   ErrorCaptureCallback? onErrorCaptured;
 
   final _random = Random();
 
-  /// Get the cloud sync service for status monitoring.
-  CloudSyncService? get cloudSync => _cloudSync;
-
-  /// Get the current cloud sync status.
-  CloudSyncStatus get cloudSyncStatus => _cloudSync?.syncStatus ?? CloudSyncStatus.disabled;
-
-  /// Get the number of pending logs in the cloud sync queue.
-  int get pendingCloudSyncCount => _cloudSync?.pendingCount ?? 0;
+  /// Get the number of pending logs in the OTEL export queue.
+  int get pendingExportCount => _otelExporter?.pendingCount ?? 0;
 
   final StreamController<LogEntry> _logStreamController = StreamController<LogEntry>.broadcast();
   Stream<LogEntry>? _cachedStream;
@@ -109,10 +110,42 @@ class LoggerRepositoryImpl extends LoggerRepository {
       cleanedLogs = await _storage!.performCleanup(maxLogs: _config.maxLogs, retentionDays: _config.retentionDays);
     }
 
-    // Initialize cloud sync if configured
-    if (_config.cloudSync != null && _config.cloudSync!.isValid) {
-      _cloudSync = CloudSyncService(config: _config.cloudSync!);
-      _cloudSync!.initialize();
+    // CloudSync is deprecated - skip initialization even if configured
+    // All telemetry should go through OTEL/OTLP endpoints
+    if (_config.cloudSync != null) {
+      developer.log(
+        'CloudSync is deprecated and will be ignored. Use OTEL instead.',
+        name: 'VooLogger',
+        level: 800, // Warning
+      );
+    }
+
+    // Auto-enable OTEL when Voo.context is available
+    // This provides seamless telemetry without manual configuration
+    final vooContext = Voo.context;
+    OtelLoggingConfig? effectiveOtelConfig = _config.otelConfig;
+
+    if (effectiveOtelConfig == null && vooContext != null && vooContext.canSync) {
+      // Auto-create OTEL config from Voo.context
+      effectiveOtelConfig = OtelLoggingConfig(
+        enabled: true,
+        endpoint: '${vooContext.config.endpoint}/v1/logs',
+        apiKey: vooContext.config.apiKey,
+        serviceName: appName ?? 'voo-flutter-app',
+        serviceVersion: appVersion ?? '1.0.0',
+        batchSize: kDebugMode ? 10 : 50,
+        batchInterval: kDebugMode ? const Duration(seconds: 10) : const Duration(seconds: 30),
+        debug: kDebugMode,
+      );
+    }
+
+    // Initialize OTEL exporter if configured (explicitly or auto)
+    if (effectiveOtelConfig != null && effectiveOtelConfig.enabled) {
+      _otelExporter = OtelLogExporter(config: effectiveOtelConfig);
+      _otelExporter!.initialize();
+
+      // Use the default VooTelemetry context provider
+      _traceContextProvider = VooTelemetryContextProvider();
     }
 
     await _logInternal(
@@ -129,7 +162,8 @@ class LoggerRepositoryImpl extends LoggerRepository {
         'maxLogs': _config.maxLogs,
         'retentionDays': _config.retentionDays,
         'autoCleanup': _config.autoCleanup,
-        'cloudSyncEnabled': _config.cloudSync?.enabled ?? false,
+        'otelEnabled': _otelExporter != null,
+        'otelAutoConfigured': _config.otelConfig == null && _otelExporter != null,
         if (cleanedLogs > 0) 'cleanedLogs': cleanedLogs,
       },
     );
@@ -234,8 +268,13 @@ class LoggerRepositoryImpl extends LoggerRepository {
       await _storage?.insertLog(entry).catchError((_) => null);
     }
 
-    // Queue for cloud sync if enabled
-    _cloudSync?.queueLog(entry);
+    // CloudSync is deprecated - skip queuing
+    // All telemetry goes through OTEL
+
+    // Export to OTEL if enabled
+    if (_otelExporter != null) {
+      _otelExporter!.queueLog(entry);
+    }
 
     // Notify error tracking for error-level logs
     if (level == LogLevel.error || level == LogLevel.fatal) {
@@ -515,14 +554,15 @@ class LoggerRepositoryImpl extends LoggerRepository {
         .toList();
   }
 
-  /// Manually flush cloud sync queue.
-  Future<bool> flushCloudSync() async => await _cloudSync?.flush() ?? false;
+  /// Manually flush pending log exports.
+  Future<bool> flushExports() async => await _otelExporter?.flush() ?? false;
 
   void close() {
     try {
-      // Dispose cloud sync service
-      _cloudSync?.dispose();
-      _cloudSync = null;
+      // Dispose OTEL exporter
+      _otelExporter?.dispose();
+      _otelExporter = null;
+      _traceContextProvider = null;
 
       if (!_logStreamController.isClosed) {
         // Send a final log before closing

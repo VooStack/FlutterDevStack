@@ -5,7 +5,6 @@ export 'src/domain/repositories/analytics_repository.dart';
 export 'src/presentation/widgets/touch_tracker_widget.dart';
 export 'src/presentation/widgets/route_aware_touch_tracker.dart';
 export 'src/presentation/navigation_observer.dart';
-export 'src/data/services/analytics_cloud_sync.dart';
 export 'src/data/services/screen_engagement_service.dart';
 export 'src/data/models/attribution.dart';
 export 'src/data/models/funnel.dart';
@@ -16,3 +15,9 @@ export 'src/presentation/widgets/voo_trackable.dart';
 export 'src/data/services/install_referrer_service.dart';
 export 'src/data/services/app_usage_service.dart';
 export 'src/replay/replay_capture_service.dart';
+
+// OTEL components
+export 'src/otel/otel_analytics_config.dart';
+export 'src/otel/touch_event_metrics.dart' hide TouchType;
+export 'src/otel/funnel_span_tracker.dart' show Funnel, FunnelStep;
+export 'src/otel/replay_trace_correlator.dart' show ReplayEventType, CorrelatedReplayEvent;

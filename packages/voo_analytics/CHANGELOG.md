@@ -1,3 +1,49 @@
+## 2.0.0
+
+> **BREAKING CHANGE**: Full migration to OpenTelemetry (OTEL) as the default telemetry export mechanism.
+
+### Breaking Changes
+- **REMOVED**: `AnalyticsCloudSyncService` and `AnalyticsCloudSyncConfig` classes deleted
+- **REMOVED**: `VooAnalyticsPlugin.cloudSyncService` property
+- **REMOVED**: `VooAnalyticsPlugin.enableOtel()` method - OTEL is now auto-enabled
+- **CHANGED**: All analytics data automatically exported via OTLP when `Voo.context` is available
+
+### New Features
+- **FEAT**: Auto-enable OTEL export via `Voo.context` - no manual configuration needed
+- **FEAT**: Screen views exported as OTEL spans to `/v1/traces`
+- **FEAT**: Touch events exported as OTEL metrics to `/v1/metrics`
+- **FEAT**: Custom events added as span events for trace correlation
+- **FEAT**: `ScreenViewSpanManager` for automatic screen engagement tracking
+- **FEAT**: `TouchEventMetrics` with counters and histograms for heatmap data
+- **FEAT**: `FunnelSpanTracker` for funnel analysis with linked spans
+- **FEAT**: `ReplayTraceCorrelator` for session replay trace correlation
+
+### Migration Guide
+
+```dart
+// Before (1.x)
+_analyticsCloudSync = AnalyticsCloudSyncService(
+  config: AnalyticsCloudSyncConfig(...),
+);
+_analyticsCloudSync.initialize();
+await VooAnalytics.initialize(cloudSyncService: _analyticsCloudSync);
+VooAnalyticsPlugin.instance.cloudSyncService = _analyticsCloudSync;
+
+// After (2.0) - OTEL auto-enabled via Voo.context
+await Voo.initializeApp(
+  config: VooConfig(
+    endpoint: 'https://api.example.com',
+    apiKey: 'your-key',
+  ),
+);
+await VooAnalytics.initialize(); // OTEL auto-configured!
+
+// Events automatically exported via OTLP
+await VooAnalytics.logEvent('button_click', parameters: {'button': 'submit'});
+```
+
+---
+
 ## 1.1.1
 
 ### New Features

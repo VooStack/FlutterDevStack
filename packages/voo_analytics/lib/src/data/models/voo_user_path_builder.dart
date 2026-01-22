@@ -1,4 +1,3 @@
-import 'package:voo_analytics/src/data/models/voo_path_node.dart';
 import 'package:voo_analytics/src/data/models/user_path.dart';
 
 /// Builder for constructing user paths from navigation events.

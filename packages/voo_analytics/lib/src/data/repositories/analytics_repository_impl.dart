@@ -4,10 +4,8 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:voo_analytics/src/data/services/analytics_cloud_sync.dart';
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_analytics/src/domain/entities/heat_map_data.dart';
 import 'package:voo_core/src/models/voo_point.dart';
@@ -26,7 +24,6 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
   final Map<String, String> _userProperties = {};
   String? _userId;
   File? _storageFile;
-  AnalyticsCloudSyncService? _cloudSyncService;
 
   @override
   final bool enableTouchTracking;
@@ -36,11 +33,6 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
   @override
   final bool enableUserProperties;
-
-  /// Set the cloud sync service for sending events to the backend.
-  set cloudSyncService(AnalyticsCloudSyncService? service) {
-    _cloudSyncService = service;
-  }
 
   AnalyticsRepositoryImpl({
     this.enableTouchTracking = true,
@@ -130,15 +122,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
     await _saveData();
 
-    // Queue for cloud sync if available
-    if (_cloudSyncService != null) {
-      _cloudSyncService!.queueEvent(AnalyticsEventData(
-        eventName: name,
-        timestamp: timestamp,
-        parameters: parameters,
-        category: parameters?['category'] as String? ?? 'general',
-      ));
-    }
+    // Events are now exported via OTEL in VooAnalyticsPlugin.logEvent()
 
     // Send to DevTools
     _sendToDevTools(
@@ -319,7 +303,6 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     _userProperties.clear();
     _userId = null;
     _storageFile = null;
-    _cloudSyncService = null;
 
     if (kDebugMode) {
       print('[VooAnalytics] Repository disposed');

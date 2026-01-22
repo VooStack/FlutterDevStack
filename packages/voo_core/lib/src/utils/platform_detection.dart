@@ -2,6 +2,7 @@
 ///
 /// This provides platform detection without Flutter dependencies,
 /// suitable for use in domain layer code.
+library;
 
 /// Whether the code is running on the web platform.
 ///

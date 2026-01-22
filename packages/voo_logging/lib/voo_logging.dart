@@ -75,4 +75,7 @@ export 'features/logging/domain/entities/network_log_entry.dart';
 export 'features/logging/domain/interceptors/dio_interceptor.dart';
 export 'features/logging/domain/interceptors/network_interceptor.dart';
 export 'features/logging/logging.dart';
+// OTEL components
+export 'src/otel/otel_logging_config.dart';
+export 'src/otel/trace_context_provider.dart' show TraceContext, TraceContextProvider;
 export 'src/voo_logging_plugin.dart';

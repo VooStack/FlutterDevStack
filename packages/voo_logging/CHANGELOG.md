@@ -1,3 +1,46 @@
+## 2.0.0
+
+> **BREAKING CHANGE**: Full migration to OpenTelemetry (OTEL) as the default telemetry export mechanism.
+
+### Breaking Changes
+- **REMOVED**: `CloudSyncService` and `CloudSyncConfig` are no longer used
+- **REMOVED**: Custom `/api/v1/telemetry/*` endpoints - all data now flows through OTLP
+- **CHANGED**: OTEL export is now auto-enabled when `Voo.context` is available
+- **CHANGED**: `LoggingConfig.cloudSync` parameter is deprecated and ignored
+
+### New Features
+- **FEAT**: Auto-enable OTEL export via `Voo.context` - no manual configuration needed
+- **FEAT**: Logs automatically exported to `/v1/logs` OTLP endpoint
+- **FEAT**: Trace context correlation - logs include traceId/spanId from active spans
+- **FEAT**: Configurable batching (10 logs debug / 50 logs production)
+- **FEAT**: Automatic retry with re-queuing on export failure
+
+### Migration Guide
+
+```dart
+// Before (1.x)
+await VooLogger.initialize(
+  config: LoggingConfig(
+    cloudSync: CloudSyncConfig(
+      enabled: true,
+      endpoint: 'https://api.example.com',
+      apiKey: 'your-key',
+    ),
+  ),
+);
+
+// After (2.0) - OTEL auto-enabled via Voo.context
+await Voo.initializeApp(
+  config: VooConfig(
+    endpoint: 'https://api.example.com',
+    apiKey: 'your-key',
+  ),
+);
+await VooLogger.initialize(); // OTEL auto-configured!
+```
+
+---
+
 ## 1.1.1
 
 ### New Features

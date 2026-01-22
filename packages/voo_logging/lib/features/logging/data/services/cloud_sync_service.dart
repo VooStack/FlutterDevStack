@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:voo_core/voo_core.dart';
 import 'package:voo_logging/features/logging/domain/entities/cloud_sync_config.dart';
 import 'package:voo_logging/features/logging/domain/entities/log_entry.dart';
