@@ -12,6 +12,19 @@ import 'package:voo_logging/src/otel/trace_context_provider.dart';
 ///
 /// Batches log entries and exports them to an OTLP endpoint using
 /// the standard OpenTelemetry log protocol.
+///
+/// **DEPRECATED**: This class is deprecated and will be removed in a future version.
+/// Logs are now routed through [VooTelemetry] automatically when VooTelemetry is initialized.
+/// This provides unified telemetry export with better batching, compression, and persistence.
+///
+/// To migrate:
+/// 1. Remove any manual OtelLogExporter configuration from your LoggingConfig
+/// 2. Ensure VooTelemetry.initialize() is called before VooLogger.initialize()
+/// 3. Logs will automatically flow through VooTelemetry's unified OTLP pipeline
+@Deprecated(
+  'OtelLogExporter is deprecated. Logs are now routed through VooTelemetry automatically. '
+  'Remove otelConfig from LoggingConfig and ensure VooTelemetry is initialized.',
+)
 class OtelLogExporter {
   final OtelLoggingConfig config;
   final TelemetryResource _resource;

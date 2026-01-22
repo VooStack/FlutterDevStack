@@ -5,7 +5,6 @@ export 'src/domain/entities/network_timing.dart';
 export 'src/interceptors/performance_dio_interceptor.dart';
 export 'src/interceptors/performance_dio_interceptor_impl.dart';
 export 'src/utils/performance_tracker.dart';
-export 'src/data/services/performance_cloud_sync.dart';
 export 'src/data/services/fps_monitor_service.dart';
 export 'src/data/services/app_launch_service.dart';
 export 'src/data/services/memory_monitor_service.dart';

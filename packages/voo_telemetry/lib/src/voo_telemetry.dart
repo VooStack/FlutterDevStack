@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:voo_core/voo_core.dart';
 
 import 'package:voo_telemetry/src/core/telemetry_config.dart';
 import 'package:voo_telemetry/src/core/telemetry_resource.dart';
 import 'package:voo_telemetry/src/exporters/otlp_http_exporter.dart';
 import 'package:voo_telemetry/src/logs/logger.dart';
+import 'package:voo_telemetry/src/logs/log_record.dart';
 import 'package:voo_telemetry/src/logs/logger_provider.dart';
 import 'package:voo_telemetry/src/metrics/meter.dart';
 import 'package:voo_telemetry/src/metrics/meter_provider.dart';
@@ -45,38 +47,48 @@ class VooTelemetry {
     Duration batchInterval = const Duration(seconds: 30),
     int maxBatchSize = 100,
     bool debug = false,
+    TelemetryConfig? config,
   }) async {
     if (_instance != null) {
       throw StateError('VooTelemetry is already initialized');
     }
 
-    final config = TelemetryConfig(endpoint: endpoint, apiKey: apiKey, batchInterval: batchInterval, maxBatchSize: maxBatchSize, debug: debug);
+    final effectiveConfig = config ??
+        TelemetryConfig(
+          endpoint: endpoint,
+          apiKey: apiKey,
+          batchInterval: batchInterval,
+          maxBatchSize: maxBatchSize,
+          debug: debug,
+        );
+
+    // Build resource attributes with OTEL semantic conventions
+    final resourceAttributes = _buildResourceAttributes(
+      serviceName: serviceName,
+      serviceVersion: serviceVersion,
+      additionalAttributes: additionalAttributes,
+    );
 
     final resource = TelemetryResource(
       serviceName: serviceName,
       serviceVersion: serviceVersion,
-      attributes: {
-        'service.name': serviceName,
-        'service.version': serviceVersion,
-        'telemetry.sdk.name': 'voo-telemetry',
-        'telemetry.sdk.version': '2.0.0',
-        'telemetry.sdk.language': 'dart',
-        'process.runtime.name': 'flutter',
-        'process.runtime.version': defaultTargetPlatform.name,
-        ...?additionalAttributes,
-      },
+      attributes: resourceAttributes,
     );
 
-    final exporter = OTLPHttpExporter(endpoint: endpoint, apiKey: apiKey, debug: debug);
+    final exporter = OTLPHttpExporter(
+      endpoint: effectiveConfig.endpoint,
+      apiKey: effectiveConfig.apiKey,
+      debug: effectiveConfig.debug,
+    );
 
-    final traceProvider = TraceProvider(resource: resource, exporter: exporter, config: config);
+    final traceProvider = TraceProvider(resource: resource, exporter: exporter, config: effectiveConfig);
 
-    final meterProvider = MeterProvider(resource: resource, exporter: exporter, config: config);
+    final meterProvider = MeterProvider(resource: resource, exporter: exporter, config: effectiveConfig);
 
-    final loggerProvider = LoggerProvider(resource: resource, exporter: exporter, config: config);
+    final loggerProvider = LoggerProvider(resource: resource, exporter: exporter, config: effectiveConfig);
 
     _instance = VooTelemetry._(
-      config: config,
+      config: effectiveConfig,
       resource: resource,
       traceProvider: traceProvider,
       meterProvider: meterProvider,
@@ -85,6 +97,75 @@ class VooTelemetry {
     );
 
     await _instance!._init();
+  }
+
+  /// Build resource attributes with device and user context
+  static Map<String, dynamic> _buildResourceAttributes({
+    required String serviceName,
+    required String serviceVersion,
+    Map<String, dynamic>? additionalAttributes,
+  }) {
+    final attributes = <String, dynamic>{
+      // Service attributes (OTEL semantic conventions)
+      'service.name': serviceName,
+      'service.version': serviceVersion,
+
+      // SDK attributes
+      'telemetry.sdk.name': 'voo-telemetry',
+      'telemetry.sdk.version': '2.0.0',
+      'telemetry.sdk.language': 'dart',
+
+      // Process attributes
+      'process.runtime.name': 'flutter',
+      'process.runtime.version': defaultTargetPlatform.name,
+    };
+
+    // Add device info from Voo.deviceInfo if available
+    final deviceInfo = Voo.deviceInfo;
+    if (deviceInfo != null) {
+      // Device attributes (OTEL semantic conventions)
+      attributes['device.id'] = deviceInfo.deviceId;
+      attributes['device.model.name'] = deviceInfo.deviceModel;
+      attributes['device.manufacturer'] = deviceInfo.manufacturer;
+
+      // OS attributes
+      attributes['os.type'] = deviceInfo.osName.toLowerCase();
+      attributes['os.name'] = deviceInfo.osName;
+      attributes['os.version'] = deviceInfo.osVersion;
+
+      // App attributes
+      attributes['app.version'] = deviceInfo.appVersion;
+      attributes['app.build'] = deviceInfo.buildNumber;
+      attributes['app.package'] = deviceInfo.packageName;
+
+      // Platform (using osName as the platform identifier)
+      attributes['platform'] = deviceInfo.osName;
+    }
+
+    // Add user context from Voo.userContext if available
+    final userContext = Voo.userContext;
+    if (userContext != null) {
+      attributes['session.id'] = userContext.sessionId;
+      if (userContext.userId != null) {
+        attributes['user.id'] = userContext.userId!;
+      }
+    }
+
+    // Add project context from Voo.config if available
+    final vooConfig = Voo.config;
+    if (vooConfig != null) {
+      if (vooConfig.projectId != null) {
+        attributes['project.id'] = vooConfig.projectId!;
+      }
+      attributes['deployment.environment'] = vooConfig.environment;
+    }
+
+    // Add any additional custom attributes
+    if (additionalAttributes != null) {
+      attributes.addAll(additionalAttributes);
+    }
+
+    return attributes;
   }
 
   /// Get the singleton instance
@@ -162,5 +243,102 @@ class VooTelemetry {
             ...?attributes,
           },
         );
+  }
+
+  /// Add a log record directly to the logger provider.
+  ///
+  /// This is a convenience method for packages that need to send
+  /// logs through the unified OTEL pipeline.
+  void addLogRecord(LogRecord record) {
+    loggerProvider.addLogRecord(record);
+  }
+
+  /// Create a LogRecord from log entry parameters.
+  ///
+  /// This is a helper for converting voo_logging LogEntry format
+  /// to OTEL LogRecord format.
+  static LogRecord createLogRecord({
+    required String message,
+    required SeverityNumber severity,
+    DateTime? timestamp,
+    String? category,
+    String? tag,
+    Map<String, dynamic>? metadata,
+    Object? error,
+    String? stackTrace,
+    String? userId,
+    String? sessionId,
+    String? traceId,
+    String? spanId,
+  }) {
+    final attributes = <String, dynamic>{
+      if (category != null) 'log.category': category,
+      if (tag != null) 'log.tag': tag,
+      if (userId != null) 'user.id': userId,
+      if (sessionId != null) 'session.id': sessionId,
+      if (error != null) 'error.type': error.runtimeType.toString(),
+      if (error != null) 'error.message': error.toString(),
+      if (stackTrace != null) 'error.stacktrace': stackTrace,
+      ...?metadata,
+    };
+
+    return LogRecord(
+      severityNumber: severity,
+      severityText: _severityToText(severity),
+      body: message,
+      timestamp: timestamp ?? DateTime.now(),
+      attributes: attributes,
+      traceId: traceId,
+      spanId: spanId,
+    );
+  }
+
+  /// Convert severity number to text
+  static String _severityToText(SeverityNumber severity) {
+    switch (severity) {
+      case SeverityNumber.trace:
+      case SeverityNumber.trace2:
+      case SeverityNumber.trace3:
+      case SeverityNumber.trace4:
+        return 'TRACE';
+      case SeverityNumber.debug:
+      case SeverityNumber.debug2:
+      case SeverityNumber.debug3:
+      case SeverityNumber.debug4:
+        return 'DEBUG';
+      case SeverityNumber.info:
+      case SeverityNumber.info2:
+      case SeverityNumber.info3:
+      case SeverityNumber.info4:
+        return 'INFO';
+      case SeverityNumber.warn:
+      case SeverityNumber.warn2:
+      case SeverityNumber.warn3:
+      case SeverityNumber.warn4:
+        return 'WARN';
+      case SeverityNumber.error:
+      case SeverityNumber.error2:
+      case SeverityNumber.error3:
+      case SeverityNumber.error4:
+        return 'ERROR';
+      case SeverityNumber.fatal:
+      case SeverityNumber.fatal2:
+      case SeverityNumber.fatal3:
+      case SeverityNumber.fatal4:
+        return 'FATAL';
+      default:
+        return 'UNSPECIFIED';
+    }
+  }
+
+  /// Get the current trace context (traceId and spanId) if available.
+  ///
+  /// Returns null if no active span exists.
+  ({String traceId, String spanId})? get currentTraceContext {
+    final span = traceProvider.activeSpan;
+    if (span != null) {
+      return (traceId: span.context.traceId, spanId: span.context.spanId);
+    }
+    return null;
   }
 }

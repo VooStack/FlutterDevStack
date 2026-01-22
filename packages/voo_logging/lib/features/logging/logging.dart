@@ -6,9 +6,7 @@
 // Data - Models
 export 'data/models/log_entry_model.dart';
 export 'data/models/log_entry_model_extensions.dart';
-// Data - Services
-export 'data/services/cloud_sync_service.dart';
-// Domain - Entities
+// Domain - Entities (CloudSyncConfig kept for backwards compatibility)
 export 'domain/entities/cloud_sync_config.dart';
 export 'domain/entities/log_entry.dart';
 export 'domain/entities/log_type_config.dart';

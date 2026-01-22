@@ -31,3 +31,7 @@ export 'src/traces/tracer.dart';
 export 'src/voo_telemetry.dart';
 // Plugin Integration
 export 'src/voo_telemetry_plugin.dart';
+// Workers (for advanced use cases)
+export 'src/workers/serializable_models.dart';
+export 'src/workers/telemetry_worker.dart';
+export 'src/workers/telemetry_worker_web.dart';

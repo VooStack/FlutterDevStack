@@ -7,9 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
 import 'package:voo_logging/features/logging/data/datasources/local_log_storage.dart';
 import 'package:voo_logging/features/logging/domain/utils/pretty_log_formatter.dart';
-import 'package:voo_logging/src/otel/otel_log_exporter.dart';
-import 'package:voo_logging/src/otel/trace_context_provider.dart';
 import 'package:voo_logging/voo_logging.dart';
+import 'package:voo_telemetry/voo_telemetry.dart';
 
 /// Callback for external error capture (e.g., replay capture).
 typedef ErrorCaptureCallback = void Function({
@@ -30,11 +29,8 @@ class LoggerRepositoryImpl extends LoggerRepository {
   LoggingConfig _config = const LoggingConfig();
   late PrettyLogFormatter _formatter;
 
-  /// OTEL log exporter for OTLP export.
-  OtelLogExporter? _otelExporter;
-
-  /// Trace context provider for correlation.
-  TraceContextProvider? _traceContextProvider;
+  /// Whether OTEL export is enabled (via VooTelemetry).
+  bool _otelEnabled = false;
 
   /// Optional callback for external error capture (e.g., session replay).
   /// Set this to forward error logs to replay capture service.
@@ -43,7 +39,8 @@ class LoggerRepositoryImpl extends LoggerRepository {
   final _random = Random();
 
   /// Get the number of pending logs in the OTEL export queue.
-  int get pendingExportCount => _otelExporter?.pendingCount ?? 0;
+  /// Returns 0 as logs are now managed by VooTelemetry's LoggerProvider.
+  int get pendingExportCount => 0;
 
   final StreamController<LogEntry> _logStreamController = StreamController<LogEntry>.broadcast();
   Stream<LogEntry>? _cachedStream;
@@ -111,41 +108,34 @@ class LoggerRepositoryImpl extends LoggerRepository {
     }
 
     // CloudSync is deprecated - skip initialization even if configured
-    // All telemetry should go through OTEL/OTLP endpoints
+    // All telemetry should go through VooTelemetry OTLP endpoints
     if (_config.cloudSync != null) {
       developer.log(
-        'CloudSync is deprecated and will be ignored. Use OTEL instead.',
+        'CloudSync is deprecated and will be ignored. Use VooTelemetry instead.',
         name: 'VooLogger',
         level: 800, // Warning
       );
     }
 
-    // Auto-enable OTEL when Voo.context is available
-    // This provides seamless telemetry without manual configuration
-    final vooContext = Voo.context;
-    OtelLoggingConfig? effectiveOtelConfig = _config.otelConfig;
-
-    if (effectiveOtelConfig == null && vooContext != null && vooContext.canSync) {
-      // Auto-create OTEL config from Voo.context
-      effectiveOtelConfig = OtelLoggingConfig(
-        enabled: true,
-        endpoint: '${vooContext.config.endpoint}/v1/logs',
-        apiKey: vooContext.config.apiKey,
-        serviceName: appName ?? 'voo-flutter-app',
-        serviceVersion: appVersion ?? '1.0.0',
-        batchSize: kDebugMode ? 10 : 50,
-        batchInterval: kDebugMode ? const Duration(seconds: 10) : const Duration(seconds: 30),
-        debug: kDebugMode,
+    // OtelLoggingConfig is deprecated - logs now route through VooTelemetry
+    if (_config.otelConfig != null) {
+      developer.log(
+        'OtelLoggingConfig is deprecated. Logs are now routed through VooTelemetry automatically.',
+        name: 'VooLogger',
+        level: 800, // Warning
       );
     }
 
-    // Initialize OTEL exporter if configured (explicitly or auto)
-    if (effectiveOtelConfig != null && effectiveOtelConfig.enabled) {
-      _otelExporter = OtelLogExporter(config: effectiveOtelConfig);
-      _otelExporter!.initialize();
+    // Auto-enable OTEL export when VooTelemetry is initialized
+    // This provides seamless telemetry without manual configuration
+    _otelEnabled = VooTelemetry.isInitialized;
 
-      // Use the default VooTelemetry context provider
-      _traceContextProvider = VooTelemetryContextProvider();
+    if (_otelEnabled && kDebugMode) {
+      developer.log(
+        'VooLogger: OTEL export enabled via VooTelemetry',
+        name: 'VooLogger',
+        level: 500, // Info
+      );
     }
 
     await _logInternal(
@@ -162,8 +152,8 @@ class LoggerRepositoryImpl extends LoggerRepository {
         'maxLogs': _config.maxLogs,
         'retentionDays': _config.retentionDays,
         'autoCleanup': _config.autoCleanup,
-        'otelEnabled': _otelExporter != null,
-        'otelAutoConfigured': _config.otelConfig == null && _otelExporter != null,
+        'otelEnabled': _otelEnabled,
+        'otelViaVooTelemetry': _otelEnabled,
         if (cleanedLogs > 0) 'cleanedLogs': cleanedLogs,
       },
     );
@@ -268,12 +258,9 @@ class LoggerRepositoryImpl extends LoggerRepository {
       await _storage?.insertLog(entry).catchError((_) => null);
     }
 
-    // CloudSync is deprecated - skip queuing
-    // All telemetry goes through OTEL
-
-    // Export to OTEL if enabled
-    if (_otelExporter != null) {
-      _otelExporter!.queueLog(entry);
+    // Export to OTEL via VooTelemetry if enabled
+    if (_otelEnabled && VooTelemetry.isInitialized) {
+      _exportToVooTelemetry(entry);
     }
 
     // Notify error tracking for error-level logs
@@ -555,14 +542,71 @@ class LoggerRepositoryImpl extends LoggerRepository {
   }
 
   /// Manually flush pending log exports.
-  Future<bool> flushExports() async => await _otelExporter?.flush() ?? false;
+  Future<bool> flushExports() async {
+    if (_otelEnabled && VooTelemetry.isInitialized) {
+      await VooTelemetry.instance.loggerProvider.flush();
+      return true;
+    }
+    return false;
+  }
+
+  /// Export a log entry to VooTelemetry.
+  void _exportToVooTelemetry(LogEntry entry) {
+    try {
+      // Get current trace context for correlation
+      final traceContext = VooTelemetry.instance.currentTraceContext;
+
+      // Create log record through VooTelemetry
+      final logRecord = VooTelemetry.createLogRecord(
+        message: entry.message,
+        severity: _logLevelToSeverity(entry.level),
+        timestamp: entry.timestamp,
+        category: entry.category,
+        tag: entry.tag,
+        metadata: entry.metadata,
+        error: entry.error,
+        stackTrace: entry.stackTrace,
+        userId: entry.userId ?? _currentUserId,
+        sessionId: entry.sessionId ?? _currentSessionId,
+        traceId: traceContext?.traceId,
+        spanId: traceContext?.spanId,
+      );
+
+      // Add to VooTelemetry's logger provider
+      VooTelemetry.instance.addLogRecord(logRecord);
+    } catch (e) {
+      if (kDebugMode) {
+        developer.log(
+          'VooLogger: Failed to export to VooTelemetry: $e',
+          name: 'VooLogger',
+          level: 800, // Warning
+        );
+      }
+    }
+  }
+
+  /// Convert LogLevel to OTEL SeverityNumber.
+  SeverityNumber _logLevelToSeverity(LogLevel level) {
+    switch (level) {
+      case LogLevel.verbose:
+        return SeverityNumber.trace;
+      case LogLevel.debug:
+        return SeverityNumber.debug;
+      case LogLevel.info:
+        return SeverityNumber.info;
+      case LogLevel.warning:
+        return SeverityNumber.warn;
+      case LogLevel.error:
+        return SeverityNumber.error;
+      case LogLevel.fatal:
+        return SeverityNumber.fatal;
+    }
+  }
 
   void close() {
     try {
-      // Dispose OTEL exporter
-      _otelExporter?.dispose();
-      _otelExporter = null;
-      _traceContextProvider = null;
+      // Disable OTEL export (VooTelemetry manages its own lifecycle)
+      _otelEnabled = false;
 
       if (!_logStreamController.isClosed) {
         // Send a final log before closing

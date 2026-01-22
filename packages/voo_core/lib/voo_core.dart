@@ -54,3 +54,11 @@ export 'package:voo_core/src/analytics/analytics_event.dart';
 // Sync Services
 export 'package:voo_core/src/config/base_sync_config.dart';
 export 'package:voo_core/src/services/base_sync_service.dart';
+
+// Batching
+export 'package:voo_core/src/batching/adaptive_batch_manager.dart';
+export 'package:voo_core/src/batching/batch_config.dart';
+export 'package:voo_core/src/batching/compression_utils.dart';
+export 'package:voo_core/src/batching/network_monitor.dart';
+export 'package:voo_core/src/batching/persistent_queue.dart';
+export 'package:voo_core/src/batching/retry_policy.dart';

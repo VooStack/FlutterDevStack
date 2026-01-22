@@ -4,6 +4,17 @@ import 'package:voo_telemetry/voo_telemetry.dart';
 ///
 /// Configure OTLP export settings for logs including endpoint,
 /// authentication, batching, and resource attributes.
+///
+/// **DEPRECATED**: This class is deprecated and will be removed in a future version.
+/// Configuration is now managed through [VooTelemetry.initialize()] with [TelemetryConfig].
+///
+/// To migrate:
+/// 1. Remove otelConfig from LoggingConfig
+/// 2. Configure telemetry through VooTelemetry.initialize() instead
+/// 3. Logs will automatically flow through VooTelemetry when it's initialized
+@Deprecated(
+  'OtelLoggingConfig is deprecated. Use VooTelemetry.initialize() with TelemetryConfig instead.',
+)
 class OtelLoggingConfig {
   /// Whether OTEL export is enabled.
   final bool enabled;
