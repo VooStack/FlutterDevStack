@@ -14,12 +14,7 @@ class OtelLogAdapter {
   /// [traceId] Optional trace ID for correlation with spans.
   /// [spanId] Optional span ID for correlation with spans.
   /// [traceFlags] Trace flags (default 0, set to 1 if sampled).
-  static LogRecord toLogRecord(
-    LogEntry entry, {
-    String? traceId,
-    String? spanId,
-    int traceFlags = 0,
-  }) {
+  static LogRecord toLogRecord(LogEntry entry, {String? traceId, String? spanId, int traceFlags = 0}) {
     final observedTime = DateTime.now();
 
     // Build attributes from LogEntry fields
@@ -63,33 +58,19 @@ class OtelLogAdapter {
   ///
   /// Uses the provided [traceContextProvider] to get current trace context
   /// for correlation with active spans.
-  static LogRecord toLogRecordWithContext(
-    LogEntry entry, {
-    TraceContextProvider? traceContextProvider,
-  }) {
+  static LogRecord toLogRecordWithContext(LogEntry entry, {TraceContextProvider? traceContextProvider}) {
     final context = traceContextProvider?.getActiveContext();
 
-    return toLogRecord(
-      entry,
-      traceId: context?.traceId,
-      spanId: context?.spanId,
-      traceFlags: context?.traceFlags ?? 0,
-    );
+    return toLogRecord(entry, traceId: context?.traceId, spanId: context?.spanId, traceFlags: context?.traceFlags ?? 0);
   }
 
   /// Convert a batch of LogEntries to OTLP format.
   ///
   /// Returns a list of maps ready for OTLP JSON export.
-  static List<Map<String, dynamic>> toOtlpBatch(
-    List<LogEntry> entries, {
-    TraceContextProvider? traceContextProvider,
-  }) => entries.map((entry) {
-      final logRecord = toLogRecordWithContext(
-        entry,
-        traceContextProvider: traceContextProvider,
-      );
-      return logRecord.toOtlp();
-    }).toList();
+  static List<Map<String, dynamic>> toOtlpBatch(List<LogEntry> entries, {TraceContextProvider? traceContextProvider}) => entries.map((entry) {
+    final logRecord = toLogRecordWithContext(entry, traceContextProvider: traceContextProvider);
+    return logRecord.toOtlp();
+  }).toList();
 
   /// Create a LogRecord directly (without LogEntry intermediate).
   ///
@@ -103,16 +84,16 @@ class OtelLogAdapter {
     String? spanId,
     int traceFlags = 0,
   }) => LogRecord(
-      timestamp: DateTime.now(),
-      observedTimestamp: DateTime.now(),
-      severityNumber: severity,
-      severityText: severityText ?? _getSeverityText(severity),
-      body: message,
-      attributes: attributes,
-      traceId: traceId,
-      spanId: spanId,
-      traceFlags: traceFlags,
-    );
+    timestamp: DateTime.now(),
+    observedTimestamp: DateTime.now(),
+    severityNumber: severity,
+    severityText: severityText ?? _getSeverityText(severity),
+    body: message,
+    attributes: attributes,
+    traceId: traceId,
+    spanId: spanId,
+    traceFlags: traceFlags,
+  );
 
   static String _getSeverityText(SeverityNumber severity) {
     final value = severity.value;

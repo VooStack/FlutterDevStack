@@ -1,12 +1,14 @@
 import 'package:voo_telemetry/src/logs/log_record.dart';
 import 'package:voo_telemetry/src/logs/logger_provider.dart';
+import 'package:voo_telemetry/src/traces/trace_provider.dart';
 
 /// Logger for creating log records
 class Logger {
   final String name;
   final LoggerProvider provider;
+  final TraceProvider? traceProvider;
 
-  Logger({required this.name, required this.provider});
+  Logger({required this.name, required this.provider, this.traceProvider});
 
   /// Log a message at the specified severity level
   void log(SeverityNumber severity, String message, {Map<String, dynamic>? attributes, DateTime? timestamp}) {
@@ -18,11 +20,12 @@ class Logger {
       timestamp: timestamp ?? DateTime.now(),
     );
 
-    // Add trace context if available
-    final activeSpan = provider.exporter.debug ? null : null; // TODO: Get active span
+    // Add trace context if available (log-trace correlation)
+    final activeSpan = traceProvider?.activeSpan;
     if (activeSpan != null) {
-      // logRecord.traceId = activeSpan.traceId;
-      // logRecord.spanId = activeSpan.spanId;
+      logRecord.traceId = activeSpan.traceId;
+      logRecord.spanId = activeSpan.spanId;
+      logRecord.traceFlags = activeSpan.context.traceFlags;
     }
 
     provider.addLogRecord(logRecord);

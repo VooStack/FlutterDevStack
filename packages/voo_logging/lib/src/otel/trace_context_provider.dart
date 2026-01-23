@@ -49,11 +49,7 @@ class VooTelemetryContextProvider implements TraceContextProvider {
       final activeSpan = VooTelemetry.instance.traceProvider.activeSpan;
       if (activeSpan == null) return null;
 
-      return TraceContext(
-        traceId: activeSpan.traceId,
-        spanId: activeSpan.spanId,
-        traceFlags: activeSpan.context.traceFlags,
-      );
+      return TraceContext(traceId: activeSpan.traceId, spanId: activeSpan.spanId, traceFlags: activeSpan.context.traceFlags);
     } catch (_) {
       return null;
     }

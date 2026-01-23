@@ -86,15 +86,6 @@ class Span {
     'status': status.toOtlp(),
   };
 
-  List<int> _hexToBytes(String hex) {
-    final bytes = <int>[];
-    for (int i = 0; i < hex.length; i += 2) {
-      final hexByte = hex.substring(i, i + 2);
-      bytes.add(int.parse(hexByte, radix: 16));
-    }
-    return bytes;
-  }
-
   Map<String, dynamic> _convertAttributeValue(dynamic value) {
     if (value is String) {
       return {'stringValue': value};
@@ -153,15 +144,6 @@ class SpanLink {
     'spanId': spanId,
     'attributes': attributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
   };
-
-  List<int> _hexToBytes(String hex) {
-    final bytes = <int>[];
-    for (int i = 0; i < hex.length; i += 2) {
-      final hexByte = hex.substring(i, i + 2);
-      bytes.add(int.parse(hexByte, radix: 16));
-    }
-    return bytes;
-  }
 
   Map<String, dynamic> _convertValue(dynamic value) {
     if (value is String) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
@@ -15,8 +16,12 @@ class VooPerformancePlugin extends VooPlugin {
   static VooPerformancePlugin? _instance;
   bool _initialized = false;
   final Map<String, PerformanceTrace> _activeTraces = {};
-  final List<NetworkMetric> _networkMetrics = [];
-  final List<PerformanceMetrics> _performanceMetrics = [];
+  final Queue<NetworkMetric> _networkMetrics = Queue();
+  final Queue<PerformanceMetrics> _performanceMetrics = Queue();
+
+  /// Timeout timers for orphan trace cleanup (5 min default)
+  final Map<String, Timer> _traceTimeouts = {};
+  static const Duration _traceTimeoutDuration = Duration(minutes: 5);
 
   // OTEL integration
   Tracer? _otelTracer;
@@ -158,6 +163,7 @@ class VooPerformancePlugin extends VooPlugin {
       );
       otelTrace.setStopCallback(recordTrace);
       _activeTraces[otelTrace.id] = otelTrace;
+      _startTraceTimeout(otelTrace);
       return otelTrace;
     }
 
@@ -165,7 +171,27 @@ class VooPerformancePlugin extends VooPlugin {
     final trace = PerformanceTrace(name: name, startTime: DateTime.now());
     trace.setStopCallback(recordTrace);
     _activeTraces[trace.id] = trace;
+    _startTraceTimeout(trace);
     return trace;
+  }
+
+  /// Start a timeout timer to auto-cleanup orphaned traces
+  void _startTraceTimeout(PerformanceTrace trace) {
+    _traceTimeouts[trace.id] = Timer(_traceTimeoutDuration, () {
+      if (_activeTraces.containsKey(trace.id)) {
+        if (kDebugMode) {
+          debugPrint('[VooPerformance] Auto-stopping orphaned trace: ${trace.name}');
+        }
+        trace.stop();
+      }
+      _traceTimeouts.remove(trace.id);
+    });
+  }
+
+  /// Cancel the timeout timer for a trace
+  void _cancelTraceTimeout(String traceId) {
+    _traceTimeouts[traceId]?.cancel();
+    _traceTimeouts.remove(traceId);
   }
 
   /// Create a new HTTP trace with CLIENT span kind for distributed tracing.
@@ -190,6 +216,7 @@ class VooPerformancePlugin extends VooPlugin {
       );
       otelTrace.setStopCallback(recordTrace);
       _activeTraces[otelTrace.id] = otelTrace;
+      _startTraceTimeout(otelTrace);
       return otelTrace;
     }
 
@@ -217,6 +244,7 @@ class VooPerformancePlugin extends VooPlugin {
 
   Future<void> recordTrace(PerformanceTrace trace) async {
     _activeTraces.remove(trace.id);
+    _cancelTraceTimeout(trace.id);
 
     final metrics = PerformanceMetrics(
       timestamp: trace.startTime,
@@ -226,8 +254,9 @@ class VooPerformancePlugin extends VooPlugin {
 
     _performanceMetrics.add(metrics);
 
-    if (_performanceMetrics.length > 1000) {
-      _performanceMetrics.removeRange(0, 100);
+    // Efficient O(1) cleanup using Queue
+    while (_performanceMetrics.length > 1000) {
+      _performanceMetrics.removeFirst();
     }
 
     // Send to DevTools
@@ -248,8 +277,9 @@ class VooPerformancePlugin extends VooPlugin {
   Future<void> recordNetworkMetric(NetworkMetric metric) async {
     _networkMetrics.add(metric);
 
-    if (_networkMetrics.length > 1000) {
-      _networkMetrics.removeRange(0, 100);
+    // Efficient O(1) cleanup using Queue
+    while (_networkMetrics.length > 1000) {
+      _networkMetrics.removeFirst();
     }
 
     // Network metrics are now exported via OTEL traces
@@ -306,9 +336,10 @@ class VooPerformancePlugin extends VooPlugin {
   }
 
   Map<String, dynamic> getMetricsSummary() {
-    final avgResponseTime = _networkMetrics.isEmpty ? 0 : _networkMetrics.map((m) => m.duration.inMilliseconds).reduce((a, b) => a + b) / _networkMetrics.length;
+    final metricsList = _networkMetrics.toList();
+    final avgResponseTime = metricsList.isEmpty ? 0 : metricsList.map((m) => m.duration.inMilliseconds).reduce((a, b) => a + b) / metricsList.length;
 
-    final errorRate = _networkMetrics.isEmpty ? 0 : _networkMetrics.where((m) => m.statusCode >= 400).length / _networkMetrics.length;
+    final errorRate = metricsList.isEmpty ? 0 : metricsList.where((m) => m.statusCode >= 400).length / metricsList.length;
 
     return {
       'network': {'total_requests': _networkMetrics.length, 'average_response_time_ms': avgResponseTime, 'error_rate': errorRate},
@@ -317,7 +348,7 @@ class VooPerformancePlugin extends VooPlugin {
   }
 
   List<NetworkMetric> getNetworkMetrics({DateTime? startDate, DateTime? endDate}) {
-    return _networkMetrics.where((metric) {
+    return _networkMetrics.toList().where((metric) {
       if (startDate != null && metric.timestamp.isBefore(startDate)) {
         return false;
       }
@@ -332,6 +363,11 @@ class VooPerformancePlugin extends VooPlugin {
     _networkMetrics.clear();
     _performanceMetrics.clear();
     _activeTraces.clear();
+    // Cancel all pending trace timeouts
+    for (final timer in _traceTimeouts.values) {
+      timer.cancel();
+    }
+    _traceTimeouts.clear();
   }
 
   @override
@@ -356,6 +392,11 @@ class VooPerformancePlugin extends VooPlugin {
 
   @override
   FutureOr<void> dispose() {
+    // Cancel all pending trace timeouts before clearing
+    for (final timer in _traceTimeouts.values) {
+      timer.cancel();
+    }
+    _traceTimeouts.clear();
     clearMetrics();
     _initialized = false;
     _instance = null;

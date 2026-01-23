@@ -53,39 +53,24 @@ class VooTelemetry {
       throw StateError('VooTelemetry is already initialized');
     }
 
-    final effectiveConfig = config ??
-        TelemetryConfig(
-          endpoint: endpoint,
-          apiKey: apiKey,
-          batchInterval: batchInterval,
-          maxBatchSize: maxBatchSize,
-          debug: debug,
-        );
+    final effectiveConfig =
+        config ?? TelemetryConfig(endpoint: endpoint, apiKey: apiKey, batchInterval: batchInterval, maxBatchSize: maxBatchSize, debug: debug);
 
     // Build resource attributes with OTEL semantic conventions
-    final resourceAttributes = _buildResourceAttributes(
-      serviceName: serviceName,
-      serviceVersion: serviceVersion,
-      additionalAttributes: additionalAttributes,
-    );
+    final resourceAttributes = _buildResourceAttributes(serviceName: serviceName, serviceVersion: serviceVersion, additionalAttributes: additionalAttributes);
 
-    final resource = TelemetryResource(
-      serviceName: serviceName,
-      serviceVersion: serviceVersion,
-      attributes: resourceAttributes,
-    );
+    final resource = TelemetryResource(serviceName: serviceName, serviceVersion: serviceVersion, attributes: resourceAttributes);
 
-    final exporter = OTLPHttpExporter(
-      endpoint: effectiveConfig.endpoint,
-      apiKey: effectiveConfig.apiKey,
-      debug: effectiveConfig.debug,
-    );
+    final exporter = OTLPHttpExporter(endpoint: effectiveConfig.endpoint, apiKey: effectiveConfig.apiKey, debug: effectiveConfig.debug);
 
     final traceProvider = TraceProvider(resource: resource, exporter: exporter, config: effectiveConfig);
 
     final meterProvider = MeterProvider(resource: resource, exporter: exporter, config: effectiveConfig);
 
     final loggerProvider = LoggerProvider(resource: resource, exporter: exporter, config: effectiveConfig);
+
+    // Wire up trace provider to logger provider for log-trace correlation
+    loggerProvider.traceProvider = traceProvider;
 
     _instance = VooTelemetry._(
       config: effectiveConfig,
@@ -147,7 +132,7 @@ class VooTelemetry {
     if (userContext != null) {
       attributes['session.id'] = userContext.sessionId;
       if (userContext.userId != null) {
-        attributes['user.id'] = userContext.userId!;
+        attributes['user.id'] = userContext.userId;
       }
     }
 
@@ -155,7 +140,7 @@ class VooTelemetry {
     final vooConfig = Voo.config;
     if (vooConfig != null) {
       if (vooConfig.projectId != null) {
-        attributes['project.id'] = vooConfig.projectId!;
+        attributes['project.id'] = vooConfig.projectId;
       }
       attributes['deployment.environment'] = vooConfig.environment;
     }
@@ -187,16 +172,25 @@ class VooTelemetry {
     await meterProvider.initialize();
     await loggerProvider.initialize();
 
-    // Start batch flush timer
-    _flushTimer = Timer.periodic(config.batchInterval, (_) {
-      flush();
-    });
-
     _initialized = true;
+
+    // Start self-rescheduling flush timer (waits for flush to complete before rescheduling)
+    _scheduleFlush();
 
     if (config.debug) {
       debugPrint('VooTelemetry initialized with endpoint: ${config.endpoint}');
     }
+  }
+
+  /// Schedule the next flush after the configured interval.
+  /// Uses self-rescheduling timer to ensure flush completes before next timer fires.
+  void _scheduleFlush() {
+    _flushTimer = Timer(config.batchInterval, () async {
+      await flush();
+      if (_initialized) {
+        _scheduleFlush();
+      }
+    });
   }
 
   /// Manually flush all telemetry data

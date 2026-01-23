@@ -22,7 +22,7 @@ class Tracer {
       span.links.addAll(links);
     }
 
-    provider.activeSpan = span;
+    provider.pushSpan(span);
 
     return span;
   }
@@ -42,11 +42,8 @@ class Tracer {
       span.end();
       provider.addSpan(span);
 
-      // Restore parent span as active
-      if (span.parentSpanId != null) {
-        // Find parent span in provider if needed
-        provider.activeSpan = null;
-      }
+      // Restore parent span as active by popping from stack
+      provider.popSpan();
     }
   }
 
@@ -65,10 +62,8 @@ class Tracer {
       span.end();
       provider.addSpan(span);
 
-      // Restore parent span as active
-      if (span.parentSpanId != null) {
-        provider.activeSpan = null;
-      }
+      // Restore parent span as active by popping from stack
+      provider.popSpan();
     }
   }
 }

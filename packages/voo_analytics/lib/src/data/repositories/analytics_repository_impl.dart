@@ -34,19 +34,13 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
   @override
   final bool enableUserProperties;
 
-  AnalyticsRepositoryImpl({
-    this.enableTouchTracking = true,
-    this.enableEventLogging = true,
-    this.enableUserProperties = true,
-  });
+  AnalyticsRepositoryImpl({this.enableTouchTracking = true, this.enableEventLogging = true, this.enableUserProperties = true});
 
   @override
   Future<void> initialize() async {
     if (!kIsWeb) {
       final directory = await getApplicationDocumentsDirectory();
-      final analyticsDir = Directory(
-        path.join(directory.path, 'voo_analytics'),
-      );
+      final analyticsDir = Directory(path.join(directory.path, 'voo_analytics'));
       if (!await analyticsDir.exists()) {
         await analyticsDir.create(recursive: true);
       }
@@ -63,9 +57,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
         if (data['touch_events'] != null) {
           final events = data['touch_events'] as List;
-          _touchEvents.addAll(
-            events.map((e) => TouchEvent.fromMap(e as Map<String, dynamic>)),
-          );
+          _touchEvents.addAll(events.map((e) => TouchEvent.fromMap(e as Map<String, dynamic>)));
         }
 
         if (data['events'] != null) {
@@ -73,9 +65,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
         }
 
         if (data['user_properties'] != null) {
-          _userProperties.addAll(
-            Map<String, String>.from(data['user_properties'] as Map),
-          );
+          _userProperties.addAll(Map<String, String>.from(data['user_properties'] as Map));
         }
 
         _userId = data['user_id'] as String?;
@@ -90,12 +80,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
   Future<void> _saveData() async {
     if (_storageFile != null) {
       try {
-        final data = {
-          'touch_events': _touchEvents.map((e) => e.toMap()).toList(),
-          'events': _events,
-          'user_properties': _userProperties,
-          'user_id': _userId,
-        };
+        final data = {'touch_events': _touchEvents.map((e) => e.toMap()).toList(), 'events': _events, 'user_properties': _userProperties, 'user_id': _userId};
         await _storageFile!.writeAsString(jsonEncode(data));
       } catch (e) {
         if (kDebugMode) {
@@ -110,10 +95,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     if (!enableEventLogging) return;
 
     final timestamp = DateTime.now();
-    final event = {
-      'timestamp': timestamp.toIso8601String(),
-      'parameters': parameters ?? {},
-    };
+    final event = {'timestamp': timestamp.toIso8601String(), 'parameters': parameters ?? {}};
 
     if (_events[name] == null) {
       _events[name] = [];
@@ -128,12 +110,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     _sendToDevTools(
       category: 'Analytics',
       message: 'Analytics event: $name',
-      metadata: {
-        'type': 'analytics_event',
-        'eventName': name,
-        ...?parameters,
-        'timestamp': timestamp.toIso8601String(),
-      },
+      metadata: {'type': 'analytics_event', 'eventName': name, ...?parameters, 'timestamp': timestamp.toIso8601String()},
     );
 
     if (kDebugMode) {
@@ -159,8 +136,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     // Send to DevTools
     _sendToDevTools(
       category: 'Analytics',
-      message:
-          'Touch event at (${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)})',
+      message: 'Touch event at (${event.x.toStringAsFixed(1)}, ${event.y.toStringAsFixed(1)})',
       metadata: {
         'type': 'touch_event',
         'x': event.x,
@@ -203,10 +179,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getHeatMapData({
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
+  Future<Map<String, dynamic>> getHeatMapData({DateTime? startDate, DateTime? endDate}) async {
     final filteredEvents = _touchEvents.where((event) {
       if (startDate != null && event.timestamp.isBefore(startDate)) {
         return false;
@@ -234,20 +207,10 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       // Create heat map grid (simplified)
       final List<HeatMapPoint> points = [];
       for (final event in events) {
-        points.add(
-          HeatMapPoint(
-            position: VooPoint(event.x, event.y),
-            intensity: 1.0,
-            count: 1,
-            primaryType: TouchType.tap,
-          ),
-        );
+        points.add(HeatMapPoint(position: VooPoint(event.x, event.y), intensity: 1.0, count: 1, primaryType: TouchType.tap));
       }
 
-      heatMapData[route] = {
-        'points': points.map((p) => p.toMap()).toList(),
-        'event_count': events.length,
-      };
+      heatMapData[route] = {'points': points.map((p) => p.toMap()).toList(), 'event_count': events.length};
     }
 
     return heatMapData;
@@ -276,11 +239,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
   }
 
   @override
-  Future<List<TouchEvent>> getTouchEvents({
-    String? screenName,
-    DateTime? startDate,
-    DateTime? endDate,
-  }) async {
+  Future<List<TouchEvent>> getTouchEvents({String? screenName, DateTime? startDate, DateTime? endDate}) async {
     return _touchEvents.where((event) {
       if (screenName != null && event.screenName != screenName) {
         return false;
@@ -309,11 +268,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     }
   }
 
-  void _sendToDevTools({
-    required String category,
-    required String message,
-    Map<String, dynamic>? metadata,
-  }) {
+  void _sendToDevTools({required String category, required String message, Map<String, dynamic>? metadata}) {
     try {
       final timestamp = DateTime.now();
 

@@ -1,3 +1,18 @@
+## 1.0.1
+
+### Bug Fixes
+- **FIX**: Add retry logic with exponential backoff and jitter to `OTLPHttpExporter`
+- **FIX**: Implement span stack for proper parent span restoration in nested `withSpan()` calls
+
+### New Features
+- **FEAT**: Implement trace context propagation to logs (log-trace correlation via traceId/spanId)
+
+### Improvements
+- **REFACTOR**: Use self-rescheduling timer for flush to prevent overlapping flush operations
+- **CHORE**: Remove dead code (`_hexToBytes` methods) from span, log record, and serializable models
+
+---
+
 ## 1.0.0
 
 > Note: This release marks the first stable major version with breaking changes.

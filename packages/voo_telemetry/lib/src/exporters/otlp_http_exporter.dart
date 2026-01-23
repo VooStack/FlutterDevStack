@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:voo_telemetry/src/core/telemetry_resource.dart';
@@ -11,9 +12,19 @@ class OTLPHttpExporter {
   final bool debug;
   final http.Client _client;
   final Duration timeout;
+  final int maxRetries;
+  final Duration retryDelay;
+  final Random _random = Random();
 
-  OTLPHttpExporter({required this.endpoint, this.apiKey, this.debug = false, http.Client? client, this.timeout = const Duration(seconds: 10)})
-    : _client = client ?? http.Client();
+  OTLPHttpExporter({
+    required this.endpoint,
+    this.apiKey,
+    this.debug = false,
+    http.Client? client,
+    this.timeout = const Duration(seconds: 10),
+    this.maxRetries = 3,
+    this.retryDelay = const Duration(seconds: 1),
+  }) : _client = client ?? http.Client();
 
   /// Update the API key used for OTLP export.
   /// Call this when the user selects a different project.
@@ -88,36 +99,66 @@ class OTLPHttpExporter {
   }
 
   Future<bool> _sendRequest(Uri url, Map<String, dynamic> body) async {
-    try {
-      if (debug) {
-        debugPrint('Sending OTLP request to $url');
-        debugPrint('Body: ${jsonEncode(body)}');
-      }
+    int attempt = 0;
 
-      final response = await _client
-          .post(url, headers: {'Content-Type': 'application/json', if (apiKey != null) 'X-API-Key': apiKey!}, body: jsonEncode(body))
-          .timeout(timeout);
+    while (attempt < maxRetries) {
+      attempt++;
 
-      if (debug) {
-        debugPrint('Response status: ${response.statusCode}');
-        debugPrint('Response body: ${response.body}');
-      }
+      try {
+        if (debug) {
+          debugPrint('Sending OTLP request to $url (attempt $attempt/$maxRetries)');
+          debugPrint('Body: ${jsonEncode(body)}');
+        }
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return true;
-      } else {
+        final response = await _client
+            .post(url, headers: {'Content-Type': 'application/json', if (apiKey != null) 'X-API-Key': apiKey!}, body: jsonEncode(body))
+            .timeout(timeout);
+
+        if (debug) {
+          debugPrint('Response status: ${response.statusCode}');
+          debugPrint('Response body: ${response.body}');
+        }
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return true;
+        }
+
+        // Don't retry on 4xx client errors (except 429 rate limit)
+        if (response.statusCode >= 400 && response.statusCode < 500 && response.statusCode != 429) {
+          if (debug) {
+            debugPrint('Failed to export telemetry (non-retryable): ${response.statusCode} ${response.body}');
+          }
+          return false;
+        }
+
         if (debug) {
           debugPrint('Failed to export telemetry: ${response.statusCode} ${response.body}');
         }
-        return false;
+      } catch (e, stackTrace) {
+        if (debug) {
+          debugPrint('Error exporting telemetry (attempt $attempt): $e');
+          debugPrint('Stack trace: $stackTrace');
+        }
       }
-    } catch (e, stackTrace) {
-      if (debug) {
-        debugPrint('Error exporting telemetry: $e');
-        debugPrint('Stack trace: $stackTrace');
+
+      // Apply exponential backoff with jitter before retry
+      if (attempt < maxRetries) {
+        final exponentialDelay = retryDelay.inMilliseconds * pow(2, attempt - 1).toInt();
+        final jitter = _random.nextInt(500); // Add up to 500ms jitter
+        final totalDelay = Duration(milliseconds: exponentialDelay + jitter);
+
+        if (debug) {
+          debugPrint('Retrying in ${totalDelay.inMilliseconds}ms...');
+        }
+
+        await Future<void>.delayed(totalDelay);
       }
-      return false;
     }
+
+    if (debug) {
+      debugPrint('Failed to export telemetry after $maxRetries attempts');
+    }
+    return false;
   }
 
   void dispose() {

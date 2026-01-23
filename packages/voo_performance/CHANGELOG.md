@@ -1,3 +1,14 @@
+## 2.0.1
+
+### Performance
+- **PERF**: Use `Queue` instead of `List` for metrics storage enabling O(1) cleanup operations
+
+### Bug Fixes
+- **FIX**: Add trace timeout mechanism (5 min default) for orphan trace cleanup
+- **FIX**: Properly dispose trace timeouts when plugin is disposed
+
+---
+
 ## 2.0.0
 
 > **BREAKING CHANGE**: Full migration to OpenTelemetry (OTEL) as the default telemetry export mechanism.

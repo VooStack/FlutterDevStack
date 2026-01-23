@@ -42,12 +42,7 @@ class TelemetryWorker {
   /// Initialize the telemetry worker.
   ///
   /// On web, this is a no-op as web workers require different setup.
-  Future<void> initialize({
-    required String endpoint,
-    String? apiKey,
-    required TelemetryConfig config,
-    required Map<String, dynamic> resourceAttributes,
-  }) async {
+  Future<void> initialize({required String endpoint, String? apiKey, required TelemetryConfig config, required Map<String, dynamic> resourceAttributes}) async {
     if (_initialized) return;
 
     if (kIsWeb) {
@@ -116,10 +111,7 @@ class TelemetryWorker {
   }
 
   /// Add log records to the export queue.
-  Future<void> addLogs(
-    List<SerializedLogRecord> logs, {
-    int priority = TelemetryPriority.normal,
-  }) async {
+  Future<void> addLogs(List<SerializedLogRecord> logs, {int priority = TelemetryPriority.normal}) async {
     if (!_initialized) return;
 
     final message = TelemetryWorkerMessage(
@@ -133,10 +125,7 @@ class TelemetryWorker {
   }
 
   /// Add spans to the export queue.
-  Future<void> addSpans(
-    List<SerializedSpan> spans, {
-    int priority = TelemetryPriority.normal,
-  }) async {
+  Future<void> addSpans(List<SerializedSpan> spans, {int priority = TelemetryPriority.normal}) async {
     if (!_initialized) return;
 
     final message = TelemetryWorkerMessage(
@@ -150,10 +139,7 @@ class TelemetryWorker {
   }
 
   /// Add metrics to the export queue.
-  Future<void> addMetrics(
-    List<SerializedMetric> metrics, {
-    int priority = TelemetryPriority.normal,
-  }) async {
+  Future<void> addMetrics(List<SerializedMetric> metrics, {int priority = TelemetryPriority.normal}) async {
     if (!_initialized) return;
 
     final message = TelemetryWorkerMessage(
@@ -170,10 +156,7 @@ class TelemetryWorker {
   Future<bool> flush() async {
     if (!_initialized) return false;
 
-    final message = TelemetryWorkerMessage(
-      id: _generateRequestId(),
-      type: TelemetryMessageType.flush,
-    );
+    final message = TelemetryWorkerMessage(id: _generateRequestId(), type: TelemetryMessageType.flush);
 
     final response = await _sendMessageAndWait(message);
     return response?.success ?? false;
@@ -184,14 +167,11 @@ class TelemetryWorker {
     if (!_initialized) return;
 
     // Send shutdown message and wait for flush
-    final message = TelemetryWorkerMessage(
-      id: _generateRequestId(),
-      type: TelemetryMessageType.shutdown,
-    );
+    final message = TelemetryWorkerMessage(id: _generateRequestId(), type: TelemetryMessageType.shutdown);
 
     await _sendMessageAndWait(message, timeout: const Duration(seconds: 10));
 
-    _isolate?.kill(priority: Isolate.beforeNextEvent);
+    _isolate?.kill();
     _isolate = null;
     _mainReceivePort?.close();
     _mainReceivePort = null;
@@ -211,10 +191,7 @@ class TelemetryWorker {
     }
   }
 
-  Future<TelemetryWorkerResponse?> _sendMessageAndWait(
-    TelemetryWorkerMessage message, {
-    Duration timeout = const Duration(seconds: 30),
-  }) async {
+  Future<TelemetryWorkerResponse?> _sendMessageAndWait(TelemetryWorkerMessage message, {Duration timeout = const Duration(seconds: 30)}) async {
     if (_workerSendPort == null) return null;
 
     final completer = Completer<TelemetryWorkerResponse>();
@@ -304,10 +281,7 @@ class _TelemetryWorkerIsolate {
     _init.mainSendPort.send(_receivePort.sendPort);
 
     // Start the flush timer
-    _flushTimer = Timer.periodic(
-      Duration(milliseconds: _init.batchIntervalMs),
-      (_) => _flushAll(),
-    );
+    _flushTimer = Timer.periodic(Duration(milliseconds: _init.batchIntervalMs), (_) => _flushAll());
 
     // Listen for messages
     _receivePort.listen((message) async {
@@ -345,9 +319,7 @@ class _TelemetryWorkerIsolate {
   }
 
   void _addLogs(TelemetryWorkerMessage message) {
-    final logs = (message.data as List)
-        .map((m) => SerializedLogRecord.fromMap(m as Map<String, dynamic>))
-        .toList();
+    final logs = (message.data as List).map((m) => SerializedLogRecord.fromMap(m as Map<String, dynamic>)).toList();
 
     for (final log in logs) {
       if (message.priority == TelemetryPriority.high) {
@@ -358,16 +330,13 @@ class _TelemetryWorkerIsolate {
     }
 
     // Check if we should flush immediately
-    if (_priorityLogQueue.isNotEmpty ||
-        _logQueue.length >= _init.batchSize) {
+    if (_priorityLogQueue.isNotEmpty || _logQueue.length >= _init.batchSize) {
       _flushLogs();
     }
   }
 
   void _addSpans(TelemetryWorkerMessage message) {
-    final spans = (message.data as List)
-        .map((m) => SerializedSpan.fromMap(m as Map<String, dynamic>))
-        .toList();
+    final spans = (message.data as List).map((m) => SerializedSpan.fromMap(m as Map<String, dynamic>)).toList();
 
     for (final span in spans) {
       if (message.priority == TelemetryPriority.high) {
@@ -377,16 +346,13 @@ class _TelemetryWorkerIsolate {
       }
     }
 
-    if (_prioritySpanQueue.isNotEmpty ||
-        _spanQueue.length >= _init.batchSize) {
+    if (_prioritySpanQueue.isNotEmpty || _spanQueue.length >= _init.batchSize) {
       _flushSpans();
     }
   }
 
   void _addMetrics(TelemetryWorkerMessage message) {
-    final metrics = (message.data as List)
-        .map((m) => SerializedMetric.fromMap(m as Map<String, dynamic>))
-        .toList();
+    final metrics = (message.data as List).map((m) => SerializedMetric.fromMap(m as Map<String, dynamic>)).toList();
 
     _metricQueue.addAll(metrics);
 
@@ -417,11 +383,7 @@ class _TelemetryWorkerIsolate {
       return true;
     }
 
-    final results = await Future.wait([
-      _flushLogs(),
-      _flushSpans(),
-      _flushMetrics(),
-    ]);
+    final results = await Future.wait([_flushLogs(), _flushSpans(), _flushMetrics()]);
 
     return results.every((r) => r);
   }
@@ -495,72 +457,61 @@ class _TelemetryWorkerIsolate {
   }
 
   Map<String, dynamic> _buildLogsPayload(List<SerializedLogRecord> logs) => {
-        'resourceLogs': [
+    'resourceLogs': [
+      {
+        'resource': {
+          'attributes': _init.resourceAttributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
+        },
+        'scopeLogs': [
           {
-            'resource': {
-              'attributes': _init.resourceAttributes.entries
-                  .map((e) => {'key': e.key, 'value': _convertValue(e.value)})
-                  .toList(),
-            },
-            'scopeLogs': [
-              {
-                'scope': {'name': 'voo-telemetry', 'version': '2.0.0'},
-                'logRecords': logs.map((l) => l.toOtlp()).toList(),
-              },
-            ],
+            'scope': {'name': 'voo-telemetry', 'version': '2.0.0'},
+            'logRecords': logs.map((l) => l.toOtlp()).toList(),
           },
         ],
-      };
+      },
+    ],
+  };
 
   Map<String, dynamic> _buildSpansPayload(List<SerializedSpan> spans) => {
-        'resourceSpans': [
+    'resourceSpans': [
+      {
+        'resource': {
+          'attributes': _init.resourceAttributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
+        },
+        'scopeSpans': [
           {
-            'resource': {
-              'attributes': _init.resourceAttributes.entries
-                  .map((e) => {'key': e.key, 'value': _convertValue(e.value)})
-                  .toList(),
-            },
-            'scopeSpans': [
-              {
-                'scope': {'name': 'voo-telemetry', 'version': '2.0.0'},
-                'spans': spans.map((s) => s.toOtlp()).toList(),
-              },
-            ],
+            'scope': {'name': 'voo-telemetry', 'version': '2.0.0'},
+            'spans': spans.map((s) => s.toOtlp()).toList(),
           },
         ],
-      };
+      },
+    ],
+  };
 
   Map<String, dynamic> _buildMetricsPayload(List<SerializedMetric> metrics) => {
-        'resourceMetrics': [
+    'resourceMetrics': [
+      {
+        'resource': {
+          'attributes': _init.resourceAttributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
+        },
+        'scopeMetrics': [
           {
-            'resource': {
-              'attributes': _init.resourceAttributes.entries
-                  .map((e) => {'key': e.key, 'value': _convertValue(e.value)})
-                  .toList(),
-            },
-            'scopeMetrics': [
-              {
-                'scope': {'name': 'voo-telemetry', 'version': '2.0.0'},
-                'metrics': metrics.map((m) => m.toOtlp()).toList(),
-              },
-            ],
+            'scope': {'name': 'voo-telemetry', 'version': '2.0.0'},
+            'metrics': metrics.map((m) => m.toOtlp()).toList(),
           },
         ],
-      };
+      },
+    ],
+  };
 
   Future<bool> _sendToEndpoint(String url, Map<String, dynamic> payload) async {
     int retries = 0;
     while (retries < _init.maxRetries) {
       try {
         final body = jsonEncode(payload);
-        final headers = <String, String>{
-          'Content-Type': 'application/json',
-          if (_init.apiKey != null) 'X-API-Key': _init.apiKey!,
-        };
+        final headers = <String, String>{'Content-Type': 'application/json', if (_init.apiKey != null) 'X-API-Key': _init.apiKey!};
 
-        final response = await _httpClient
-            .post(Uri.parse(url), headers: headers, body: body)
-            .timeout(Duration(milliseconds: _init.timeoutMs));
+        final response = await _httpClient.post(Uri.parse(url), headers: headers, body: body).timeout(Duration(milliseconds: _init.timeoutMs));
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
           if (_init.debug) {
@@ -570,8 +521,7 @@ class _TelemetryWorkerIsolate {
         }
 
         if (_init.debug) {
-          debugPrint(
-              'TelemetryWorker: Export failed ${response.statusCode}: ${response.body}');
+          debugPrint('TelemetryWorker: Export failed ${response.statusCode}: ${response.body}');
         }
       } catch (e) {
         if (_init.debug) {
@@ -589,11 +539,7 @@ class _TelemetryWorkerIsolate {
   }
 
   void _sendResponse(String requestId, bool success, {String? error}) {
-    _init.mainSendPort.send(TelemetryWorkerResponse(
-      requestId: requestId,
-      success: success,
-      error: error,
-    ).toMap());
+    _init.mainSendPort.send(TelemetryWorkerResponse(requestId: requestId, success: success, error: error).toMap());
   }
 
   Map<String, dynamic> _convertValue(dynamic value) {

@@ -143,9 +143,10 @@ void main() {
       final otlp = span.toOtlp();
 
       expect(otlp['name'], 'test-span');
-      expect(otlp['traceId'], isList);
-      expect(otlp['spanId'], isList);
-      expect(otlp['parentSpanId'], isList);
+      // traceId/spanId are kept as hex strings (backend expects strings)
+      expect(otlp['traceId'], '12345678901234567890123456789012');
+      expect(otlp['spanId'], '1234567890123456');
+      expect(otlp['parentSpanId'], '0987654321098765');
       expect(otlp['kind'], SpanKind.client.value);
       expect(otlp['startTimeUnixNano'], isA<int>());
       expect(otlp['endTimeUnixNano'], isA<int>());
@@ -188,8 +189,9 @@ void main() {
 
       final otlp = link.toOtlp();
 
-      expect(otlp['traceId'], isList);
-      expect(otlp['spanId'], isList);
+      // traceId/spanId are kept as hex strings (backend expects strings)
+      expect(otlp['traceId'], '12345678901234567890123456789012');
+      expect(otlp['spanId'], '1234567890123456');
       expect(otlp['attributes'], isList);
       expect(otlp['attributes'].length, 1);
     });

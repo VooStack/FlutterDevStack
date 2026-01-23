@@ -36,8 +36,7 @@ class OtelLogExporter {
   /// Callback to get current trace context for log correlation.
   TraceContextProvider? traceContextProvider;
 
-  OtelLogExporter({required this.config})
-      : _resource = config.buildResource();
+  OtelLogExporter({required this.config}) : _resource = config.buildResource();
 
   /// Initialize the exporter and start the flush timer.
   void initialize() {
@@ -78,8 +77,7 @@ class OtelLogExporter {
     }
 
     // Flush immediately for error/fatal logs if prioritizeErrors is enabled
-    if (config.prioritizeErrors &&
-        (log.level.priority >= 4)) {
+    if (config.prioritizeErrors && (log.level.priority >= 4)) {
       // error or fatal
       flush();
     }
@@ -102,10 +100,7 @@ class OtelLogExporter {
 
     try {
       // Convert to OTLP format
-      final logRecords = logsToExport.map((entry) => OtelLogAdapter.toLogRecordWithContext(
-          entry,
-          traceContextProvider: traceContextProvider,
-        )).toList();
+      final logRecords = logsToExport.map((entry) => OtelLogAdapter.toLogRecordWithContext(entry, traceContextProvider: traceContextProvider)).toList();
 
       // Build OTLP payload
       final payload = _buildOtlpPayload(logRecords);
@@ -142,28 +137,20 @@ class OtelLogExporter {
 
   /// Build the OTLP log export payload.
   Map<String, dynamic> _buildOtlpPayload(List<LogRecord> logRecords) => {
-      'resourceLogs': [
-        {
-          'resource': {
-            'attributes': _resource.attributes.entries
-                .map((e) => {
-                      'key': e.key,
-                      'value': _convertValue(e.value),
-                    })
-                .toList(),
-          },
-          'scopeLogs': [
-            {
-              'scope': {
-                'name': config.instrumentationScopeName,
-                'version': config.instrumentationScopeVersion,
-              },
-              'logRecords': logRecords.map((r) => r.toOtlp()).toList(),
-            },
-          ],
+    'resourceLogs': [
+      {
+        'resource': {
+          'attributes': _resource.attributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
         },
-      ],
-    };
+        'scopeLogs': [
+          {
+            'scope': {'name': config.instrumentationScopeName, 'version': config.instrumentationScopeVersion},
+            'logRecords': logRecords.map((r) => r.toOtlp()).toList(),
+          },
+        ],
+      },
+    ],
+  };
 
   Map<String, dynamic> _convertValue(dynamic value) {
     if (value is String) {
@@ -184,11 +171,7 @@ class OtelLogExporter {
     try {
       final uri = Uri.parse('${config.endpoint}/v1/logs');
 
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        if (config.apiKey != null) 'X-API-Key': config.apiKey!,
-        ...?config.headers,
-      };
+      final headers = <String, String>{'Content-Type': 'application/json', if (config.apiKey != null) 'X-API-Key': config.apiKey!, ...?config.headers};
 
       // Fallback to direct HTTP (VooTelemetry integration removed)
       final response = await _httpPost(uri, headers, payload);
@@ -201,18 +184,10 @@ class OtelLogExporter {
     }
   }
 
-  Future<bool> _httpPost(
-    Uri uri,
-    Map<String, String> headers,
-    Map<String, dynamic> payload,
-  ) async {
+  Future<bool> _httpPost(Uri uri, Map<String, String> headers, Map<String, dynamic> payload) async {
     try {
       final client = _getHttpClient();
-      final response = await client.post(
-        uri,
-        headers: headers,
-        body: _encodeJson(payload),
-      );
+      final response = await client.post(uri, headers: headers, body: _encodeJson(payload));
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (e) {
       if (config.debug) {
@@ -229,10 +204,7 @@ class OtelLogExporter {
     return _httpClient!;
   }
 
-  String _encodeJson(Map<String, dynamic> data) {
-    // ignore: avoid_dynamic_calls
-    return _jsonEncode(data);
-  }
+  String _encodeJson(Map<String, dynamic> data) => _jsonEncode(data);
 
   String _jsonEncode(dynamic data) {
     if (data is Map) {

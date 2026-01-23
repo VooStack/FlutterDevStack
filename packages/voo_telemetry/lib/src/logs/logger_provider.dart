@@ -5,6 +5,7 @@ import 'package:voo_telemetry/src/core/telemetry_resource.dart';
 import 'package:voo_telemetry/src/exporters/otlp_http_exporter.dart';
 import 'package:voo_telemetry/src/logs/log_record.dart';
 import 'package:voo_telemetry/src/logs/logger.dart';
+import 'package:voo_telemetry/src/traces/trace_provider.dart';
 
 /// Provider for log telemetry
 class LoggerProvider {
@@ -15,6 +16,9 @@ class LoggerProvider {
   final List<LogRecord> _pendingLogs = [];
   final _lock = Lock();
 
+  /// Reference to TraceProvider for log-trace correlation
+  TraceProvider? traceProvider;
+
   LoggerProvider({required this.resource, required this.exporter, required this.config});
 
   /// Initialize the logger provider
@@ -23,7 +27,10 @@ class LoggerProvider {
   }
 
   /// Get or create a logger
-  Logger getLogger(String name) => _loggers.putIfAbsent(name, () => Logger(name: name, provider: this));
+  Logger getLogger(String name) => _loggers.putIfAbsent(
+        name,
+        () => Logger(name: name, provider: this, traceProvider: traceProvider),
+      );
 
   /// Add a log record to be exported
   void addLogRecord(LogRecord logRecord) {

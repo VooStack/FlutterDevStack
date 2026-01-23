@@ -14,7 +14,18 @@ class TraceProvider {
   final Map<String, Tracer> _tracers = {};
   final List<Span> _pendingSpans = [];
   final _lock = Lock();
-  Span? activeSpan;
+
+  /// Stack-based span management for proper parent restoration
+  final List<Span> _spanStack = [];
+
+  /// Get the currently active span (top of stack)
+  Span? get activeSpan => _spanStack.isNotEmpty ? _spanStack.last : null;
+
+  /// Push a span onto the stack (called when starting a span)
+  void pushSpan(Span span) => _spanStack.add(span);
+
+  /// Pop a span from the stack (called when ending a span)
+  Span? popSpan() => _spanStack.isNotEmpty ? _spanStack.removeLast() : null;
 
   TraceProvider({required this.resource, required this.exporter, required this.config});
 
@@ -55,6 +66,6 @@ class TraceProvider {
   Future<void> shutdown() async {
     await flush();
     _tracers.clear();
-    activeSpan = null;
+    _spanStack.clear();
   }
 }

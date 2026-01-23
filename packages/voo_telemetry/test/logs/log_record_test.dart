@@ -86,8 +86,9 @@ void main() {
 
       final otlp = record.toOtlp();
 
-      expect(otlp['traceId'], isList);
-      expect(otlp['spanId'], isList);
+      // traceId/spanId are kept as hex strings (backend expects strings)
+      expect(otlp['traceId'], 'abcdef1234567890abcdef1234567890');
+      expect(otlp['spanId'], '1234567890');
       expect(otlp['flags'], 1);
     });
 
@@ -141,7 +142,7 @@ void main() {
       expect(nullAttr['value']['stringValue'], 'null');
     });
 
-    test('should handle hex to bytes conversion', () {
+    test('should keep traceId/spanId as hex strings', () {
       final record = LogRecord(
         severityNumber: SeverityNumber.info,
         severityText: 'INFO',
@@ -152,29 +153,18 @@ void main() {
 
       final otlp = record.toOtlp();
 
-      // Check traceId bytes
-      final traceIdBytes = otlp['traceId'] as List<int>;
-      expect(traceIdBytes.length, 16);
-      expect(traceIdBytes[0], 0x01);
-      expect(traceIdBytes[1], 0x23);
-      expect(traceIdBytes[6], 0xcd);
-      expect(traceIdBytes[7], 0xef);
-
-      // Check spanId bytes (padded to 16 chars)
-      final spanIdBytes = otlp['spanId'] as List<int>;
-      expect(spanIdBytes.length, 8);
-      expect(spanIdBytes[0], 0xfe);
-      expect(spanIdBytes[1], 0xdc);
+      // traceId/spanId are kept as hex strings (backend expects strings)
+      expect(otlp['traceId'], '0123456789abcdef0123456789abcdef');
+      expect(otlp['spanId'], 'fedcba9876543210');
     });
 
-    test('should pad short span IDs', () {
+    test('should preserve span IDs as strings', () {
       final record = LogRecord(severityNumber: SeverityNumber.info, severityText: 'INFO', body: 'Test', spanId: '12345678');
 
       final otlp = record.toOtlp();
-      final spanIdBytes = otlp['spanId'] as List<int>;
 
-      // Should pad with zeros and convert correctly
-      expect(spanIdBytes.length, 8);
+      // spanId is kept as hex string (backend expects strings)
+      expect(otlp['spanId'], '12345678');
     });
 
     test('should include observed timestamp when provided', () {
