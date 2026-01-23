@@ -7,13 +7,19 @@ import 'package:voo_telemetry/src/core/telemetry_resource.dart';
 /// OTLP HTTP exporter for sending telemetry data
 class OTLPHttpExporter {
   final String endpoint;
-  final String? apiKey;
+  String? apiKey;
   final bool debug;
   final http.Client _client;
   final Duration timeout;
 
   OTLPHttpExporter({required this.endpoint, this.apiKey, this.debug = false, http.Client? client, this.timeout = const Duration(seconds: 10)})
     : _client = client ?? http.Client();
+
+  /// Update the API key used for OTLP export.
+  /// Call this when the user selects a different project.
+  void updateApiKey(String? newApiKey) {
+    apiKey = newApiKey;
+  }
 
   /// Export traces to OTLP endpoint
   Future<bool> exportTraces(List<Map<String, dynamic>> spans, TelemetryResource resource) async {

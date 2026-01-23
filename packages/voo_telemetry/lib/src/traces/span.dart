@@ -72,9 +72,10 @@ class Span {
 
   /// Convert to OTLP format
   Map<String, dynamic> toOtlp() => {
-    'traceId': _hexToBytes(traceId),
-    'spanId': _hexToBytes(spanId.padRight(16, '0')),
-    if (parentSpanId != null) 'parentSpanId': _hexToBytes(parentSpanId!.padRight(16, '0')),
+    // Keep traceId/spanId as hex strings - backend expects strings, not byte arrays
+    'traceId': traceId,
+    'spanId': spanId,
+    if (parentSpanId != null) 'parentSpanId': parentSpanId,
     'name': name,
     'kind': kind.value,
     'startTimeUnixNano': startTime.microsecondsSinceEpoch * 1000,
@@ -147,8 +148,9 @@ class SpanLink {
   SpanLink({required this.traceId, required this.spanId, this.attributes = const {}});
 
   Map<String, dynamic> toOtlp() => {
-    'traceId': _hexToBytes(traceId),
-    'spanId': _hexToBytes(spanId.padRight(16, '0')),
+    // Keep traceId/spanId as hex strings - backend expects strings, not byte arrays
+    'traceId': traceId,
+    'spanId': spanId,
     'attributes': attributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
   };
 

@@ -32,8 +32,9 @@ class LogRecord {
     'severityText': severityText,
     'body': {'stringValue': body},
     'attributes': attributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
-    if (traceId != null) 'traceId': _hexToBytes(traceId!),
-    if (spanId != null) 'spanId': _hexToBytes(spanId!.padRight(16, '0')),
+    // Keep traceId/spanId as hex strings - backend expects strings, not byte arrays
+    if (traceId != null) 'traceId': traceId,
+    if (spanId != null) 'spanId': spanId,
     'flags': traceFlags,
   };
 

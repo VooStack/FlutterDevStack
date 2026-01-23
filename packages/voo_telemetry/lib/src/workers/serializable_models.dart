@@ -54,8 +54,9 @@ class SerializedLogRecord {
         'attributes': attributes.entries
             .map((e) => {'key': e.key, 'value': _convertValue(e.value)})
             .toList(),
-        if (traceId != null) 'traceId': _hexToBytes(traceId!),
-        if (spanId != null) 'spanId': _hexToBytes(spanId!.padRight(16, '0')),
+        // Keep traceId/spanId as hex strings - backend expects strings, not byte arrays
+        if (traceId != null) 'traceId': traceId,
+        if (spanId != null) 'spanId': spanId,
         'flags': traceFlags,
       };
 
@@ -174,10 +175,10 @@ class SerializedSpan {
 
   /// Convert to OTLP format (runs in worker isolate).
   Map<String, dynamic> toOtlp() => {
-        'traceId': _hexToBytes(traceId),
-        'spanId': _hexToBytes(spanId.padRight(16, '0')),
-        if (parentSpanId != null)
-          'parentSpanId': _hexToBytes(parentSpanId!.padRight(16, '0')),
+        // Keep traceId/spanId as hex strings - backend expects strings, not byte arrays
+        'traceId': traceId,
+        'spanId': spanId,
+        if (parentSpanId != null) 'parentSpanId': parentSpanId,
         'name': name,
         'kind': kind,
         'startTimeUnixNano': startTimeMicros * 1000,
@@ -327,8 +328,9 @@ class SerializedSpanLink {
   }
 
   Map<String, dynamic> toOtlp() => {
-        'traceId': _hexToBytes(traceId),
-        'spanId': _hexToBytes(spanId.padRight(16, '0')),
+        // Keep traceId/spanId as hex strings - backend expects strings, not byte arrays
+        'traceId': traceId,
+        'spanId': spanId,
         'attributes': attributes.entries
             .map((e) => {'key': e.key, 'value': _convertValue(e.value)})
             .toList(),

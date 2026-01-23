@@ -216,6 +216,12 @@ class VooTelemetry {
     _instance = null;
   }
 
+  /// Update the API key used for OTLP export.
+  /// Call this when the user selects a different project.
+  static void updateApiKey(String? apiKey) {
+    _instance?.exporter.updateApiKey(apiKey);
+  }
+
   /// Get a tracer for creating spans
   Tracer getTracer([String name = 'default']) => traceProvider.getTracer(name);
 
