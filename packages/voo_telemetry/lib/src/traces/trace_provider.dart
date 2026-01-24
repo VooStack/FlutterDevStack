@@ -39,13 +39,32 @@ class TraceProvider {
 
   /// Add a span to be exported
   void addSpan(Span span) {
-    _lock.synchronized(() {
+    unawaited(_addSpanAsync(span));
+  }
+
+  Future<void> _addSpanAsync(Span span) async {
+    List<Span>? itemsToExport;
+
+    await _lock.synchronized(() {
       _pendingSpans.add(span);
 
       if (_pendingSpans.length >= config.maxBatchSize) {
-        flush();
+        // Extract items inside lock, export outside
+        itemsToExport = List<Span>.from(_pendingSpans);
+        _pendingSpans.clear();
       }
     });
+
+    // Export outside the lock to prevent deadlock
+    if (itemsToExport != null) {
+      await _exportBatch(itemsToExport!);
+    }
+  }
+
+  Future<void> _exportBatch(List<Span> spans) async {
+    if (spans.isEmpty) return;
+    final otlpSpans = spans.map((s) => s.toOtlp()).toList();
+    await exporter.exportTraces(otlpSpans, resource);
   }
 
   /// Flush pending spans

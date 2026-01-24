@@ -27,13 +27,32 @@ class MeterProvider {
 
   /// Add a metric to be exported
   void addMetric(Metric metric) {
-    _lock.synchronized(() {
+    unawaited(_addMetricAsync(metric));
+  }
+
+  Future<void> _addMetricAsync(Metric metric) async {
+    List<Metric>? itemsToExport;
+
+    await _lock.synchronized(() {
       _pendingMetrics.add(metric);
 
       if (_pendingMetrics.length >= config.maxBatchSize) {
-        flush();
+        // Extract items inside lock, export outside
+        itemsToExport = List<Metric>.from(_pendingMetrics);
+        _pendingMetrics.clear();
       }
     });
+
+    // Export outside the lock to prevent deadlock
+    if (itemsToExport != null) {
+      await _exportBatch(itemsToExport!);
+    }
+  }
+
+  Future<void> _exportBatch(List<Metric> metrics) async {
+    if (metrics.isEmpty) return;
+    final otlpMetrics = metrics.map((m) => m.toOtlp()).toList();
+    await exporter.exportMetrics(otlpMetrics, resource);
   }
 
   /// Flush pending metrics

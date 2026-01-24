@@ -34,13 +34,32 @@ class LoggerProvider {
 
   /// Add a log record to be exported
   void addLogRecord(LogRecord logRecord) {
-    _lock.synchronized(() {
+    unawaited(_addLogRecordAsync(logRecord));
+  }
+
+  Future<void> _addLogRecordAsync(LogRecord logRecord) async {
+    List<LogRecord>? itemsToExport;
+
+    await _lock.synchronized(() {
       _pendingLogs.add(logRecord);
 
       if (_pendingLogs.length >= config.maxBatchSize) {
-        flush();
+        // Extract items inside lock, export outside
+        itemsToExport = List<LogRecord>.from(_pendingLogs);
+        _pendingLogs.clear();
       }
     });
+
+    // Export outside the lock to prevent deadlock
+    if (itemsToExport != null) {
+      await _exportBatch(itemsToExport!);
+    }
+  }
+
+  Future<void> _exportBatch(List<LogRecord> logs) async {
+    if (logs.isEmpty) return;
+    final otlpLogs = logs.map((l) => l.toOtlp()).toList();
+    await exporter.exportLogs(otlpLogs, resource);
   }
 
   /// Flush pending logs
