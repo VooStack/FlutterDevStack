@@ -162,7 +162,12 @@ void main() {
 
     group('isCacheHit', () {
       test('should return true when connectionSetupMs is 0 and ttfb is low', () {
-        const timing = NetworkTiming(timeToFirstByteMs: 1);
+        const timing = NetworkTiming(
+          dnsLookupMs: 0,
+          tcpConnectMs: 0,
+          tlsHandshakeMs: 0,
+          timeToFirstByteMs: 1,
+        );
 
         expect(timing.isCacheHit, isTrue);
       });

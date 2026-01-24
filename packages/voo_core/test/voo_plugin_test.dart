@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:voo_core/voo_core.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('VooPlugin', () {
     group('abstract interface', () {
       test('should implement name and version', () {

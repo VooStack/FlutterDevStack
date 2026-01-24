@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:voo_core/voo_core.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Voo', () {
     tearDown(() async {
       await Voo.dispose();

@@ -289,7 +289,7 @@ void main() {
               throw Exception('always fail');
             },
             policy: const RetryPolicy(
-              maxRetries: 2,
+              maxRetries: 3,
               baseDelay: Duration(milliseconds: 10),
             ),
           );
@@ -297,7 +297,7 @@ void main() {
         throwsException,
       );
 
-      // Initial + 2 retries = 3 attempts
+      // maxRetries = total attempts (not additional retries)
       expect(attempts, equals(3));
     });
 

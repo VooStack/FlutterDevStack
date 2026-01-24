@@ -160,6 +160,15 @@ class VooFeatureConfigService {
     _ttl = defaultTtl;
   }
 
+  /// Set config directly for testing.
+  ///
+  /// This bypasses server fetch and cache loading.
+  @visibleForTesting
+  void setConfigForTesting(VooFeatureConfig config) {
+    _config = config;
+    _initialized = true;
+  }
+
   bool _shouldRefresh() {
     if (_lastFetchTime == null) return true;
     return DateTime.now().difference(_lastFetchTime!) > _ttl;

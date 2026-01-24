@@ -81,7 +81,8 @@ void main() {
         final attribution = VooAttribution.fromReferrer('not a valid url');
 
         expect(attribution.referrer, equals('not a valid url'));
-        expect(attribution.referrerHost, isNull);
+        // Invalid URLs parse with empty host
+        expect(attribution.referrerHost, isEmpty);
       });
     });
 

@@ -1,7 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:voo_analytics/src/replay/replay_capture_service.dart';
+import 'package:voo_core/voo_core.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    // Enable session replay feature for tests
+    VooFeatureConfigService.instance.setConfigForTesting(
+      const VooFeatureConfig(sessionReplayEnabled: true),
+    );
+  });
+
+  tearDownAll(() {
+    VooFeatureConfigService.instance.reset();
+  });
   group('ReplayCaptureConfig', () {
     test('default config has sensible defaults', () {
       const config = ReplayCaptureConfig();

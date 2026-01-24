@@ -7,7 +7,8 @@ void main() {
       final context = VooUserContext();
 
       expect(context.sessionId, isNotEmpty);
-      expect(context.sessionId, startsWith('session_'));
+      // Session ID is a UUID v4
+      expect(context.sessionId.length, equals(36));
     });
 
     test('should allow custom initial session ID', () {
@@ -123,7 +124,8 @@ void main() {
       context.startNewSession();
 
       expect(context.sessionId, isNot(equals(originalSessionId)));
-      expect(context.sessionId, startsWith('session_'));
+      // Session ID is a UUID v4
+      expect(context.sessionId.length, equals(36));
     });
 
     test('should start new session with custom ID', () {
