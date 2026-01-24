@@ -1,0 +1,35 @@
+name: voo_test_utils
+description: Shared testing utilities for the VooStack packages
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  web:
+  windows:
+
+environment:
+  sdk: '>=3.8.1 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  voo_core:
+    path: ../voo_core
+  voo_telemetry:
+    path: ../voo_telemetry
+  http:
+  path_provider_platform_interface:
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
