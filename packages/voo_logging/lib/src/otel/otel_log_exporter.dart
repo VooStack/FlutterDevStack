@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:collection';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:voo_logging/features/logging/domain/entities/log_entry.dart';
-import 'package:voo_telemetry/voo_telemetry.dart';
 import 'package:voo_logging/src/otel/otel_log_adapter.dart';
 import 'package:voo_logging/src/otel/otel_logging_config.dart';
 import 'package:voo_logging/src/otel/trace_context_provider.dart';
+import 'package:voo_telemetry/voo_telemetry.dart';
 
 /// OTLP Log Exporter for VooLogger.
 ///

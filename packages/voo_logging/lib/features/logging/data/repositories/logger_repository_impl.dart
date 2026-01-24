@@ -267,13 +267,13 @@ class LoggerRepositoryImpl extends LoggerRepository {
     if (level == LogLevel.error || level == LogLevel.fatal) {
       // Always submit to VooErrorTrackingService if enabled (automatic)
       if (VooErrorTrackingService.instance.isEnabled) {
-        VooErrorTrackingService.instance.submitError(
+        unawaited(VooErrorTrackingService.instance.submitError(
           message: message,
           errorType: error?.runtimeType.toString(),
           stackTrace: stackTrace?.toString(),
           severity: level == LogLevel.fatal ? 'critical' : 'high',
           isFatal: level == LogLevel.fatal,
-        );
+        ));
       }
 
       // Also notify any custom error capture callback (e.g., replay capture)

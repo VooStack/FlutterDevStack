@@ -71,7 +71,7 @@ class VooTelemetryPlugin extends VooPlugin {
       apiKey: _apiKey,
       serviceName: app.options.appName ?? app.name,
       serviceVersion: app.options.appVersion ?? '1.0.0',
-      additionalAttributes: {'app.name': app.name, 'app.environment': app.options.environment, ...app.options.customConfig},
+      additionalAttributes: {'app.name': app.name, 'app.environment': app.options.environment},
       debug: app.options.enableDebugLogging,
     );
 

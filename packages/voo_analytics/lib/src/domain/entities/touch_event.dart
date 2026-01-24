@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:voo_core/src/models/voo_point.dart';
+import 'package:voo_core/voo_core.dart';
 
 class TouchEvent extends Equatable {
   final String id;

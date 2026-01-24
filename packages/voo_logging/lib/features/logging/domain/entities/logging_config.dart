@@ -67,6 +67,7 @@ class LoggingConfig {
   final CloudSyncConfig? cloudSync;
 
   /// OpenTelemetry configuration for OTLP log export.
+  // ignore: deprecated_member_use_from_same_package
   final OtelLoggingConfig? otelConfig;
 
   const LoggingConfig({
@@ -168,6 +169,7 @@ class LoggingConfig {
     int? retentionDays,
     bool? autoCleanup,
     CloudSyncConfig? cloudSync,
+    // ignore: deprecated_member_use_from_same_package
     OtelLoggingConfig? otelConfig,
   }) => LoggingConfig(
     enablePrettyLogs: enablePrettyLogs ?? this.enablePrettyLogs,

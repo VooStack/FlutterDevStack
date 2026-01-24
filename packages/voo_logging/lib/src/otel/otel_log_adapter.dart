@@ -1,7 +1,7 @@
 import 'package:voo_logging/features/logging/domain/entities/log_entry.dart';
-import 'package:voo_telemetry/voo_telemetry.dart';
 import 'package:voo_logging/src/otel/log_level_otel_extension.dart';
 import 'package:voo_logging/src/otel/trace_context_provider.dart';
+import 'package:voo_telemetry/voo_telemetry.dart';
 
 /// Adapts VooLogger LogEntry to OpenTelemetry LogRecord.
 ///

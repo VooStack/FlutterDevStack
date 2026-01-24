@@ -6,8 +6,8 @@ import 'package:voo_core/voo_core.dart';
 import 'package:voo_telemetry/src/core/telemetry_config.dart';
 import 'package:voo_telemetry/src/core/telemetry_resource.dart';
 import 'package:voo_telemetry/src/exporters/otlp_http_exporter.dart';
-import 'package:voo_telemetry/src/logs/logger.dart';
 import 'package:voo_telemetry/src/logs/log_record.dart';
+import 'package:voo_telemetry/src/logs/logger.dart';
 import 'package:voo_telemetry/src/logs/logger_provider.dart';
 import 'package:voo_telemetry/src/metrics/meter.dart';
 import 'package:voo_telemetry/src/metrics/meter_provider.dart';
@@ -210,10 +210,10 @@ class VooTelemetry {
     _instance = null;
   }
 
-  /// Update the API key used for OTLP export.
+  /// Set the API key used for OTLP export.
   /// Call this when the user selects a different project.
-  static void updateApiKey(String? apiKey) {
-    _instance?.exporter.updateApiKey(apiKey);
+  static set apiKey(String? apiKey) {
+    _instance?.exporter.apiKeyValue = apiKey;
   }
 
   /// Get a tracer for creating spans

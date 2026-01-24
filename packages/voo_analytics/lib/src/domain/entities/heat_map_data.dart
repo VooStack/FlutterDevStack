@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:voo_analytics/src/domain/entities/heat_map_point.dart';
-import 'package:voo_core/src/models/voo_size.dart';
+import 'package:voo_core/voo_core.dart';
 
 export 'heat_map_point.dart';
 

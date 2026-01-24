@@ -6,10 +6,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
-import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_analytics/src/domain/entities/heat_map_data.dart';
-import 'package:voo_core/src/models/voo_point.dart';
+import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_analytics/src/domain/repositories/analytics_repository.dart';
+import 'package:voo_core/voo_core.dart';
 
 class AnalyticsRepositoryImpl implements AnalyticsRepository {
   /// Touch events queue - uses Queue for O(1) removals when bounded

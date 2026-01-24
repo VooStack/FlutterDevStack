@@ -297,13 +297,11 @@ class PrettyLogFormatter {
     }
   }
 
-  bool _supportsAnsiColors() {
-    // ANSI color support is controlled by the showColors config option.
-    // The caller should set showColors: false for platforms that don't support
-    // ANSI escape codes (web, mobile). Desktop terminals typically support them.
-    // This keeps the domain layer free of Flutter dependencies.
-    return true;
-  }
+  // ANSI color support is controlled by the showColors config option.
+  // The caller should set showColors: false for platforms that don't support
+  // ANSI escape codes (web, mobile). Desktop terminals typically support them.
+  // This keeps the domain layer free of Flutter dependencies.
+  bool _supportsAnsiColors() => true;
 
   String _formatTimestamp(DateTime timestamp) {
     final hour = timestamp.hour.toString().padLeft(2, '0');

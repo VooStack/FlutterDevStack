@@ -20,10 +20,10 @@ class VooSize {
   const VooSize.square(double dimension) : width = dimension, height = dimension;
 
   /// Creates a size with the given [width] and infinite height.
-  const VooSize.fromWidth(double width) : width = width, height = double.infinity;
+  const VooSize.fromWidth(this.width) : height = double.infinity;
 
   /// Creates a size with the given [height] and infinite width.
-  const VooSize.fromHeight(double height) : width = double.infinity, height = height;
+  const VooSize.fromHeight(this.height) : width = double.infinity;
 
   /// Creates a size from the shortest side of a given [size].
   factory VooSize.fromShortestSide(VooSize size) {

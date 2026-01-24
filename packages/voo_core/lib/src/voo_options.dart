@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 /// For API and sync configuration, use [VooConfig] instead.
 ///
 /// ## Migration from customConfig
-/// Previously, device and user info was passed via [customConfig]:
+/// Previously, device and user info was passed via `customConfig`:
 /// ```dart
 /// // Old way (deprecated)
 /// VooOptions(customConfig: {'deviceId': '...', 'userId': '...'})
@@ -59,6 +59,7 @@ class VooOptions {
   const VooOptions({
     this.enableDebugLogging = kDebugMode,
     this.autoRegisterPlugins = true,
+    // ignore: deprecated_member_use_from_same_package
     @Deprecated('Use VooConfig for API/sync config. Device info is now auto-collected.') this.customConfig = const {},
     this.initializationTimeout = const Duration(seconds: 10),
     this.appName,

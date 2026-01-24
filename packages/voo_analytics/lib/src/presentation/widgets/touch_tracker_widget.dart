@@ -3,7 +3,7 @@ import 'package:voo_analytics/src/data/repositories/analytics_repository_impl.da
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_analytics/src/replay/replay_capture_service.dart';
 import 'package:voo_analytics/src/voo_analytics_plugin.dart';
-import 'package:voo_core/src/models/voo_point.dart';
+import 'package:voo_core/voo_core.dart';
 
 class TouchTrackerWidget extends StatefulWidget {
   final Widget child;

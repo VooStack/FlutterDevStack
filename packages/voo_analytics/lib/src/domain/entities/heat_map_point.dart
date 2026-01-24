@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
-import 'package:voo_core/src/models/voo_point.dart';
+import 'package:voo_core/voo_core.dart';
 
 class HeatMapPoint extends Equatable {
   final VooPoint position;

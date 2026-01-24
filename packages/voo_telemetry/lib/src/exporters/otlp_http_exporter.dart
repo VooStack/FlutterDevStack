@@ -26,9 +26,9 @@ class OTLPHttpExporter {
     this.retryDelay = const Duration(seconds: 1),
   }) : _client = client ?? http.Client();
 
-  /// Update the API key used for OTLP export.
+  /// Set the API key used for OTLP export.
   /// Call this when the user selects a different project.
-  void updateApiKey(String? newApiKey) {
+  set apiKeyValue(String? newApiKey) {
     apiKey = newApiKey;
   }
 

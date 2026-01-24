@@ -66,7 +66,7 @@ class ManualTraceContextProvider implements TraceContextProvider {
   /// Set the current trace context.
   ///
   /// Call this to update the context (e.g., when a new request arrives).
-  void setContext(TraceContext? context) {
+  set context(TraceContext? context) {
     _currentContext = context;
   }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:voo_analytics/src/data/repositories/analytics_repository_impl.dart';
 import 'package:voo_analytics/src/domain/entities/touch_event.dart';
 import 'package:voo_analytics/src/voo_analytics_plugin.dart';
-import 'package:voo_core/src/models/voo_point.dart';
+import 'package:voo_core/voo_core.dart';
 
 /// A widget that tracks touch events on its child.
 ///
@@ -15,13 +15,7 @@ class TouchableWidget extends StatelessWidget {
   final String? widgetKey;
   final VoidCallback? onTap;
 
-  const TouchableWidget({
-    super.key,
-    required this.child,
-    required this.widgetType,
-    this.widgetKey,
-    this.onTap,
-  });
+  const TouchableWidget({super.key, required this.child, required this.widgetType, this.widgetKey, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +26,7 @@ class TouchableWidget extends StatelessWidget {
           if (renderBox != null) {
             final position = renderBox.localToGlobal(Offset.zero);
             final size = renderBox.size;
-            final center = Offset(
-              position.dx + size.width / 2,
-              position.dy + size.height / 2,
-            );
+            final center = Offset(position.dx + size.width / 2, position.dy + size.height / 2);
 
             final routeName = ModalRoute.of(context)?.settings.name;
             final screenName = routeName ?? 'unknown';

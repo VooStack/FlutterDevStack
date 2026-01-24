@@ -226,26 +226,14 @@ class MemoryMonitorService {
   static Future<MemorySnapshot> takeSnapshot({String? context}) async {
     final timestamp = DateTime.now();
 
-    int? heapUsage;
-    int? externalUsage;
-    int? heapCapacity;
-
-    try {
-      // Memory info is primarily available through DevTools in debug mode.
-      // For production, we rely on platform-specific methods.
-      // The Dart VM doesn't expose direct memory APIs to user code.
-      if (kDebugMode) {
-        // Debug-only memory introspection could be added via DevTools protocol
-      }
-    } catch (e) {
-      // Memory info not available
-    }
-
-    // Calculate usage percent if we have capacity
-    double? usagePercent;
-    if (heapUsage != null && heapCapacity != null && heapCapacity > 0) {
-      usagePercent = (heapUsage / heapCapacity) * 100;
-    }
+    // Memory info is primarily available through DevTools in debug mode.
+    // For production, we rely on platform-specific methods.
+    // The Dart VM doesn't expose direct memory APIs to user code.
+    // TODO: Implement platform-specific memory monitoring
+    const int? heapUsage = null;
+    const int? externalUsage = null;
+    const int? heapCapacity = null;
+    const double? usagePercent = null;
 
     // Determine pressure level
     final pressureLevel = _determinePressureLevel(usagePercent, heapUsage);
@@ -262,10 +250,8 @@ class MemoryMonitorService {
       context: context,
     );
 
-    // Update peak usage
-    if (heapUsage != null && heapUsage > instance._peakHeapUsage) {
-      instance._peakHeapUsage = heapUsage;
-    }
+    // Update peak usage when implemented
+    // TODO: Update peak usage tracking when memory monitoring is implemented
 
     // Add to history
     instance._history.add(snapshot);
