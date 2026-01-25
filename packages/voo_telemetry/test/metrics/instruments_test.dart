@@ -9,17 +9,10 @@ void main() {
   late Meter meter;
 
   setUp(() {
-    resource = TelemetryResource(
-      serviceName: 'test-service',
-      serviceVersion: '1.0.0',
-    );
+    resource = TelemetryResource(serviceName: 'test-service', serviceVersion: '1.0.0');
     exporter = OTLPHttpExporter(endpoint: 'https://test.com');
     config = TelemetryConfig(endpoint: 'https://test.com');
-    meterProvider = MeterProvider(
-      resource: resource,
-      exporter: exporter,
-      config: config,
-    );
+    meterProvider = MeterProvider(resource: resource, exporter: exporter, config: config);
     meter = meterProvider.getMeter('test-meter');
   });
 
@@ -40,16 +33,13 @@ void main() {
     test('should increment by 1', () {
       final counter = meter.createCounter('test.counter');
 
-      expect(() => counter.increment(), returnsNormally);
+      expect(counter.increment, returnsNormally);
     });
 
     test('should accept attributes', () {
       final counter = meter.createCounter('test.counter');
 
-      expect(
-        () => counter.add(5, attributes: {'method': 'GET', 'status': 200}),
-        returnsNormally,
-      );
+      expect(() => counter.add(5, attributes: {'method': 'GET', 'status': 200}), returnsNormally);
     });
   });
 
@@ -69,10 +59,7 @@ void main() {
     test('should accept attributes', () {
       final counter = meter.createUpDownCounter('test.updown');
 
-      expect(
-        () => counter.add(1, attributes: {'connection': 'open'}),
-        returnsNormally,
-      );
+      expect(() => counter.add(1, attributes: {'connection': 'open'}), returnsNormally);
     });
   });
 
@@ -88,10 +75,7 @@ void main() {
     test('should accept attributes', () {
       final histogram = meter.createHistogram('test.histogram');
 
-      expect(
-        () => histogram.record(50.0, attributes: {'endpoint': '/api/users'}),
-        returnsNormally,
-      );
+      expect(() => histogram.record(50.0, attributes: {'endpoint': '/api/users'}), returnsNormally);
     });
 
     test('should handle edge values', () {
@@ -125,10 +109,7 @@ void main() {
     test('should accept attributes', () {
       final gauge = meter.createGauge('test.gauge');
 
-      expect(
-        () => gauge.set(100.0, attributes: {'unit': 'MB'}),
-        returnsNormally,
-      );
+      expect(() => gauge.set(100.0, attributes: {'unit': 'MB'}), returnsNormally);
     });
 
     test('should start at 0', () {

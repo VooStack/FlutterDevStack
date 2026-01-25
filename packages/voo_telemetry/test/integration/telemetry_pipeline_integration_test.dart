@@ -17,45 +17,29 @@ void main() {
         return http.Response('{}', 200);
       });
 
-      resource = TelemetryResource(
-        serviceName: 'test-service',
-        serviceVersion: '1.0.0',
-      );
+      resource = TelemetryResource(serviceName: 'test-service', serviceVersion: '1.0.0');
       config = TelemetryConfig(endpoint: 'https://test.com');
     });
 
     group('Full Trace Pipeline', () {
       test('should create, record, and export traces', () async {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
-        final traceProvider = TraceProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
+        final traceProvider = TraceProvider(resource: resource, exporter: exporter, config: config);
         await traceProvider.initialize();
 
         final tracer = traceProvider.getTracer('test-tracer');
 
         // Create parent span
-        final parentSpan = tracer.startSpan(
-          'parent-operation',
-          kind: SpanKind.server,
-        );
+        final parentSpan = tracer.startSpan('parent-operation', kind: SpanKind.server);
         parentSpan.setAttribute('http.method', 'GET');
         parentSpan.setAttribute('http.route', '/api/users');
 
         // Create child span
-        final childSpan = tracer.startSpan(
-          'database-query',
-          kind: SpanKind.client,
-        );
+        final childSpan = tracer.startSpan('database-query', kind: SpanKind.client);
         childSpan.setAttribute('db.system', 'postgresql');
         childSpan.addEvent('query-start');
 
-        await Future.delayed(const Duration(milliseconds: 10));
+        await Future<void>.delayed(const Duration(milliseconds: 10));
         childSpan.addEvent('query-end');
         childSpan.status = SpanStatus.ok();
         childSpan.end();
@@ -74,15 +58,8 @@ void main() {
       });
 
       test('should correlate parent and child spans', () async {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
-        final traceProvider = TraceProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
+        final traceProvider = TraceProvider(resource: resource, exporter: exporter, config: config);
 
         final tracer = traceProvider.getTracer('test-tracer');
 
@@ -102,35 +79,16 @@ void main() {
 
     group('Full Metrics Pipeline', () {
       test('should create and export metrics', () async {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
-        final meterProvider = MeterProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
+        final meterProvider = MeterProvider(resource: resource, exporter: exporter, config: config);
         await meterProvider.initialize();
 
         final meter = meterProvider.getMeter('test-meter');
 
         // Create various instruments
-        final requestCounter = meter.createCounter(
-          'http.requests',
-          description: 'Number of HTTP requests',
-          unit: '{requests}',
-        );
-        final latencyHistogram = meter.createHistogram(
-          'http.request.duration',
-          description: 'HTTP request duration',
-          unit: 'ms',
-        );
-        final activeConnections = meter.createGauge(
-          'http.connections.active',
-          description: 'Active connections',
-          unit: '{connections}',
-        );
+        final requestCounter = meter.createCounter('http.requests', description: 'Number of HTTP requests', unit: '{requests}');
+        final latencyHistogram = meter.createHistogram('http.request.duration', description: 'HTTP request duration', unit: 'ms');
+        final activeConnections = meter.createGauge('http.connections.active', description: 'Active connections', unit: '{connections}');
 
         // Record metrics
         requestCounter.add(1, attributes: {'method': 'GET', 'status': 200});
@@ -146,15 +104,8 @@ void main() {
 
     group('Full Logging Pipeline', () {
       test('should create and export logs', () async {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
-        final loggerProvider = LoggerProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
+        final loggerProvider = LoggerProvider(resource: resource, exporter: exporter, config: config);
         await loggerProvider.initialize();
 
         final logger = loggerProvider.getLogger('test-logger');
@@ -163,30 +114,16 @@ void main() {
         logger.debug('Debug message', attributes: {'debug': true});
         logger.info('User logged in', attributes: {'user.id': '123'});
         logger.warn('Slow response', attributes: {'duration_ms': 5000});
-        logger.error('Request failed', attributes: {
-          'exception.type': 'HttpException',
-          'exception.message': 'Timeout',
-        });
+        logger.error('Request failed', attributes: {'exception.type': 'HttpException', 'exception.message': 'Timeout'});
 
         await loggerProvider.flush();
         await loggerProvider.shutdown();
       });
 
       test('should correlate logs with traces', () async {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
-        final traceProvider = TraceProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
-        final loggerProvider = LoggerProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
+        final traceProvider = TraceProvider(resource: resource, exporter: exporter, config: config);
+        final loggerProvider = LoggerProvider(resource: resource, exporter: exporter, config: config);
         loggerProvider.traceProvider = traceProvider;
 
         final tracer = traceProvider.getTracer('test-tracer');
@@ -208,26 +145,11 @@ void main() {
 
     group('Combined Telemetry', () {
       test('should handle traces, metrics, and logs together', () async {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
 
-        final traceProvider = TraceProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
-        final meterProvider = MeterProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
-        final loggerProvider = LoggerProvider(
-          resource: resource,
-          exporter: exporter,
-          config: config,
-        );
+        final traceProvider = TraceProvider(resource: resource, exporter: exporter, config: config);
+        final meterProvider = MeterProvider(resource: resource, exporter: exporter, config: config);
+        final loggerProvider = LoggerProvider(resource: resource, exporter: exporter, config: config);
         loggerProvider.traceProvider = traceProvider;
 
         final tracer = traceProvider.getTracer('app');
@@ -242,7 +164,7 @@ void main() {
           logger.info('Request started');
           requestCounter.increment();
 
-          await Future.delayed(const Duration(milliseconds: 50));
+          await Future<void>.delayed(const Duration(milliseconds: 50));
 
           span.setAttribute('http.status_code', 200);
           latency.record(50);

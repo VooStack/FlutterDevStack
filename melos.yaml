@@ -53,3 +53,16 @@ scripts:
   nuke_stale_state:
     description: Nuke stale state from all packages.
     run: melos exec -- bash -c 'rm -rf pubspec.lock .dart_tool build'
+
+  test_integration_api:
+    description: Run API integration tests with mock servers.
+    run: |
+      melos exec --scope="voo_telemetry" --scope="voo_performance" --scope="voo_logging" --scope="voo_core" -- \
+        flutter test test/integration/api/
+
+  test_integration_api_real:
+    description: Run API integration tests with real endpoints. Set VOO_TEST_REAL_ENDPOINT=true and VOO_OTLP_ENDPOINT.
+    run: |
+      export VOO_TEST_REAL_ENDPOINT=true
+      melos exec --scope="voo_telemetry" --scope="voo_performance" --scope="voo_logging" --scope="voo_core" -- \
+        flutter test test/integration/api/

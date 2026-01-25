@@ -10,17 +10,10 @@ void main() {
     late Tracer tracer;
 
     setUp(() {
-      resource = TelemetryResource(
-        serviceName: 'test-service',
-        serviceVersion: '1.0.0',
-      );
+      resource = TelemetryResource(serviceName: 'test-service', serviceVersion: '1.0.0');
       exporter = OTLPHttpExporter(endpoint: 'https://test.com');
       config = TelemetryConfig(endpoint: 'https://test.com');
-      traceProvider = TraceProvider(
-        resource: resource,
-        exporter: exporter,
-        config: config,
-      );
+      traceProvider = TraceProvider(resource: resource, exporter: exporter, config: config);
       tracer = traceProvider.getTracer('test-tracer');
     });
 
@@ -46,10 +39,7 @@ void main() {
       });
 
       test('should create span with attributes', () {
-        final span = tracer.startSpan(
-          'span-with-attrs',
-          attributes: {'key': 'value', 'count': 42},
-        );
+        final span = tracer.startSpan('span-with-attrs', attributes: {'key': 'value', 'count': 42});
 
         expect(span.attributes['key'], equals('value'));
         expect(span.attributes['count'], equals(42));
@@ -59,11 +49,7 @@ void main() {
       });
 
       test('should create span with links', () {
-        final link = SpanLink(
-          traceId: 'abc123',
-          spanId: 'def456',
-          attributes: {'link.type': 'follows_from'},
-        );
+        final link = SpanLink(traceId: 'abc123', spanId: 'def456', attributes: {'link.type': 'follows_from'});
         final span = tracer.startSpan('span-with-links', links: [link]);
 
         expect(span.links.length, equals(1));
@@ -100,9 +86,7 @@ void main() {
       test('should execute function and set ok status on success', () async {
         String? result;
 
-        result = await tracer.withSpan<String>('async-span', (span) async {
-          return 'success';
-        });
+        result = await tracer.withSpan<String>('async-span', (span) async => 'success');
 
         expect(result, equals('success'));
       });
@@ -142,9 +126,7 @@ void main() {
 
     group('withSpanSync', () {
       test('should execute function and set ok status on success', () {
-        final result = tracer.withSpanSync<String>('sync-span', (span) {
-          return 'success';
-        });
+        final result = tracer.withSpanSync<String>('sync-span', (span) => 'success');
 
         expect(result, equals('success'));
       });
@@ -171,13 +153,9 @@ void main() {
       test('should include attributes in span', () {
         Span? capturedSpan;
 
-        tracer.withSpanSync<void>(
-          'test-span',
-          (span) {
-            capturedSpan = span;
-          },
-          attributes: {'test.attr': 'value'},
-        );
+        tracer.withSpanSync<void>('test-span', (span) {
+          capturedSpan = span;
+        }, attributes: {'test.attr': 'value'});
 
         expect(capturedSpan!.attributes['test.attr'], equals('value'));
       });

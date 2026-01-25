@@ -1,9 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voo_logging/voo_logging.dart';
-// ignore: deprecated_member_use_from_same_package
 import 'package:voo_logging/src/otel/otel_log_exporter.dart';
-// ignore: deprecated_member_use_from_same_package
-import 'package:voo_logging/src/otel/otel_logging_config.dart';
+import 'package:voo_logging/voo_logging.dart';
 
 void main() {
   group('OtelLogExporter', () {
@@ -16,24 +13,14 @@ void main() {
         enabled: true,
         endpoint: 'https://test.otel.endpoint',
         serviceName: 'test-service',
-        serviceVersion: '1.0.0',
         apiKey: 'test-api-key',
         batchSize: 5,
         batchInterval: Duration(seconds: 10),
       );
     });
 
-    LogEntry createTestLog({
-      String message = 'Test log message',
-      LogLevel level = LogLevel.info,
-    }) {
-      return LogEntry(
-        id: 'test-${DateTime.now().millisecondsSinceEpoch}',
-        level: level,
-        message: message,
-        timestamp: DateTime.now(),
-      );
-    }
+    LogEntry createTestLog({String message = 'Test log message', LogLevel level = LogLevel.info}) =>
+        LogEntry(id: 'test-${DateTime.now().millisecondsSinceEpoch}', level: level, message: message, timestamp: DateTime.now());
 
     group('constructor', () {
       test('should create with valid config', () {
@@ -50,7 +37,7 @@ void main() {
         // ignore: deprecated_member_use_from_same_package
         final exporter = OtelLogExporter(config: config);
 
-        expect(() => exporter.initialize(), returnsNormally);
+        expect(exporter.initialize, returnsNormally);
         await exporter.dispose();
       });
 
@@ -171,7 +158,6 @@ void main() {
           enabled: true,
           endpoint: 'https://test.otel.endpoint',
           serviceName: 'test-service',
-          prioritizeErrors: true,
           batchSize: 100, // Large batch size
           batchInterval: Duration(hours: 1),
         );

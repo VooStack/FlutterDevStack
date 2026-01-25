@@ -49,6 +49,8 @@ dev_dependencies:
   build_runner: ^2.4.0
   dio: ^5.0.0
   path_provider_platform_interface: ^2.1.0
+  voo_test_utils:
+    path: ../voo_test_utils
 
 flutter:
   uses-material-design: true

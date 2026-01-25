@@ -8,10 +8,7 @@ void main() {
     late TelemetryResource resource;
 
     setUp(() {
-      resource = TelemetryResource(
-        serviceName: 'test-service',
-        serviceVersion: '1.0.0',
-      );
+      resource = TelemetryResource(serviceName: 'test-service', serviceVersion: '1.0.0');
     });
 
     group('constructor', () {
@@ -23,28 +20,19 @@ void main() {
       });
 
       test('should create with api key', () {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          apiKey: 'test-api-key',
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', apiKey: 'test-api-key');
 
         expect(exporter.apiKey, equals('test-api-key'));
       });
 
       test('should create with debug mode', () {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          debug: true,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', debug: true);
 
         expect(exporter.debug, isTrue);
       });
 
       test('should create with custom timeout', () {
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          timeout: const Duration(seconds: 30),
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', timeout: const Duration(seconds: 30));
 
         expect(exporter.timeout, equals(const Duration(seconds: 30)));
       });
@@ -76,14 +64,9 @@ void main() {
           return http.Response('{}', 200);
         });
 
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
 
-        final spans = [
-          Span(name: 'test-span').toOtlp(),
-        ];
+        final spans = [Span(name: 'test-span').toOtlp()];
 
         final result = await exporter.exportTraces(spans, resource);
 
@@ -91,20 +74,11 @@ void main() {
       });
 
       test('should return false on server error', () async {
-        final mockClient = MockClient((request) async {
-          return http.Response('{"error": "Server Error"}', 500);
-        });
+        final mockClient = MockClient((request) async => http.Response('{"error": "Server Error"}', 500));
 
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-          maxRetries: 1,
-          retryDelay: const Duration(milliseconds: 10),
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient, maxRetries: 1, retryDelay: const Duration(milliseconds: 10));
 
-        final spans = [
-          Span(name: 'test-span').toOtlp(),
-        ];
+        final spans = [Span(name: 'test-span').toOtlp()];
 
         final result = await exporter.exportTraces(spans, resource);
 
@@ -127,14 +101,9 @@ void main() {
           return http.Response('{}', 200);
         });
 
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
 
-        final metrics = [
-          CounterMetric(name: 'test.counter', value: 10).toOtlp(),
-        ];
+        final metrics = [CounterMetric(name: 'test.counter', value: 10).toOtlp()];
 
         final result = await exporter.exportMetrics(metrics, resource);
 
@@ -157,18 +126,9 @@ void main() {
           return http.Response('{}', 200);
         });
 
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient);
 
-        final logs = [
-          LogRecord(
-            body: 'Test log',
-            severityNumber: SeverityNumber.info,
-            severityText: 'INFO',
-          ).toOtlp(),
-        ];
+        final logs = [LogRecord(body: 'Test log', severityNumber: SeverityNumber.info, severityText: 'INFO').toOtlp()];
 
         final result = await exporter.exportLogs(logs, resource);
 
@@ -188,12 +148,7 @@ void main() {
           return http.Response('{}', 200);
         });
 
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-          maxRetries: 3,
-          retryDelay: const Duration(milliseconds: 10),
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient, retryDelay: const Duration(milliseconds: 10));
 
         final spans = [Span(name: 'test').toOtlp()];
         final result = await exporter.exportTraces(spans, resource);
@@ -210,12 +165,7 @@ void main() {
           return http.Response('{"error": "Bad Request"}', 400);
         });
 
-        final exporter = OTLPHttpExporter(
-          endpoint: 'https://test.com',
-          client: mockClient,
-          maxRetries: 3,
-          retryDelay: const Duration(milliseconds: 10),
-        );
+        final exporter = OTLPHttpExporter(endpoint: 'https://test.com', client: mockClient, retryDelay: const Duration(milliseconds: 10));
 
         final spans = [Span(name: 'test').toOtlp()];
         final result = await exporter.exportTraces(spans, resource);
@@ -229,7 +179,7 @@ void main() {
       test('should dispose without error', () {
         final exporter = OTLPHttpExporter(endpoint: 'https://test.com');
 
-        expect(() => exporter.dispose(), returnsNormally);
+        expect(exporter.dispose, returnsNormally);
       });
     });
   });
