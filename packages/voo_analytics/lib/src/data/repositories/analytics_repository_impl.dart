@@ -71,7 +71,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
         _userId = data['user_id'] as String?;
       } catch (e) {
         if (kDebugMode) {
-          print('[VooAnalytics] Error loading data: $e');
+          debugPrint('[VooAnalytics] Error loading data: $e');
         }
       }
     }
@@ -84,7 +84,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
         await _storageFile!.writeAsString(jsonEncode(data));
       } catch (e) {
         if (kDebugMode) {
-          print('[VooAnalytics] Error saving data: $e');
+          debugPrint('[VooAnalytics] Error saving data: $e');
         }
       }
     }
@@ -114,7 +114,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     );
 
     if (kDebugMode) {
-      print('[VooAnalytics] Event logged: $name');
+      debugPrint('[VooAnalytics] Event logged: $name');
     }
   }
 
@@ -152,7 +152,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     );
 
     if (kDebugMode) {
-      print('[VooAnalytics] Touch event tracked at (${event.x}, ${event.y})');
+      debugPrint('[VooAnalytics] Touch event tracked at (${event.x}, ${event.y})');
     }
   }
 
@@ -164,7 +164,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     await _saveData();
 
     if (kDebugMode) {
-      print('[VooAnalytics] User property set: $name = $value');
+      debugPrint('[VooAnalytics] User property set: $name = $value');
     }
   }
 
@@ -174,7 +174,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     await _saveData();
 
     if (kDebugMode) {
-      print('[VooAnalytics] User ID set: $userId');
+      debugPrint('[VooAnalytics] User ID set: $userId');
     }
   }
 
@@ -228,7 +228,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     }
 
     if (kDebugMode) {
-      print('[VooAnalytics] All data cleared');
+      debugPrint('[VooAnalytics] All data cleared');
     }
   }
 
@@ -264,7 +264,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     _storageFile = null;
 
     if (kDebugMode) {
-      print('[VooAnalytics] Repository disposed');
+      debugPrint('[VooAnalytics] Repository disposed');
     }
   }
 

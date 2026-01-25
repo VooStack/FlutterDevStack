@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:voo_analytics/src/presentation/widgets/touch_tracker_widget.dart';
@@ -93,7 +93,9 @@ class _RouteAwareTouchTrackerState extends State<RouteAwareTouchTracker>
       }
     } catch (e) {
       // Ignore errors in screenshot capture
-      debugPrint('Failed to capture screenshot: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to capture screenshot: $e');
+      }
     }
   }
 
