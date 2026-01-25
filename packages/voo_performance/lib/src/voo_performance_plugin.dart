@@ -158,9 +158,6 @@ class VooPerformancePlugin extends VooPlugin {
     // Forward FPS samples to OTEL
     _fpsSubscription?.cancel();
     _fpsSubscription = FpsMonitorService.fpsStream.listen((sample) {
-      if (kDebugMode) {
-        debugPrint('[VooPerformance] FPS sample: ${sample.fps.toStringAsFixed(1)} fps, janky: ${sample.isJanky}');
-      }
       _fpsMetric?.recordSample(
         fps: sample.fps,
         frameDurationMs: sample.frameDurationMs,
@@ -171,9 +168,6 @@ class VooPerformancePlugin extends VooPlugin {
     // Forward memory snapshots to OTEL
     _memorySubscription?.cancel();
     _memorySubscription = MemoryMonitorService.snapshotStream.listen((snapshot) {
-      if (kDebugMode) {
-        debugPrint('[VooPerformance] Memory snapshot: ${snapshot.heapUsageMB?.toStringAsFixed(1) ?? 'N/A'}MB, pressure: ${snapshot.pressureLevel.name}');
-      }
       _memoryMetric?.recordSnapshot(
         heapUsageBytes: snapshot.heapUsageBytes,
         externalUsageBytes: snapshot.externalUsageBytes,

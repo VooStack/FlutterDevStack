@@ -267,10 +267,6 @@ class FpsMonitorService {
       }
 
       _fpsController.add(sample);
-
-      if (kDebugMode) {
-        debugPrint('FpsMonitorService [web]: Emitted FPS sample');
-      }
     });
   }
 
