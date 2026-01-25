@@ -57,6 +57,12 @@ class MeterProvider {
 
   /// Flush pending metrics
   Future<void> flush() async {
+    // First, flush all meter instruments (especially histograms with pending values)
+    for (final meter in _meters.values) {
+      meter.flush();
+    }
+
+    // Now export all pending metrics
     final metricsToExport = await _lock.synchronized(() {
       final metrics = List<Metric>.from(_pendingMetrics);
       _pendingMetrics.clear();

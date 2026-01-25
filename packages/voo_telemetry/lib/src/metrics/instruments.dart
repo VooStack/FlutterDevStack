@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:voo_telemetry/src/metrics/meter.dart';
 import 'package:voo_telemetry/src/metrics/metric.dart';
 
@@ -65,6 +66,10 @@ class Histogram {
   void record(double value, {Map<String, dynamic>? attributes}) {
     _values.add(value);
 
+    if (kDebugMode && _values.length % 50 == 0) {
+      debugPrint('[Histogram] $name: recorded ${_values.length} values');
+    }
+
     // Batch values and send periodically
     if (_values.length >= 100) {
       _flush(attributes: attributes);
@@ -85,6 +90,12 @@ class Histogram {
 
     meter.provider.addMetric(metric);
     _values.clear();
+  }
+
+  /// Flush any pending histogram values.
+  /// Called during MeterProvider.flush() to ensure all data is exported.
+  void flush({Map<String, dynamic>? attributes}) {
+    _flush(attributes: attributes);
   }
 }
 

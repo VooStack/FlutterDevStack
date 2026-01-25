@@ -10,7 +10,10 @@ import 'package:voo_performance/src/otel/otel_performance_trace.dart';
 import 'package:voo_performance/src/otel/semantic_conventions.dart';
 import 'package:voo_performance/src/otel/metrics/otel_fps_metric.dart';
 import 'package:voo_performance/src/otel/metrics/otel_memory_metric.dart';
-import 'package:voo_performance/src/otel/metrics/otel_app_launch_metric.dart';
+import 'package:voo_performance/src/otel/metrics/otel_app_launch_metric.dart' as otel_launch;
+import 'package:voo_performance/src/data/services/fps_monitor_service.dart';
+import 'package:voo_performance/src/data/services/memory_monitor_service.dart';
+import 'package:voo_performance/src/data/services/app_launch_service.dart';
 
 class VooPerformancePlugin extends VooPlugin {
   static VooPerformancePlugin? _instance;
@@ -28,8 +31,13 @@ class VooPerformancePlugin extends VooPlugin {
   Meter? _otelMeter;
   OtelFpsMetric? _fpsMetric;
   OtelMemoryMetric? _memoryMetric;
-  OtelAppLaunchMetric? _appLaunchMetric;
+  otel_launch.OtelAppLaunchMetric? _appLaunchMetric;
   bool _otelEnabled = false;
+
+  // Stream subscriptions for forwarding metrics to OTEL
+  StreamSubscription<FpsSample>? _fpsSubscription;
+  StreamSubscription<MemorySnapshot>? _memorySubscription;
+  StreamSubscription<AppLaunchMetrics>? _appLaunchSubscription;
 
   /// Check if OTEL is enabled.
   bool get isOtelEnabled => _otelEnabled;
@@ -119,13 +127,79 @@ class VooPerformancePlugin extends VooPlugin {
     _memoryMetric = OtelMemoryMetric(_otelMeter!);
     _memoryMetric!.initialize();
 
-    _appLaunchMetric = OtelAppLaunchMetric(_otelTracer!, _otelMeter!);
+    _appLaunchMetric = otel_launch.OtelAppLaunchMetric(_otelTracer!, _otelMeter!);
     _appLaunchMetric!.initialize();
 
     _otelEnabled = true;
 
+    // Subscribe to monitor services and forward to OTEL
+    _subscribeToMonitorServices();
+
     if (kDebugMode) {
       debugPrint('[VooPerformance] OTEL auto-enabled with endpoint: $endpoint');
+    }
+  }
+
+  /// Subscribe to monitor services and forward metrics to OTEL.
+  void _subscribeToMonitorServices() {
+    // Forward FPS samples to OTEL
+    _fpsSubscription?.cancel();
+    _fpsSubscription = FpsMonitorService.fpsStream.listen((sample) {
+      if (kDebugMode) {
+        debugPrint('[VooPerformance] FPS sample: ${sample.fps.toStringAsFixed(1)} fps, janky: ${sample.isJanky}');
+      }
+      _fpsMetric?.recordSample(
+        fps: sample.fps,
+        frameDurationMs: sample.frameDurationMs,
+        isJanky: sample.isJanky,
+      );
+    });
+
+    // Forward memory snapshots to OTEL
+    _memorySubscription?.cancel();
+    _memorySubscription = MemoryMonitorService.snapshotStream.listen((snapshot) {
+      if (kDebugMode) {
+        debugPrint('[VooPerformance] Memory snapshot: ${snapshot.heapUsageMB?.toStringAsFixed(1) ?? 'N/A'}MB, pressure: ${snapshot.pressureLevel.name}');
+      }
+      _memoryMetric?.recordSnapshot(
+        heapUsageBytes: snapshot.heapUsageBytes,
+        externalUsageBytes: snapshot.externalUsageBytes,
+        heapCapacityBytes: snapshot.heapCapacityBytes,
+        pressureLevel: snapshot.pressureLevel.name,
+        isUnderPressure: snapshot.isUnderPressure,
+      );
+    });
+
+    // Forward app launch metrics to OTEL
+    _appLaunchSubscription?.cancel();
+    _appLaunchSubscription = AppLaunchService.launchStream.listen((metrics) {
+      if (kDebugMode) {
+        debugPrint('[VooPerformance] App launch: ${metrics.launchType.name}, TTI: ${metrics.timeToInteractive?.inMilliseconds}ms');
+      }
+      _appLaunchMetric?.recordLaunch(
+        launchType: _mapLaunchType(metrics.launchType),
+        totalLaunchMs: metrics.totalLaunchTime?.inMilliseconds,
+        timeToFirstFrameMs: metrics.timeToFirstFrame?.inMilliseconds,
+        timeToInteractiveMs: metrics.timeToInteractive?.inMilliseconds,
+        isSuccessful: metrics.isSuccessful,
+        isSlow: metrics.isSlowLaunch,
+      );
+    });
+
+    if (kDebugMode) {
+      debugPrint('[VooPerformance] Subscribed to monitor services for OTEL export');
+    }
+  }
+
+  /// Map AppLaunchService.LaunchType to OtelAppLaunchMetric.LaunchType
+  otel_launch.LaunchType _mapLaunchType(LaunchType type) {
+    switch (type) {
+      case LaunchType.cold:
+        return otel_launch.LaunchType.cold;
+      case LaunchType.warm:
+        return otel_launch.LaunchType.warm;
+      case LaunchType.hot:
+        return otel_launch.LaunchType.hot;
     }
   }
 
@@ -142,7 +216,7 @@ class VooPerformancePlugin extends VooPlugin {
   OtelMemoryMetric? get memoryMetric => _memoryMetric;
 
   /// Get the App Launch metric recorder (available after enableOtel is called).
-  OtelAppLaunchMetric? get appLaunchMetric => _appLaunchMetric;
+  otel_launch.OtelAppLaunchMetric? get appLaunchMetric => _appLaunchMetric;
 
   /// Create a new performance trace.
   ///
@@ -392,6 +466,14 @@ class VooPerformancePlugin extends VooPlugin {
 
   @override
   FutureOr<void> dispose() {
+    // Cancel monitor service subscriptions
+    _fpsSubscription?.cancel();
+    _fpsSubscription = null;
+    _memorySubscription?.cancel();
+    _memorySubscription = null;
+    _appLaunchSubscription?.cancel();
+    _appLaunchSubscription = null;
+
     // Cancel all pending trace timeouts before clearing
     for (final timer in _traceTimeouts.values) {
       timer.cancel();

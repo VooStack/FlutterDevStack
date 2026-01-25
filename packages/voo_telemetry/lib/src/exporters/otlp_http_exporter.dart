@@ -56,7 +56,16 @@ class OTLPHttpExporter {
 
   /// Export metrics to OTLP endpoint
   Future<bool> exportMetrics(List<Map<String, dynamic>> metrics, TelemetryResource resource) async {
-    if (metrics.isEmpty) return true;
+    if (metrics.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('[OTLPHttpExporter] No metrics to export');
+      }
+      return true;
+    }
+
+    if (kDebugMode) {
+      debugPrint('[OTLPHttpExporter] Exporting ${metrics.length} metrics to $endpoint/v1/metrics');
+    }
 
     final url = Uri.parse('$endpoint/v1/metrics');
     final body = {

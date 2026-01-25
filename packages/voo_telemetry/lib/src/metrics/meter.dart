@@ -25,4 +25,13 @@ class Meter {
   /// Create a gauge instrument
   Gauge createGauge(String name, {String? description, String? unit}) =>
       _instruments.putIfAbsent(name, () => Gauge(name: name, description: description, unit: unit, meter: this)) as Gauge;
+
+  /// Flush all histogram instruments to ensure their pending values are exported.
+  void flush() {
+    for (final instrument in _instruments.values) {
+      if (instrument is Histogram) {
+        instrument.flush();
+      }
+    }
+  }
 }
