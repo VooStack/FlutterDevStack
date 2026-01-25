@@ -61,7 +61,16 @@ class VooTelemetry {
 
     final resource = TelemetryResource(serviceName: serviceName, serviceVersion: serviceVersion, attributes: resourceAttributes);
 
-    final exporter = OTLPHttpExporter(endpoint: effectiveConfig.endpoint, apiKey: effectiveConfig.apiKey, debug: effectiveConfig.debug);
+    final exporter = OTLPHttpExporter(
+      endpoint: effectiveConfig.endpoint,
+      apiKey: effectiveConfig.apiKey,
+      debug: effectiveConfig.debug,
+      timeout: effectiveConfig.timeout,
+      maxRetries: effectiveConfig.maxRetries,
+      retryDelay: effectiveConfig.retryDelay,
+      enableCompression: effectiveConfig.enableCompression,
+      compressionThreshold: effectiveConfig.compressionThreshold,
+    );
 
     final traceProvider = TraceProvider(resource: resource, exporter: exporter, config: effectiveConfig);
 
@@ -195,7 +204,50 @@ class VooTelemetry {
 
   /// Manually flush all telemetry data
   Future<void> flush() async {
-    await Future.wait([traceProvider.flush(), meterProvider.flush(), loggerProvider.flush()]);
+    if (config.useCombinedEndpoint) {
+      await _flushCombined();
+    } else {
+      await _flushSeparate();
+    }
+  }
+
+  /// Flush using separate endpoints (3 HTTP requests)
+  Future<void> _flushSeparate() async {
+    await Future.wait([
+      traceProvider.flush(),
+      meterProvider.flush(),
+      loggerProvider.flush(),
+    ]);
+  }
+
+  /// Flush using combined endpoint (1 HTTP request)
+  Future<void> _flushCombined() async {
+    // Collect all pending telemetry in parallel
+    final results = await Future.wait([
+      traceProvider.collectPendingOtlp(),
+      meterProvider.collectPendingOtlp(),
+      loggerProvider.collectPendingOtlp(),
+    ]);
+
+    final spans = results[0];
+    final metrics = results[1];
+    final logs = results[2];
+
+    // Skip export if nothing to send
+    if (spans.isEmpty && metrics.isEmpty && logs.isEmpty) {
+      return;
+    }
+
+    final result = await exporter.exportCombined(
+      spans: spans,
+      metrics: metrics,
+      logRecords: logs,
+      resource: resource,
+    );
+
+    if (config.debug) {
+      debugPrint('Combined export: $result');
+    }
   }
 
   /// Shutdown VooTelemetry and flush remaining data

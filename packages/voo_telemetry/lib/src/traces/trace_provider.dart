@@ -67,17 +67,26 @@ class TraceProvider {
     await exporter.exportTraces(otlpSpans, resource);
   }
 
-  /// Flush pending spans
-  Future<void> flush() async {
+  /// Collect pending spans for combined export.
+  ///
+  /// Returns the OTLP-formatted spans and clears the pending list.
+  /// Use this when exporting via the combined telemetry endpoint.
+  Future<List<Map<String, dynamic>>> collectPendingOtlp() async {
     final spansToExport = await _lock.synchronized(() {
       final spans = List<Span>.from(_pendingSpans);
       _pendingSpans.clear();
       return spans;
     });
 
-    if (spansToExport.isEmpty) return;
+    if (spansToExport.isEmpty) return [];
 
-    final otlpSpans = spansToExport.map((s) => s.toOtlp()).toList();
+    return spansToExport.map((s) => s.toOtlp()).toList();
+  }
+
+  /// Flush pending spans
+  Future<void> flush() async {
+    final otlpSpans = await collectPendingOtlp();
+    if (otlpSpans.isEmpty) return;
     await exporter.exportTraces(otlpSpans, resource);
   }
 

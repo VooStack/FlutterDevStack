@@ -62,17 +62,26 @@ class LoggerProvider {
     await exporter.exportLogs(otlpLogs, resource);
   }
 
-  /// Flush pending logs
-  Future<void> flush() async {
+  /// Collect pending logs for combined export.
+  ///
+  /// Returns the OTLP-formatted logs and clears the pending list.
+  /// Use this when exporting via the combined telemetry endpoint.
+  Future<List<Map<String, dynamic>>> collectPendingOtlp() async {
     final logsToExport = await _lock.synchronized(() {
       final logs = List<LogRecord>.from(_pendingLogs);
       _pendingLogs.clear();
       return logs;
     });
 
-    if (logsToExport.isEmpty) return;
+    if (logsToExport.isEmpty) return [];
 
-    final otlpLogs = logsToExport.map((l) => l.toOtlp()).toList();
+    return logsToExport.map((l) => l.toOtlp()).toList();
+  }
+
+  /// Flush pending logs
+  Future<void> flush() async {
+    final otlpLogs = await collectPendingOtlp();
+    if (otlpLogs.isEmpty) return;
     await exporter.exportLogs(otlpLogs, resource);
   }
 

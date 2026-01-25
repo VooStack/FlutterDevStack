@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:voo_core/voo_core.dart';
 import 'package:voo_telemetry/src/core/telemetry_resource.dart';
 
 /// OTLP HTTP exporter for sending telemetry data
@@ -14,6 +15,8 @@ class OTLPHttpExporter {
   final Duration timeout;
   final int maxRetries;
   final Duration retryDelay;
+  final bool enableCompression;
+  final int compressionThreshold;
   final Random _random = Random();
 
   OTLPHttpExporter({
@@ -24,6 +27,8 @@ class OTLPHttpExporter {
     this.timeout = const Duration(seconds: 10),
     this.maxRetries = 3,
     this.retryDelay = const Duration(seconds: 1),
+    this.enableCompression = true,
+    this.compressionThreshold = 1024,
   }) : _client = client ?? http.Client();
 
   /// Set the API key used for OTLP export.
@@ -107,6 +112,99 @@ class OTLPHttpExporter {
     return _sendRequest(url, body);
   }
 
+  /// Export combined telemetry (traces, metrics, logs) in a single request.
+  ///
+  /// This reduces the number of HTTP requests from 3 to 1 per flush cycle.
+  /// Returns [CombinedExportResult] with success status for each type.
+  Future<CombinedExportResult> exportCombined({
+    required List<Map<String, dynamic>> spans,
+    required List<Map<String, dynamic>> metrics,
+    required List<Map<String, dynamic>> logRecords,
+    required TelemetryResource resource,
+  }) async {
+    // If all are empty, return success
+    if (spans.isEmpty && metrics.isEmpty && logRecords.isEmpty) {
+      return const CombinedExportResult(success: true);
+    }
+
+    final url = Uri.parse('$endpoint/v1/telemetry');
+    final resourceOtlp = resource.toOtlp();
+    final scope = {'name': 'voo-telemetry', 'version': '2.0.0'};
+
+    final body = <String, dynamic>{};
+
+    // Only include non-empty data
+    if (spans.isNotEmpty) {
+      body['resourceSpans'] = [
+        {
+          'resource': resourceOtlp,
+          'scopeSpans': [
+            {'scope': scope, 'spans': spans},
+          ],
+        },
+      ];
+    }
+
+    if (metrics.isNotEmpty) {
+      body['resourceMetrics'] = [
+        {
+          'resource': resourceOtlp,
+          'scopeMetrics': [
+            {'scope': scope, 'metrics': metrics},
+          ],
+        },
+      ];
+    }
+
+    if (logRecords.isNotEmpty) {
+      body['resourceLogs'] = [
+        {
+          'resource': resourceOtlp,
+          'scopeLogs': [
+            {'scope': scope, 'logRecords': logRecords},
+          ],
+        },
+      ];
+    }
+
+    final success = await _sendRequest(url, body);
+
+    return CombinedExportResult(
+      success: success,
+      spansExported: spans.length,
+      metricsExported: metrics.length,
+      logsExported: logRecords.length,
+    );
+  }
+
+  /// Check if the combined endpoint is available.
+  ///
+  /// Makes a test request to check if the server returns 404.
+  /// Returns true if the endpoint is available.
+  Future<bool> isCombinedEndpointAvailable() async {
+    try {
+      final url = Uri.parse('$endpoint/v1/telemetry');
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        if (apiKey != null) 'X-API-Key': apiKey!,
+      };
+
+      // Send empty request to check availability
+      final response = await _client
+          .post(url, headers: headers, body: '{}')
+          .timeout(const Duration(seconds: 5));
+
+      // 404 means endpoint doesn't exist
+      // 200/400/401 etc. means it exists
+      return response.statusCode != 404;
+    } catch (e) {
+      if (debug) {
+        debugPrint('Error checking combined endpoint availability: $e');
+      }
+      return false;
+    }
+  }
+
   Future<bool> _sendRequest(Uri url, Map<String, dynamic> body) async {
     int attempt = 0;
 
@@ -114,13 +212,31 @@ class OTLPHttpExporter {
       attempt++;
 
       try {
+        // Compress payload if enabled and above threshold
+        final jsonString = jsonEncode(body);
+        final compressed = CompressionUtils.compressIfNeeded(
+          jsonString,
+          threshold: compressionThreshold,
+          enabled: enableCompression,
+        );
+
+        final headers = <String, String>{
+          'Content-Type': 'application/json',
+          if (apiKey != null) 'X-API-Key': apiKey!,
+          if (compressed.isCompressed) 'Content-Encoding': 'gzip',
+        };
+
         if (debug) {
           debugPrint('Sending OTLP request to $url (attempt $attempt/$maxRetries)');
-          debugPrint('Body: ${jsonEncode(body)}');
+          if (compressed.isCompressed) {
+            debugPrint('Payload compressed: ${compressed.originalSize} -> ${compressed.compressedSize} bytes '
+                '(${(compressed.compressionRatio * 100).toStringAsFixed(1)}%)');
+          }
+          debugPrint('Body: $jsonString');
         }
 
         final response = await _client
-            .post(url, headers: {'Content-Type': 'application/json', if (apiKey != null) 'X-API-Key': apiKey!}, body: jsonEncode(body))
+            .post(url, headers: headers, body: compressed.data)
             .timeout(timeout);
 
         if (debug) {
@@ -173,4 +289,34 @@ class OTLPHttpExporter {
   void dispose() {
     _client.close();
   }
+}
+
+/// Result of a combined telemetry export.
+@immutable
+class CombinedExportResult {
+  /// Whether the export was successful.
+  final bool success;
+
+  /// Number of spans exported.
+  final int spansExported;
+
+  /// Number of metrics exported.
+  final int metricsExported;
+
+  /// Number of log records exported.
+  final int logsExported;
+
+  const CombinedExportResult({
+    required this.success,
+    this.spansExported = 0,
+    this.metricsExported = 0,
+    this.logsExported = 0,
+  });
+
+  /// Total number of items exported.
+  int get totalExported => spansExported + metricsExported + logsExported;
+
+  @override
+  String toString() =>
+      'CombinedExportResult(success: $success, spans: $spansExported, metrics: $metricsExported, logs: $logsExported)';
 }

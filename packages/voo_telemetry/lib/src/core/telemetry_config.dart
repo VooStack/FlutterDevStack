@@ -33,6 +33,13 @@ class TelemetryConfig {
   /// Payloads larger than this will be compressed.
   final int compressionThreshold;
 
+  /// Use the combined telemetry endpoint (/v1/telemetry) instead of
+  /// separate endpoints for traces, metrics, and logs.
+  ///
+  /// This reduces HTTP requests from 3 to 1 per flush cycle.
+  /// Requires backend support (API v1.1+).
+  final bool useCombinedEndpoint;
+
   TelemetryConfig({
     required this.endpoint,
     this.apiKey,
@@ -49,6 +56,7 @@ class TelemetryConfig {
     this.maxQueueSize = 5000,
     this.maxRetention = const Duration(days: 7),
     this.compressionThreshold = 1024,
+    this.useCombinedEndpoint = false,
     Map<String, String>? headers,
   }) : headers = {'Content-Type': 'application/json', if (apiKey != null) 'X-API-Key': apiKey, ...?headers};
 
@@ -69,6 +77,7 @@ class TelemetryConfig {
     int? maxQueueSize,
     Duration? maxRetention,
     int? compressionThreshold,
+    bool? useCombinedEndpoint,
     Map<String, String>? headers,
   }) => TelemetryConfig(
     endpoint: endpoint ?? this.endpoint,
@@ -86,6 +95,7 @@ class TelemetryConfig {
     maxQueueSize: maxQueueSize ?? this.maxQueueSize,
     maxRetention: maxRetention ?? this.maxRetention,
     compressionThreshold: compressionThreshold ?? this.compressionThreshold,
+    useCombinedEndpoint: useCombinedEndpoint ?? this.useCombinedEndpoint,
     headers: headers ?? this.headers,
   );
 }

@@ -55,23 +55,32 @@ class MeterProvider {
     await exporter.exportMetrics(otlpMetrics, resource);
   }
 
-  /// Flush pending metrics
-  Future<void> flush() async {
+  /// Collect pending metrics for combined export.
+  ///
+  /// Returns the OTLP-formatted metrics and clears the pending list.
+  /// Use this when exporting via the combined telemetry endpoint.
+  Future<List<Map<String, dynamic>>> collectPendingOtlp() async {
     // First, flush all meter instruments (especially histograms with pending values)
     for (final meter in _meters.values) {
       meter.flush();
     }
 
-    // Now export all pending metrics
+    // Now collect all pending metrics
     final metricsToExport = await _lock.synchronized(() {
       final metrics = List<Metric>.from(_pendingMetrics);
       _pendingMetrics.clear();
       return metrics;
     });
 
-    if (metricsToExport.isEmpty) return;
+    if (metricsToExport.isEmpty) return [];
 
-    final otlpMetrics = metricsToExport.map((m) => m.toOtlp()).toList();
+    return metricsToExport.map((m) => m.toOtlp()).toList();
+  }
+
+  /// Flush pending metrics
+  Future<void> flush() async {
+    final otlpMetrics = await collectPendingOtlp();
+    if (otlpMetrics.isEmpty) return;
     await exporter.exportMetrics(otlpMetrics, resource);
   }
 
