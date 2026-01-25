@@ -11,6 +11,7 @@ import 'package:voo_performance/src/otel/semantic_conventions.dart';
 import 'package:voo_performance/src/otel/metrics/otel_fps_metric.dart';
 import 'package:voo_performance/src/otel/metrics/otel_memory_metric.dart';
 import 'package:voo_performance/src/otel/metrics/otel_app_launch_metric.dart' as otel_launch;
+import 'package:voo_performance/src/otel/metrics/otel_http_metric.dart';
 import 'package:voo_performance/src/data/services/fps_monitor_service.dart';
 import 'package:voo_performance/src/data/services/memory_monitor_service.dart';
 import 'package:voo_performance/src/data/services/app_launch_service.dart';
@@ -32,6 +33,7 @@ class VooPerformancePlugin extends VooPlugin {
   OtelFpsMetric? _fpsMetric;
   OtelMemoryMetric? _memoryMetric;
   otel_launch.OtelAppLaunchMetric? _appLaunchMetric;
+  OtelHttpMetric? _httpMetric;
   bool _otelEnabled = false;
 
   // Stream subscriptions for forwarding metrics to OTEL
@@ -130,6 +132,9 @@ class VooPerformancePlugin extends VooPlugin {
     _appLaunchMetric = otel_launch.OtelAppLaunchMetric(_otelTracer!, _otelMeter!);
     _appLaunchMetric!.initialize();
 
+    _httpMetric = OtelHttpMetric(_otelMeter!);
+    _httpMetric!.initialize();
+
     _otelEnabled = true;
 
     // Subscribe to monitor services and forward to OTEL
@@ -142,6 +147,14 @@ class VooPerformancePlugin extends VooPlugin {
 
   /// Subscribe to monitor services and forward metrics to OTEL.
   void _subscribeToMonitorServices() {
+    // Start monitor services if not already running
+    if (!FpsMonitorService.isMonitoring) {
+      FpsMonitorService.startMonitoring();
+    }
+    if (!MemoryMonitorService.isMonitoring) {
+      MemoryMonitorService.startMonitoring();
+    }
+
     // Forward FPS samples to OTEL
     _fpsSubscription?.cancel();
     _fpsSubscription = FpsMonitorService.fpsStream.listen((sample) {
@@ -217,6 +230,9 @@ class VooPerformancePlugin extends VooPlugin {
 
   /// Get the App Launch metric recorder (available after enableOtel is called).
   otel_launch.OtelAppLaunchMetric? get appLaunchMetric => _appLaunchMetric;
+
+  /// Get the HTTP metric recorder (available after enableOtel is called).
+  OtelHttpMetric? get httpMetric => _httpMetric;
 
   /// Create a new performance trace.
   ///
@@ -356,8 +372,17 @@ class VooPerformancePlugin extends VooPlugin {
       _networkMetrics.removeFirst();
     }
 
-    // Network metrics are now exported via OTEL traces
-    // CloudSync is deprecated and no longer used
+    // Export HTTP metrics via OTEL (for endpoint performance tracking)
+    if (_otelEnabled && _httpMetric != null) {
+      _httpMetric!.recordRequest(
+        method: metric.method,
+        url: metric.url,
+        statusCode: metric.statusCode,
+        durationMs: metric.duration.inMilliseconds.toDouble(),
+        requestSize: metric.requestSize,
+        responseSize: metric.responseSize,
+      );
+    }
 
     // Send to DevTools
     _sendToDevTools(
@@ -473,6 +498,10 @@ class VooPerformancePlugin extends VooPlugin {
     _memorySubscription = null;
     _appLaunchSubscription?.cancel();
     _appLaunchSubscription = null;
+
+    // Stop monitor services
+    FpsMonitorService.stopMonitoring();
+    MemoryMonitorService.stopMonitoring();
 
     // Cancel all pending trace timeouts before clearing
     for (final timer in _traceTimeouts.values) {

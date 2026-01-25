@@ -13,3 +13,4 @@ export 'src/data/services/memory_monitor_service.dart';
 export 'src/otel/otel_performance_trace.dart';
 export 'src/otel/otel_context_propagator.dart';
 export 'src/otel/semantic_conventions.dart';
+export 'src/otel/metrics/otel_http_metric.dart';

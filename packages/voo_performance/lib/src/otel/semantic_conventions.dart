@@ -15,6 +15,9 @@ class HttpSemanticConventions {
   static const String httpResponseStatusCode = 'http.response.status_code';
   static const String httpResponseBodySize = 'http.response.body.size';
 
+  // HTTP Client Metrics (OTEL semantic conventions)
+  static const String httpClientRequestDuration = 'http.client.request.duration';
+
   // URL Attributes
   static const String urlFull = 'url.full';
   static const String urlPath = 'url.path';

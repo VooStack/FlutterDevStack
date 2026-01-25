@@ -29,8 +29,8 @@ class CounterMetric extends Metric {
     'sum': {
       'dataPoints': [
         {
-          'asInt': value,
-          'timeUnixNano': timestamp.microsecondsSinceEpoch * 1000,
+          'asInt': value.toString(), // OTLP JSON uses strings for 64-bit integers
+          'timeUnixNano': (timestamp.microsecondsSinceEpoch * 1000).toString(),
           'attributes': attributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
         },
       ],
@@ -69,7 +69,7 @@ class GaugeMetric extends Metric {
       'dataPoints': [
         {
           'asDouble': value,
-          'timeUnixNano': timestamp.microsecondsSinceEpoch * 1000,
+          'timeUnixNano': (timestamp.microsecondsSinceEpoch * 1000).toString(), // OTLP JSON uses strings for 64-bit integers
           'attributes': attributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
         },
       ],
@@ -110,11 +110,11 @@ class HistogramMetric extends Metric {
       'histogram': {
         'dataPoints': [
           {
-            'count': values.length,
+            'count': values.length.toString(), // OTLP JSON uses strings for 64-bit integers
             'sum': values.fold<double>(0, (sum, v) => sum + v),
-            'bucketCounts': bucketCounts,
+            'bucketCounts': bucketCounts.map((c) => c.toString()).toList(), // Strings for 64-bit integers
             'explicitBounds': bounds,
-            'timeUnixNano': timestamp.microsecondsSinceEpoch * 1000,
+            'timeUnixNano': (timestamp.microsecondsSinceEpoch * 1000).toString(), // Strings for 64-bit integers
             'attributes': attributes.entries.map((e) => {'key': e.key, 'value': _convertValue(e.value)}).toList(),
             if (values.isNotEmpty) 'min': values.reduce((a, b) => a < b ? a : b),
             if (values.isNotEmpty) 'max': values.reduce((a, b) => a > b ? a : b),
