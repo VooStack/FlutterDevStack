@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-
 import 'package:voo_core/src/batching/batch_config.dart';
 import 'package:voo_core/src/batching/compression_utils.dart';
 import 'package:voo_core/src/batching/network_monitor.dart';
@@ -97,10 +95,7 @@ class AdaptiveBatchManager<T> {
     _initialized = true;
 
     // Process any items that were persisted
-    final pending = await _queue.length;
-    if (pending > 0 && kDebugMode) {
-      debugPrint('AdaptiveBatchManager[$name]: Restored $pending items');
-    }
+    // Process any persisted items on next flush cycle
   }
 
   /// Add an item to the batch queue.
@@ -143,9 +138,6 @@ class AdaptiveBatchManager<T> {
   Future<bool> flush() async {
     if (!_initialized || _flushing) return true;
     if (!_circuitBreaker.allowRequest) {
-      if (kDebugMode) {
-        debugPrint('AdaptiveBatchManager[$name]: Circuit breaker open, skipping flush');
-      }
       return false;
     }
 
@@ -180,10 +172,7 @@ class AdaptiveBatchManager<T> {
             await _queue.requeue(items);
             return false;
           }
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint('AdaptiveBatchManager[$name]: Flush failed: $e');
-          }
+        } catch (_) {
           // Requeue items
           await _queue.requeue(items);
           return false;

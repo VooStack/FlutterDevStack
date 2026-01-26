@@ -137,9 +137,6 @@ class CircuitBreaker {
     if (_state == CircuitBreakerState.halfOpen) {
       _state = CircuitBreakerState.closed;
       _openedAt = null;
-      if (kDebugMode) {
-        debugPrint('CircuitBreaker: Closed after successful request');
-      }
     }
   }
 
@@ -151,10 +148,6 @@ class CircuitBreaker {
         _state == CircuitBreakerState.closed) {
       _state = CircuitBreakerState.open;
       _openedAt = DateTime.now();
-      if (kDebugMode) {
-        debugPrint(
-            'CircuitBreaker: Opened after $threshold consecutive failures');
-      }
     } else if (_state == CircuitBreakerState.halfOpen) {
       // Failed during half-open, go back to open
       _state = CircuitBreakerState.open;
@@ -168,9 +161,6 @@ class CircuitBreaker {
       final elapsed = DateTime.now().difference(_openedAt!);
       if (elapsed >= cooldown) {
         _state = CircuitBreakerState.halfOpen;
-        if (kDebugMode) {
-          debugPrint('CircuitBreaker: Half-open, allowing test request');
-        }
       }
     }
   }
@@ -231,10 +221,6 @@ Future<T> retryWithBackoff<T>(
       // Calculate delay
       final delay = policy.getDelay(attempt);
       onRetry?.call(attempt, e);
-
-      if (kDebugMode) {
-        debugPrint('Retry attempt $attempt after ${delay.inMilliseconds}ms');
-      }
 
       await Future.delayed(delay);
     }

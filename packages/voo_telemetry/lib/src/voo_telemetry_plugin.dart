@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
 import 'package:voo_telemetry/voo_telemetry.dart';
 
@@ -53,10 +52,6 @@ class VooTelemetryPlugin extends VooPlugin {
     // Register the plugin with Voo
     await Voo.registerPlugin(plugin);
     plugin._initialized = true;
-
-    if (kDebugMode) {
-      debugPrint('VooTelemetry: Plugin initialized with endpoint: $endpoint');
-    }
   }
 
   @override
@@ -80,10 +75,6 @@ class VooTelemetryPlugin extends VooPlugin {
 
     // Set up integrations with other plugins if they exist
     await _setupIntegrations(app);
-
-    if (app.options.enableDebugLogging) {
-      debugPrint('VooTelemetry initialized for app: ${app.name}');
-    }
   }
 
   @override
@@ -119,9 +110,6 @@ class VooTelemetryPlugin extends VooPlugin {
         // Set up log forwarding to OpenTelemetry
         // The actual implementation would set up stream listeners
         // to forward logs to the telemetry backend
-        if (app.options.enableDebugLogging) {
-          debugPrint('VooTelemetry: Logging integration enabled for app ${app.name}');
-        }
       }
     }
   }
@@ -135,9 +123,6 @@ class VooTelemetryPlugin extends VooPlugin {
         // Set up event forwarding to OpenTelemetry
         // The actual implementation would set up event listeners
         // to forward analytics events to the telemetry backend
-        if (app.options.enableDebugLogging) {
-          debugPrint('VooTelemetry: Analytics integration enabled for app ${app.name}');
-        }
       }
     }
   }
@@ -151,9 +136,6 @@ class VooTelemetryPlugin extends VooPlugin {
         // Set up trace and metric forwarding to OpenTelemetry
         // The actual implementation would set up performance listeners
         // to forward metrics to the telemetry backend
-        if (app.options.enableDebugLogging) {
-          debugPrint('VooTelemetry: Performance integration enabled for app ${app.name}');
-        }
       }
     }
   }

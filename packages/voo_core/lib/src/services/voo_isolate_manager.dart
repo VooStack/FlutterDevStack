@@ -88,18 +88,11 @@ class VooIsolateManager {
     // On web, we can't use traditional isolates
     if (kIsWeb) {
       _initialized = true;
-      if (kDebugMode) {
-        debugPrint('VooIsolateManager: Web platform - using main thread');
-      }
       return;
     }
 
     await instance._initializeWorker();
     _initialized = true;
-
-    if (kDebugMode) {
-      debugPrint('VooIsolateManager: Initialized with worker isolate');
-    }
   }
 
   /// Run a synchronous function in an isolate.
@@ -161,12 +154,8 @@ class VooIsolateManager {
     // Use Isolate.run for simple async operations
     try {
       return await Isolate.run<R>(() => callback(message));
-    } catch (e) {
+    } catch (_) {
       // Fallback to main thread if isolate fails
-      if (kDebugMode) {
-        debugPrint(
-            'VooIsolateManager: Isolate failed, running on main thread: $e');
-      }
       return await callback(message);
     }
   }
@@ -181,11 +170,8 @@ class VooIsolateManager {
 
     try {
       return await Isolate.run<R>(callback);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint(
-            'VooIsolateManager: Isolate failed, running on main thread: $e');
-      }
+    } catch (_) {
+      // Fallback to main thread if isolate fails
       return await callback();
     }
   }
@@ -246,10 +232,7 @@ class VooIsolateManager {
           throw TimeoutException('Worker isolate initialization timed out');
         },
       );
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooIsolateManager: Failed to initialize worker: $e');
-      }
+    } catch (_) {
       _workerIsolate?.kill();
       _workerIsolate = null;
       _mainReceivePort?.close();
@@ -321,10 +304,6 @@ class VooIsolateManager {
     }
     _initialized = false;
     _instance = null;
-
-    if (kDebugMode) {
-      debugPrint('VooIsolateManager: Disposed');
-    }
   }
 
   /// Reset for testing.

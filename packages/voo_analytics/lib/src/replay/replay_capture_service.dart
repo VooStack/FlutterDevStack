@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:voo_analytics/src/utils/isolate_processing.dart';
@@ -156,13 +155,6 @@ class ReplayCaptureService {
   /// This should be a RenderRepaintBoundary from a RepaintBoundary widget.
   void setRepaintBoundary(RenderRepaintBoundary? boundary) {
     _repaintBoundary = boundary;
-    if (kDebugMode) {
-      if (boundary != null) {
-        debugPrint('VooReplay: RepaintBoundary set - attached: ${boundary.attached}, size: ${boundary.size}');
-      } else {
-        debugPrint('VooReplay: RepaintBoundary cleared (set to null)');
-      }
-    }
   }
 
   /// Whether replay capture is currently enabled and active.
@@ -204,11 +196,6 @@ class ReplayCaptureService {
 
     if (_config.enabled) {
       _startFlushTimer();
-      if (kDebugMode) {
-        debugPrint('VooReplay: Capture enabled for session ${Voo.sessionId}');
-        debugPrint('VooReplay: Config - captureScreenshots: ${_config.captureScreenshots}, captureScreenViews: ${_config.captureScreenViews}');
-        debugPrint('VooReplay: RepaintBoundary set: ${_repaintBoundary != null}');
-      }
     }
   }
 
@@ -223,10 +210,6 @@ class ReplayCaptureService {
     // Flush remaining events
     if (_eventBuffer.isNotEmpty) {
       _flush();
-    }
-
-    if (kDebugMode) {
-      debugPrint('VooReplay: Capture disabled');
     }
   }
 
@@ -250,17 +233,10 @@ class ReplayCaptureService {
   /// Capture a screen view transition.
   void captureScreenView({required String screenName, String? routePath}) {
     if (!isEnabled || !_config.captureScreenViews) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: captureScreenView skipped - isEnabled: $isEnabled, captureScreenViews: ${_config.captureScreenViews}');
-      }
       return;
     }
 
     _currentScreenName = screenName;
-
-    if (kDebugMode) {
-      debugPrint('VooReplay: captureScreenView - screenName: $screenName, routePath: $routePath');
-    }
 
     _addEvent(
       ReplayEventCapture(
@@ -274,9 +250,6 @@ class ReplayCaptureService {
 
     // Also capture screenshot if enabled
     if (_config.captureScreenshots) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: Scheduling screenshot capture for $screenName in 100ms');
-      }
       // Delay slightly to let the new screen render
       Future.delayed(const Duration(milliseconds: 100), () {
         captureScreenshot(screenName: screenName, captureReason: 'screen_transition');
@@ -292,21 +265,12 @@ class ReplayCaptureService {
   /// Screenshots are uploaded to the backend asynchronously.
   Future<void> captureScreenshot({String? screenName, String captureReason = 'manual'}) async {
     if (!isEnabled || !_config.captureScreenshots) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: Screenshot capture skipped - enabled: $isEnabled, captureScreenshots: ${_config.captureScreenshots}');
-      }
       return;
     }
     if (_repaintBoundary == null) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: No RepaintBoundary set for screenshot capture');
-      }
       return;
     }
     if (_isCapturing) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: Screenshot capture already in progress, skipping');
-      }
       return;
     }
 
@@ -317,9 +281,6 @@ class ReplayCaptureService {
 
       // Check if boundary is attached and has valid size
       if (!boundary.attached) {
-        if (kDebugMode) {
-          debugPrint('VooReplay: RepaintBoundary not attached, skipping capture');
-        }
         return;
       }
 
@@ -328,36 +289,23 @@ class ReplayCaptureService {
       final originalHeight = boundary.size.height;
 
       if (originalWidth <= 0 || originalHeight <= 0) {
-        if (kDebugMode) {
-          debugPrint('VooReplay: Invalid boundary size: ${originalWidth}x$originalHeight');
-        }
         return;
       }
 
       final targetWidth = _config.maxScreenshotWidth.toDouble();
       final pixelRatio = originalWidth > targetWidth ? targetWidth / originalWidth : 1.0;
 
-      if (kDebugMode) {
-        debugPrint('VooReplay: Capturing screenshot - size: ${originalWidth}x$originalHeight, pixelRatio: $pixelRatio');
-      }
-
       // Capture the image
       final image = await boundary.toImage(pixelRatio: pixelRatio);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData == null) {
-        if (kDebugMode) {
-          debugPrint('VooReplay: Failed to convert image to bytes (toByteData returned null)');
-        }
         return;
       }
 
       final bytes = byteData.buffer.asUint8List();
 
       if (bytes.isEmpty) {
-        if (kDebugMode) {
-          debugPrint('VooReplay: Screenshot bytes are empty');
-        }
         return;
       }
 
@@ -369,10 +317,6 @@ class ReplayCaptureService {
 
       final effectiveScreenName = screenName ?? _currentScreenName ?? 'unknown';
 
-      if (kDebugMode) {
-        debugPrint('VooReplay: Screenshot captured for $effectiveScreenName (${image.width}x${image.height}, ${bytes.length} bytes), uploading...');
-      }
-
       // Upload to backend
       await _uploadScreenshot(
         screenName: effectiveScreenName,
@@ -383,15 +327,8 @@ class ReplayCaptureService {
         sizeBytes: bytes.length,
         captureReason: captureReason,
       );
-
-      if (kDebugMode) {
-        debugPrint('VooReplay: Screenshot uploaded successfully for $effectiveScreenName');
-      }
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: Screenshot capture failed: $e');
-        debugPrint('VooReplay: Stack trace: $stackTrace');
-      }
+    } catch (_) {
+      // ignore
     } finally {
       _isCapturing = false;
     }
@@ -411,24 +348,14 @@ class ReplayCaptureService {
     final context = Voo.context;
 
     if (sessionId == null) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: Cannot upload screenshot - no session ID');
-      }
       return;
     }
 
     if (context == null) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: Cannot upload screenshot - no Voo context');
-      }
       return;
     }
 
     final url = '${context.config.endpoint}/v1/replay/sessions/$sessionId/screenshots';
-
-    if (kDebugMode) {
-      debugPrint('VooReplay: Uploading screenshot to $url ($sizeBytes bytes, base64 length: ${base64Data.length})');
-    }
 
     try {
       final response = await http.post(
@@ -451,17 +378,10 @@ class ReplayCaptureService {
         }),
       );
 
-      if (kDebugMode) {
-        debugPrint('VooReplay: Screenshot upload response: ${response.statusCode}');
-      }
-
       if (response.statusCode >= 400) {
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: Screenshot upload failed: $e');
-      }
       rethrow; // Re-throw so the caller knows it failed
     }
   }
@@ -559,9 +479,6 @@ class ReplayCaptureService {
     final context = Voo.context;
 
     if (sessionId == null || context == null) {
-      if (kDebugMode) {
-        debugPrint('VooReplay: Cannot flush - no session or context');
-      }
       return;
     }
 
@@ -575,19 +492,11 @@ class ReplayCaptureService {
 
       // Send to backend
       await _sendToBackend(sessionId, payload);
-
-      if (kDebugMode) {
-        debugPrint('VooReplay: Flushed ${events.length} events');
-      }
-    } catch (e) {
+    } catch (_) {
       // Re-add events to buffer on failure (with limit)
       final remaining = _config.maxBufferSize - _eventBuffer.length;
       if (remaining > 0) {
         _eventBuffer.insertAll(0, events.take(remaining));
-      }
-
-      if (kDebugMode) {
-        debugPrint('VooReplay: Flush failed: $e');
       }
     }
   }

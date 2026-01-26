@@ -150,7 +150,7 @@ class InstallReferrer {
           params[keyValue[0].trim()] = keyValue[1].trim();
         }
       }
-    } catch (e) {
+    } catch (_) {
       // If parsing fails, try a simple key=value split
       try {
         final pairs = referrer.split('&');
@@ -298,17 +298,8 @@ class InstallReferrerService {
 
       _initialized = true;
 
-      if (kDebugMode) {
-        debugPrint('InstallReferrerService: Initialized');
-        debugPrint('InstallReferrerService: $_cachedReferrer');
-      }
-
       return _cachedReferrer;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('InstallReferrerService: Failed to initialize: $e');
-      }
-
+    } catch (_) {
       // Return organic referrer as fallback
       _cachedReferrer = InstallReferrer.organic(
         installSource: _getPlatformSource(),
@@ -354,16 +345,10 @@ class InstallReferrerService {
         installSource: 'play_store',
         responseTimeMs: responseTimeMs,
       );
-    } on PlatformException catch (e) {
-      if (kDebugMode) {
-        debugPrint('InstallReferrerService: Platform exception: ${e.message}');
-      }
+    } on PlatformException catch (_) {
       return InstallReferrer.organic(installSource: 'play_store');
     } on MissingPluginException {
       // Native implementation not available, use fallback
-      if (kDebugMode) {
-        debugPrint('InstallReferrerService: Native plugin not available');
-      }
       return InstallReferrer.organic(installSource: 'play_store');
     }
   }
@@ -398,10 +383,6 @@ class InstallReferrerService {
   static void setInstallReferrer(InstallReferrer referrer) {
     _cachedReferrer = referrer;
     _initialized = true;
-
-    if (kDebugMode) {
-      debugPrint('InstallReferrerService: Manually set referrer: $referrer');
-    }
   }
 
   /// Clear cached referrer (for testing).

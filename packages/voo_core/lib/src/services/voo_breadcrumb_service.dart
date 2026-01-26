@@ -60,11 +60,6 @@ class VooBreadcrumbService {
   static void initialize({int maxBreadcrumbs = 100}) {
     _maxBreadcrumbs = maxBreadcrumbs;
     _initialized = true;
-
-    if (kDebugMode) {
-      debugPrint(
-          'VooBreadcrumbService: Initialized with max $maxBreadcrumbs breadcrumbs');
-    }
   }
 
   /// Add a breadcrumb to the trail.
@@ -86,15 +81,9 @@ class VooBreadcrumbService {
     for (final listener in instance._listeners) {
       try {
         listener(breadcrumb);
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('VooBreadcrumbService: Listener error: $e');
-        }
+      } catch (_) {
+        // ignore
       }
-    }
-
-    if (kDebugMode) {
-      debugPrint('VooBreadcrumbService: Added ${breadcrumb.category}');
     }
   }
 
@@ -226,10 +215,6 @@ class VooBreadcrumbService {
   /// Clear all breadcrumbs.
   static void clear() {
     instance._breadcrumbs.clear();
-
-    if (kDebugMode) {
-      debugPrint('VooBreadcrumbService: Cleared all breadcrumbs');
-    }
   }
 
   /// Add a listener to be notified when breadcrumbs are added.
@@ -248,10 +233,6 @@ class VooBreadcrumbService {
     instance._listeners.clear();
     _initialized = false;
     _instance = null;
-
-    if (kDebugMode) {
-      debugPrint('VooBreadcrumbService: Disposed');
-    }
   }
 
   /// Reset for testing.

@@ -215,11 +215,6 @@ class MemoryMonitorService {
     instance._baselineHeapUsage = baseline.heapUsageBytes;
 
     _initialized = true;
-
-    if (kDebugMode) {
-      debugPrint('MemoryMonitorService: Initialized');
-      debugPrint('MemoryMonitorService: Baseline heap: ${baseline.heapUsageMB?.toStringAsFixed(1)}MB');
-    }
   }
 
   /// Take a memory snapshot.
@@ -274,10 +269,8 @@ class MemoryMonitorService {
         for (final callback in instance._pressureCallbacks) {
           try {
             callback(pressureLevel);
-          } catch (e) {
-            if (kDebugMode) {
-              debugPrint('MemoryMonitorService: Callback error: $e');
-            }
+          } catch (_) {
+            // Callback error ignored
           }
         }
 
@@ -338,20 +331,12 @@ class MemoryMonitorService {
     instance._monitoringTimer = Timer.periodic(interval, (_) {
       takeSnapshot(context: 'periodic');
     });
-
-    if (kDebugMode) {
-      debugPrint('MemoryMonitorService: Started monitoring (interval: ${interval.inSeconds}s)');
-    }
   }
 
   /// Stop periodic monitoring.
   static void stopMonitoring() {
     instance._monitoringTimer?.cancel();
     instance._monitoringTimer = null;
-
-    if (kDebugMode) {
-      debugPrint('MemoryMonitorService: Stopped monitoring');
-    }
   }
 
   /// Register a callback for memory pressure events.
@@ -409,10 +394,8 @@ class MemoryMonitorService {
           },
         ),
       );
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('MemoryMonitorService: Failed to log metrics: $e');
-      }
+    } catch (_) {
+      // Metrics logging error ignored
     }
   }
 
@@ -420,12 +403,8 @@ class MemoryMonitorService {
   ///
   /// Note: This is a hint to the VM, not a guarantee.
   static Future<void> requestGC() async {
-    if (kDebugMode) {
-      debugPrint('MemoryMonitorService: Requesting GC');
-    }
-
     // Take a snapshot before
-    final before = await takeSnapshot(context: 'pre_gc');
+    await takeSnapshot(context: 'pre_gc');
 
     // In Dart, we can't force GC, but we can allocate and release
     // to hint to the VM that memory should be collected
@@ -440,12 +419,7 @@ class MemoryMonitorService {
     await Future.delayed(const Duration(milliseconds: 100));
 
     // Take a snapshot after
-    final after = await takeSnapshot(context: 'post_gc');
-
-    if (kDebugMode && before.heapUsageBytes != null && after.heapUsageBytes != null) {
-      final freed = before.heapUsageBytes! - after.heapUsageBytes!;
-      debugPrint('MemoryMonitorService: GC hint - freed ~${(freed / 1024 / 1024).toStringAsFixed(1)}MB');
-    }
+    await takeSnapshot(context: 'post_gc');
   }
 
   /// Dispose resources.
@@ -457,10 +431,6 @@ class MemoryMonitorService {
     instance._history.clear();
     _initialized = false;
     _instance = null;
-
-    if (kDebugMode) {
-      debugPrint('MemoryMonitorService: Disposed');
-    }
   }
 
   /// Reset for testing.

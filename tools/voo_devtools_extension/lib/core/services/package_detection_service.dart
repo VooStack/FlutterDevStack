@@ -140,9 +140,6 @@ class PackageDetectionService {
           // If checking fails, assume package might be available
           // This ensures UI is shown even if detection fails
           newStatus[entry.key] = true;
-          if (kDebugMode) {
-            print('Failed to check package ${entry.key}: $e');
-          }
         }
       }
 
@@ -154,9 +151,6 @@ class PackageDetectionService {
         _updateStatus(newStatus);
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Error checking package availability: $e');
-      }
       // On error, show all features as potentially available
       _updateStatus({
         'voo_logging': true,
@@ -199,9 +193,7 @@ class PackageDetectionService {
         return result == 'true' || result == true;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Import check failed for $packageName: $e');
-      }
+      // Package import check failed
     }
     // Default to showing the feature if we can't determine
     return true;

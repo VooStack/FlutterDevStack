@@ -74,10 +74,6 @@ class FunnelTrackingService {
   static void initialize() {
     if (_initialized) return;
     _initialized = true;
-
-    if (kDebugMode) {
-      debugPrint('FunnelTrackingService: Initialized');
-    }
   }
 
   /// Register a funnel for tracking.
@@ -93,10 +89,6 @@ class FunnelTrackingService {
       instance._eventToSteps[step.eventName] = refs;
     }
 
-    if (kDebugMode) {
-      debugPrint(
-          'FunnelTrackingService: Registered funnel "${funnel.name}" with ${funnel.steps.length} steps');
-    }
   }
 
   /// Unregister a funnel.
@@ -164,10 +156,6 @@ class FunnelTrackingService {
         currentStepIndex: 0,
       );
 
-      if (kDebugMode) {
-        debugPrint(
-            'FunnelTrackingService: Started funnel "${funnel.name}"');
-      }
     }
 
     // Check if this is the expected step
@@ -243,11 +231,6 @@ class FunnelTrackingService {
       progress: progress,
     ));
 
-    if (kDebugMode) {
-      debugPrint(
-          'FunnelTrackingService: Completed step "${step.name}" in "${funnel.name}"');
-    }
-
     // Check if funnel is complete
     final requiredSteps = funnel.steps.where((s) => !s.isOptional).length;
     final completedRequired = progress.completedSteps
@@ -271,10 +254,6 @@ class FunnelTrackingService {
         progress: progress,
       ));
 
-      if (kDebugMode) {
-        debugPrint(
-            'FunnelTrackingService: Completed funnel "${funnel.name}" in ${progress.duration?.inSeconds}s');
-      }
     }
   }
 
@@ -297,7 +276,7 @@ class FunnelTrackingService {
           'total_steps': funnel.steps.length,
         },
       );
-    } catch (e) {
+    } catch (_) {
       // Ignore logging errors
     }
   }
@@ -314,7 +293,7 @@ class FunnelTrackingService {
           'steps_completed': progress.completedSteps.length,
         },
       );
-    } catch (e) {
+    } catch (_) {
       // Ignore logging errors
     }
   }
@@ -369,10 +348,6 @@ class FunnelTrackingService {
       reason: reason,
     ));
 
-    if (kDebugMode) {
-      debugPrint(
-          'FunnelTrackingService: Abandoned funnel "$funnelId" - $reason');
-    }
   }
 
   /// Mark all active funnels as abandoned (e.g., on app close).
@@ -386,10 +361,6 @@ class FunnelTrackingService {
   /// Reset a funnel's progress (start fresh).
   static void resetProgress(String funnelId) {
     instance._activeProgress.remove(funnelId);
-
-    if (kDebugMode) {
-      debugPrint('FunnelTrackingService: Reset progress for "$funnelId"');
-    }
   }
 
   /// Dispose resources.
@@ -401,10 +372,6 @@ class FunnelTrackingService {
     instance._eventToSteps.clear();
     _initialized = false;
     _instance = null;
-
-    if (kDebugMode) {
-      debugPrint('FunnelTrackingService: Disposed');
-    }
   }
 
   /// Reset for testing.

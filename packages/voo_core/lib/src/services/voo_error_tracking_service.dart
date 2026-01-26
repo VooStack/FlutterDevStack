@@ -69,17 +69,11 @@ class VooErrorTrackingService {
   /// This is called automatically by [Voo.initializeApp()].
   void enable() {
     _enabled = true;
-    if (kDebugMode) {
-      debugPrint('VooErrorTracking: Enabled');
-    }
   }
 
   /// Disable error tracking.
   void disable() {
     _enabled = false;
-    if (kDebugMode) {
-      debugPrint('VooErrorTracking: Disabled');
-    }
   }
 
   /// Submit an error to the error tracking endpoint.
@@ -118,17 +112,11 @@ class VooErrorTrackingService {
 
     final context = Voo.context;
     if (context == null) {
-      if (kDebugMode) {
-        debugPrint('VooErrorTracking: Cannot submit - no Voo context');
-      }
       return;
     }
 
     final projectId = context.config.projectId;
     if (projectId == null || projectId.isEmpty) {
-      if (kDebugMode) {
-        debugPrint('VooErrorTracking: Cannot submit - no projectId');
-      }
       return;
     }
 
@@ -202,7 +190,7 @@ class VooErrorTrackingService {
         'appVersion': context.appVersion,
       };
 
-      final response = await http.post(
+      await http.post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
@@ -210,20 +198,8 @@ class VooErrorTrackingService {
         },
         body: jsonEncode(payload),
       );
-
-      if (kDebugMode) {
-        if (response.statusCode >= 400) {
-          debugPrint(
-              'VooErrorTracking: Submit failed (${response.statusCode}): ${response.body}');
-        } else {
-          debugPrint('VooErrorTracking: Error submitted successfully');
-        }
-      }
-    } catch (e) {
-      // Silent fail - error tracking should never crash the app
-      if (kDebugMode) {
-        debugPrint('VooErrorTracking: Submit error failed: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 

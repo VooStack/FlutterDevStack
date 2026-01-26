@@ -24,7 +24,6 @@ class TelemetryWorkerWeb {
   int _retryDelayMs = 1000;
   // Note: Compression is not supported on web (dart:io not available)
   Map<String, dynamic> _resourceAttributes = {};
-  bool _debug = false;
 
   final http.Client _httpClient = http.Client();
 
@@ -70,7 +69,6 @@ class TelemetryWorkerWeb {
     _retryDelayMs = config.retryDelay.inMilliseconds;
     // Note: config.enableCompression is ignored on web (dart:io not available)
     _resourceAttributes = resourceAttributes;
-    _debug = config.debug;
 
     // Start the flush timer
     _flushTimer = Timer.periodic(
@@ -79,10 +77,6 @@ class TelemetryWorkerWeb {
     );
 
     _initialized = true;
-
-    if (_debug) {
-      debugPrint('TelemetryWorkerWeb: Initialized');
-    }
   }
 
   /// Add log records to the export queue.
@@ -335,20 +329,10 @@ class TelemetryWorkerWeb {
             .timeout(Duration(milliseconds: _timeoutMs));
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
-          if (_debug) {
-            debugPrint('TelemetryWorkerWeb: Exported to $url');
-          }
           return true;
         }
-
-        if (_debug) {
-          debugPrint(
-              'TelemetryWorkerWeb: Export failed ${response.statusCode}');
-        }
-      } catch (e) {
-        if (_debug) {
-          debugPrint('TelemetryWorkerWeb: Export error: $e');
-        }
+      } catch (_) {
+        // Retry on failure
       }
 
       retries++;

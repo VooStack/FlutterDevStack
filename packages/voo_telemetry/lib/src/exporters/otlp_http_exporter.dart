@@ -61,16 +61,7 @@ class OTLPHttpExporter {
 
   /// Export metrics to OTLP endpoint
   Future<bool> exportMetrics(List<Map<String, dynamic>> metrics, TelemetryResource resource) async {
-    if (metrics.isEmpty) {
-      if (kDebugMode) {
-        debugPrint('[OTLPHttpExporter] No metrics to export');
-      }
-      return true;
-    }
-
-    if (kDebugMode) {
-      debugPrint('[OTLPHttpExporter] Exporting ${metrics.length} metrics to $endpoint/v1/metrics');
-    }
+    if (metrics.isEmpty) return true;
 
     final url = Uri.parse('$endpoint/v1/metrics');
     final body = {
@@ -197,10 +188,7 @@ class OTLPHttpExporter {
       // 404 means endpoint doesn't exist
       // 200/400/401 etc. means it exists
       return response.statusCode != 404;
-    } catch (e) {
-      if (debug) {
-        debugPrint('Error checking combined endpoint availability: $e');
-      }
+    } catch (_) {
       return false;
     }
   }
@@ -226,23 +214,9 @@ class OTLPHttpExporter {
           if (compressed.isCompressed) 'Content-Encoding': 'gzip',
         };
 
-        if (debug) {
-          debugPrint('Sending OTLP request to $url (attempt $attempt/$maxRetries)');
-          if (compressed.isCompressed) {
-            debugPrint('Payload compressed: ${compressed.originalSize} -> ${compressed.compressedSize} bytes '
-                '(${(compressed.compressionRatio * 100).toStringAsFixed(1)}%)');
-          }
-          debugPrint('Body: $jsonString');
-        }
-
         final response = await _client
             .post(url, headers: headers, body: compressed.data)
             .timeout(timeout);
-
-        if (debug) {
-          debugPrint('Response status: ${response.statusCode}');
-          debugPrint('Response body: ${response.body}');
-        }
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
           return true;
@@ -250,20 +224,10 @@ class OTLPHttpExporter {
 
         // Don't retry on 4xx client errors (except 429 rate limit)
         if (response.statusCode >= 400 && response.statusCode < 500 && response.statusCode != 429) {
-          if (debug) {
-            debugPrint('Failed to export telemetry (non-retryable): ${response.statusCode} ${response.body}');
-          }
           return false;
         }
-
-        if (debug) {
-          debugPrint('Failed to export telemetry: ${response.statusCode} ${response.body}');
-        }
-      } catch (e, stackTrace) {
-        if (debug) {
-          debugPrint('Error exporting telemetry (attempt $attempt): $e');
-          debugPrint('Stack trace: $stackTrace');
-        }
+      } catch (_) {
+        // Retry on failure
       }
 
       // Apply exponential backoff with jitter before retry
@@ -272,17 +236,10 @@ class OTLPHttpExporter {
         final jitter = _random.nextInt(500); // Add up to 500ms jitter
         final totalDelay = Duration(milliseconds: exponentialDelay + jitter);
 
-        if (debug) {
-          debugPrint('Retrying in ${totalDelay.inMilliseconds}ms...');
-        }
-
         await Future<void>.delayed(totalDelay);
       }
     }
 
-    if (debug) {
-      debugPrint('Failed to export telemetry after $maxRetries attempts');
-    }
     return false;
   }
 

@@ -61,14 +61,7 @@ class PersistentQueue<T> {
       await _cleanupOldItems();
 
       _initialized = true;
-
-      if (kDebugMode) {
-        debugPrint('PersistentQueue[$name]: Initialized');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('PersistentQueue[$name]: Failed to initialize: $e');
-      }
+    } catch (_) {
       // Fall back to in-memory only
       _initialized = true;
     }
@@ -87,10 +80,8 @@ class PersistentQueue<T> {
 
       // Enforce max size
       await _enforceMaxSize();
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('PersistentQueue[$name]: Failed to add item: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -113,10 +104,8 @@ class PersistentQueue<T> {
       });
 
       await _enforceMaxSize();
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('PersistentQueue[$name]: Failed to add items: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -163,10 +152,7 @@ class PersistentQueue<T> {
       });
 
       return items;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('PersistentQueue[$name]: Failed to take items: $e');
-      }
+    } catch (_) {
       return [];
     }
   }
@@ -220,10 +206,8 @@ class PersistentQueue<T> {
           });
         }
       });
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('PersistentQueue[$name]: Failed to requeue items: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -242,10 +226,8 @@ class PersistentQueue<T> {
 
     try {
       await _store!.delete(_db!);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('PersistentQueue[$name]: Failed to clear: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -274,9 +256,6 @@ class PersistentQueue<T> {
       }
     });
 
-    if (kDebugMode) {
-      debugPrint('PersistentQueue[$name]: Removed $toRemove items (max size)');
-    }
   }
 
   Future<void> _cleanupOldItems() async {
@@ -285,14 +264,10 @@ class PersistentQueue<T> {
     final cutoff =
         DateTime.now().subtract(maxRetention).millisecondsSinceEpoch;
 
-    final count = await _store!.delete(
+    await _store!.delete(
       _db!,
       finder: Finder(filter: Filter.lessThan('timestamp', cutoff)),
     );
-
-    if (count > 0 && kDebugMode) {
-      debugPrint('PersistentQueue[$name]: Removed $count old items');
-    }
   }
 
   /// Close the database connection.

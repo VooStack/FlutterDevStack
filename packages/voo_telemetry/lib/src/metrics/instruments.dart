@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:voo_telemetry/src/metrics/meter.dart';
 import 'package:voo_telemetry/src/metrics/metric.dart';
 
@@ -65,10 +64,6 @@ class Histogram {
   /// Record a value
   void record(double value, {Map<String, dynamic>? attributes}) {
     _values.add(value);
-
-    if (kDebugMode && _values.length % 50 == 0) {
-      debugPrint('[Histogram] $name: recorded ${_values.length} values');
-    }
 
     // Batch values and send periodically
     if (_values.length >= 100) {

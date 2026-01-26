@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:voo_core/voo_core.dart';
@@ -174,19 +173,11 @@ class AppLaunchService with WidgetsBindingObserver {
   /// Mark the start of app launch - call this as early as possible in main().
   static void markLaunchStart() {
     _processStartTime ??= DateTime.now();
-
-    if (kDebugMode) {
-      debugPrint('AppLaunchService: Launch start marked');
-    }
   }
 
   /// Mark when widget binding is ready.
   static void markWidgetBindingReady() {
     _widgetBindingReadyTime = DateTime.now();
-
-    if (kDebugMode) {
-      debugPrint('AppLaunchService: Widget binding ready');
-    }
   }
 
   /// Initialize the service - call after WidgetsFlutterBinding.ensureInitialized().
@@ -203,10 +194,6 @@ class AppLaunchService with WidgetsBindingObserver {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _firstFrameTime = DateTime.now();
 
-      if (kDebugMode) {
-        debugPrint('AppLaunchService: First frame rendered');
-      }
-
       // Record cold start metrics
       if (instance._isInitialLaunch) {
         instance._recordLaunch(LaunchType.cold);
@@ -214,10 +201,6 @@ class AppLaunchService with WidgetsBindingObserver {
     });
 
     _initialized = true;
-
-    if (kDebugMode) {
-      debugPrint('AppLaunchService: Initialized');
-    }
   }
 
   /// Mark when the app is fully interactive.
@@ -228,12 +211,6 @@ class AppLaunchService with WidgetsBindingObserver {
     }
 
     _interactiveTime = DateTime.now();
-
-    if (kDebugMode) {
-      final ttif = _firstFrameTime != null ? _firstFrameTime!.difference(_processStartTime!).inMilliseconds : 'N/A';
-      final tti = _interactiveTime!.difference(_processStartTime!).inMilliseconds;
-      debugPrint('AppLaunchService: Interactive (TTFF: ${ttif}ms, TTI: ${tti}ms)');
-    }
 
     // Update metrics with interactive time
     if (instance._isInitialLaunch && instance._launchHistory.isNotEmpty) {
@@ -270,10 +247,6 @@ class AppLaunchService with WidgetsBindingObserver {
     final previousState = _lastLifecycleState;
     _lastLifecycleState = state;
 
-    if (kDebugMode) {
-      debugPrint('AppLaunchService: Lifecycle $previousState -> $state');
-    }
-
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
@@ -303,10 +276,6 @@ class AppLaunchService with WidgetsBindingObserver {
       _firstFrameTime = DateTime.now();
       _recordLaunch(launchType);
     });
-
-    if (kDebugMode) {
-      debugPrint('AppLaunchService: Resume detected - $launchType start');
-    }
 
     // Add breadcrumb
     Voo.addBreadcrumb(
@@ -363,12 +332,6 @@ class AppLaunchService with WidgetsBindingObserver {
     // Log to Voo performance
     _logLaunchMetrics(metrics);
 
-    if (kDebugMode) {
-      debugPrint('AppLaunchService: Recorded ${launchType.name} launch');
-      if (metrics.timeToFirstFrame != null) {
-        debugPrint('  Time to first frame: ${metrics.timeToFirstFrame!.inMilliseconds}ms');
-      }
-    }
   }
 
   void _logLaunchMetrics(AppLaunchMetrics metrics) {
@@ -388,10 +351,8 @@ class AppLaunchService with WidgetsBindingObserver {
           },
         ),
       );
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('AppLaunchService: Failed to log metrics: $e');
-      }
+    } catch (_) {
+      // Metrics logging error ignored
     }
   }
 
@@ -422,10 +383,6 @@ class AppLaunchService with WidgetsBindingObserver {
     _widgetBindingReadyTime = null;
     _firstFrameTime = null;
     _interactiveTime = null;
-
-    if (kDebugMode) {
-      debugPrint('AppLaunchService: Disposed');
-    }
   }
 
   /// Reset for testing.

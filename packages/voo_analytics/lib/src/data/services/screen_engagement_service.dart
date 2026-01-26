@@ -122,10 +122,6 @@ class ScreenEngagementService {
   static void initialize() {
     if (_initialized) return;
     _initialized = true;
-
-    if (kDebugMode) {
-      debugPrint('ScreenEngagementService: Initialized');
-    }
   }
 
   /// Start tracking engagement for a new screen.
@@ -143,10 +139,6 @@ class ScreenEngagementService {
     instance._screenEnterTime = DateTime.now();
     instance._interactionCount = 0;
     instance._scrollDepth = null;
-
-    if (kDebugMode) {
-      debugPrint('ScreenEngagementService: Started tracking $screenName');
-    }
   }
 
   /// Stop tracking and return the engagement metrics.
@@ -177,15 +169,10 @@ class ScreenEngagementService {
     instance._engagementController.add(engagement);
 
     // Reset tracking state
-    final screenName = instance._currentScreen;
     instance._currentScreen = null;
     instance._screenEnterTime = null;
     instance._interactionCount = 0;
     instance._scrollDepth = null;
-
-    if (kDebugMode) {
-      debugPrint('ScreenEngagementService: Stopped tracking $screenName - $engagement');
-    }
 
     return engagement;
   }
@@ -200,10 +187,6 @@ class ScreenEngagementService {
     if (instance._currentScreen == null) return;
 
     instance._interactionCount++;
-
-    if (kDebugMode) {
-      debugPrint('ScreenEngagementService: Recorded interaction $type');
-    }
   }
 
   /// Update the scroll depth for the current screen.
@@ -259,11 +242,8 @@ class ScreenEngagementService {
         'interactionCount': (currentInteractions as int) + engagement.interactionCount,
         'lastScreen': engagement.screenName,
       });
-    } catch (e) {
-      // Ignore errors updating user context
-      if (kDebugMode) {
-        debugPrint('ScreenEngagementService: Failed to update user context: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -278,10 +258,6 @@ class ScreenEngagementService {
     instance._history.clear();
     _initialized = false;
     _instance = null;
-
-    if (kDebugMode) {
-      debugPrint('ScreenEngagementService: Disposed');
-    }
   }
 
   /// Reset for testing.

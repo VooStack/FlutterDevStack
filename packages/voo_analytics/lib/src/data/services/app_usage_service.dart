@@ -255,23 +255,14 @@ class VooAppUsageService {
     }
 
     if (!Platform.isAndroid) {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Only available on Android');
-      }
       return;
     }
 
     try {
       _hasPermission = await hasUsageStatsPermission();
       _initialized = true;
-
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Initialized (permission: $_hasPermission)');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Failed to initialize: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -284,14 +275,8 @@ class VooAppUsageService {
       _hasPermission = result ?? false;
       return _hasPermission;
     } on MissingPluginException {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Native plugin not available');
-      }
       return false;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Permission check failed: $e');
-      }
+    } catch (_) {
       return false;
     }
   }
@@ -306,13 +291,9 @@ class VooAppUsageService {
     try {
       await _channel.invokeMethod<void>('requestUsageStatsPermission');
     } on MissingPluginException {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Native plugin not available');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Failed to request permission: $e');
-      }
+      // ignore
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -347,14 +328,8 @@ class VooAppUsageService {
         return app;
       }).toList();
     } on MissingPluginException {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Native plugin not available');
-      }
       return [];
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Failed to get installed apps: $e');
-      }
+    } catch (_) {
       return [];
     }
   }
@@ -367,9 +342,6 @@ class VooAppUsageService {
 
     final hasPermission = await hasUsageStatsPermission();
     if (!hasPermission) {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: No usage stats permission');
-      }
       return [];
     }
 
@@ -388,14 +360,8 @@ class VooAppUsageService {
 
       return stats;
     } on MissingPluginException {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Native plugin not available');
-      }
       return [];
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooAppUsageService: Failed to get usage stats: $e');
-      }
+    } catch (_) {
       return [];
     }
   }

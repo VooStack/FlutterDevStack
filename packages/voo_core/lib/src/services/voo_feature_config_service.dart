@@ -71,10 +71,6 @@ class VooFeatureConfigService {
 
     // Then fetch fresh config from server
     await fetchConfig();
-
-    if (kDebugMode) {
-      debugPrint('VooFeatureConfig: Initialized - $_config');
-    }
   }
 
   /// Refresh config if TTL has expired.
@@ -119,22 +115,10 @@ class VooFeatureConfigService {
 
           _lastFetchTime = DateTime.now();
           await _saveToCache();
-
-          if (kDebugMode) {
-            debugPrint('VooFeatureConfig: Fetched from server - $_config');
-          }
-        }
-      } else {
-        if (kDebugMode) {
-          debugPrint(
-              'VooFeatureConfig: Failed to fetch (${response.statusCode})');
         }
       }
-    } catch (e) {
-      // Silent fail - keep using cached config
-      if (kDebugMode) {
-        debugPrint('VooFeatureConfig: Failed to fetch: $e');
-      }
+    } catch (_) {
+      // ignore
     } finally {
       _isFetching = false;
     }
@@ -195,15 +179,9 @@ class VooFeatureConfigService {
         if (cachedAtStr != null) {
           _lastFetchTime = DateTime.tryParse(cachedAtStr);
         }
-
-        if (kDebugMode) {
-          debugPrint('VooFeatureConfig: Loaded from cache - $_config');
-        }
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooFeatureConfig: Failed to load cache: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -222,14 +200,8 @@ class VooFeatureConfigService {
       };
 
       await _cacheFile!.writeAsString(jsonEncode(cacheData));
-
-      if (kDebugMode) {
-        debugPrint('VooFeatureConfig: Saved to cache');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooFeatureConfig: Failed to save cache: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 }

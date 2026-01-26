@@ -156,15 +156,8 @@ class VooRuntimeMetricsService {
       await instance._startMonitoring();
       _initialized = true;
 
-      if (kDebugMode) {
-        debugPrint('VooRuntimeMetricsService: Initialized - $_currentMetrics');
-      }
-
       return _currentMetrics!;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooRuntimeMetricsService: Initialization failed: $e');
-      }
+    } catch (_) {
       _currentMetrics = _fallbackMetrics();
       return _currentMetrics!;
     }
@@ -176,10 +169,7 @@ class VooRuntimeMetricsService {
       _currentMetrics = await instance._collectMetrics();
       instance._metricsController.add(_currentMetrics!);
       return _currentMetrics!;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooRuntimeMetricsService: Refresh failed: $e');
-      }
+    } catch (_) {
       return _currentMetrics ?? _fallbackMetrics();
     }
   }
@@ -220,18 +210,9 @@ class VooRuntimeMetricsService {
             collectedAt: DateTime.now(),
           );
           _metricsController.add(_currentMetrics!);
-
-          if (kDebugMode) {
-            debugPrint(
-                'VooRuntimeMetricsService: Network changed to $networkType');
-          }
         }
       },
-      onError: (e) {
-        if (kDebugMode) {
-          debugPrint('VooRuntimeMetricsService: Connectivity error: $e');
-        }
-      },
+      onError: (_) {},
     );
   }
 
@@ -355,10 +336,6 @@ class VooRuntimeMetricsService {
     _initialized = false;
     _currentMetrics = null;
     _instance = null;
-
-    if (kDebugMode) {
-      debugPrint('VooRuntimeMetricsService: Disposed');
-    }
   }
 
   /// Reset for testing.

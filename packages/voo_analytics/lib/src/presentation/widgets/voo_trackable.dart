@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:voo_analytics/src/data/services/screen_engagement_service.dart';
 import 'package:voo_analytics/src/presentation/models/voo_interaction_event.dart';
@@ -155,10 +154,6 @@ class VooTrackable extends StatelessWidget {
 
     // Call optional callback
     onInteractionTracked?.call(event);
-
-    if (kDebugMode) {
-      debugPrint('VooTrackable: ${event.typeName} on ${event.elementId ?? 'unknown'}');
-    }
   }
 
   void _addBreadcrumb(VooInteractionEvent event) {
@@ -174,7 +169,7 @@ class VooTrackable extends StatelessWidget {
           if (event.customParams != null) ...event.customParams!,
         },
       ));
-    } catch (e) {
+    } catch (_) {
       // Ignore breadcrumb errors
     }
   }

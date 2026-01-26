@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb, immutable, visibleForTesting;
+import 'package:flutter/foundation.dart' show kIsWeb, immutable, visibleForTesting;
 import 'package:flutter/scheduler.dart';
 
 /// A single FPS measurement sample.
@@ -222,10 +222,6 @@ class FpsMonitorService {
       SchedulerBinding.instance.addTimingsCallback(instance._onFrameTimings);
     }
     _isMonitoring = true;
-
-    if (kDebugMode) {
-      debugPrint('FpsMonitorService: Started monitoring (web: $kIsWeb)');
-    }
   }
 
   /// Stop monitoring FPS.
@@ -239,11 +235,6 @@ class FpsMonitorService {
       SchedulerBinding.instance.removeTimingsCallback(instance._onFrameTimings);
     }
     _isMonitoring = false;
-
-    if (kDebugMode) {
-      final stats = getStats();
-      debugPrint('FpsMonitorService: Stopped - $stats');
-    }
   }
 
   /// Web fallback: emit estimated FPS samples periodically.
@@ -349,11 +340,6 @@ class FpsMonitorService {
 
     // Notify listeners
     _fpsController.add(sample);
-
-    if (kDebugMode && isJanky) {
-      debugPrint(
-          'FpsMonitorService: Jank detected! Frame took ${totalDuration.toStringAsFixed(1)}ms');
-    }
   }
 
   /// Dispose resources.
@@ -362,10 +348,6 @@ class FpsMonitorService {
     await instance._fpsController.close();
     instance._samples.clear();
     _instance = null;
-
-    if (kDebugMode) {
-      debugPrint('FpsMonitorService: Disposed');
-    }
   }
 
   /// Reset for testing.

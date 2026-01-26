@@ -66,10 +66,6 @@ class NetworkMonitor {
     _subscription = _connectivity.onConnectivityChanged.listen(_updateNetworkType);
 
     _initialized = true;
-
-    if (kDebugMode) {
-      debugPrint('NetworkMonitor: Initialized with $_currentNetworkType');
-    }
   }
 
   void _updateNetworkType(List<ConnectivityResult> results) {
@@ -80,10 +76,6 @@ class NetworkMonitor {
 
       _networkTypeController.add(newType);
       _configController.add(_currentConfig);
-
-      if (kDebugMode) {
-        debugPrint('NetworkMonitor: Network changed to $_currentNetworkType');
-      }
     }
   }
 

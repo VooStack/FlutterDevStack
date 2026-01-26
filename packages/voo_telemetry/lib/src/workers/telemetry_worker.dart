@@ -48,9 +48,6 @@ class TelemetryWorker {
     if (kIsWeb) {
       // Web doesn't support traditional isolates
       _initialized = true;
-      if (kDebugMode) {
-        debugPrint('TelemetryWorker: Web platform - using fallback mode');
-      }
       return;
     }
 
@@ -93,14 +90,7 @@ class TelemetryWorker {
       );
 
       _initialized = true;
-
-      if (kDebugMode) {
-        debugPrint('TelemetryWorker: Initialized with isolate');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('TelemetryWorker: Failed to initialize: $e');
-      }
       _isolate?.kill();
       _isolate = null;
       _mainReceivePort?.close();
@@ -514,19 +504,10 @@ class _TelemetryWorkerIsolate {
         final response = await _httpClient.post(Uri.parse(url), headers: headers, body: body).timeout(Duration(milliseconds: _init.timeoutMs));
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
-          if (_init.debug) {
-            debugPrint('TelemetryWorker: Exported to $url');
-          }
           return true;
         }
-
-        if (_init.debug) {
-          debugPrint('TelemetryWorker: Export failed ${response.statusCode}: ${response.body}');
-        }
-      } catch (e) {
-        if (_init.debug) {
-          debugPrint('TelemetryWorker: Export error: $e');
-        }
+      } catch (_) {
+        // Retry on failure
       }
 
       retries++;

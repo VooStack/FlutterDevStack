@@ -96,18 +96,11 @@ abstract class BaseSyncService<T> {
   void initialize() {
     if (!config.isValid) {
       _status = SyncStatus.disabled;
-      if (kDebugMode) {
-        debugPrint('$serviceName: Invalid configuration, sync disabled');
-      }
       return;
     }
 
     _startBatchTimer();
     _status = SyncStatus.idle;
-
-    if (kDebugMode) {
-      debugPrint('$serviceName: Initialized with endpoint $endpoint');
-    }
   }
 
   /// Queue an item for syncing.
@@ -208,22 +201,11 @@ abstract class BaseSyncService<T> {
             .timeout(config.timeout);
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
-          if (kDebugMode) {
-            debugPrint('$serviceName: Synced ${items.length} items successfully');
-          }
           return true;
-        }
-
-        if (kDebugMode) {
-          debugPrint(
-              '$serviceName: Failed with status ${response.statusCode}: ${response.body}');
         }
 
         onError?.call('HTTP ${response.statusCode}: ${response.body}', attempt);
       } catch (e) {
-        if (kDebugMode) {
-          debugPrint('$serviceName: Error on attempt $attempt: $e');
-        }
         onError?.call(e.toString(), attempt);
       }
 

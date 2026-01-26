@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:developer' as developer;
-import 'package:flutter/foundation.dart';
 import 'package:voo_core/voo_core.dart';
 import 'package:voo_telemetry/voo_telemetry.dart';
 import 'package:voo_performance/src/domain/entities/performance_trace.dart';
@@ -96,9 +95,6 @@ class VooPerformancePlugin extends VooPlugin {
       });
     }
 
-    if (kDebugMode) {
-      debugPrint('[VooPerformance] Initialized (OTEL: ${plugin._otelEnabled})');
-    }
   }
 
   /// Internal method to enable OTEL (auto-called during initialize).
@@ -140,9 +136,6 @@ class VooPerformancePlugin extends VooPlugin {
     // Subscribe to monitor services and forward to OTEL
     _subscribeToMonitorServices();
 
-    if (kDebugMode) {
-      debugPrint('[VooPerformance] OTEL auto-enabled with endpoint: $endpoint');
-    }
   }
 
   /// Subscribe to monitor services and forward metrics to OTEL.
@@ -180,9 +173,6 @@ class VooPerformancePlugin extends VooPlugin {
     // Forward app launch metrics to OTEL
     _appLaunchSubscription?.cancel();
     _appLaunchSubscription = AppLaunchService.launchStream.listen((metrics) {
-      if (kDebugMode) {
-        debugPrint('[VooPerformance] App launch: ${metrics.launchType.name}, TTI: ${metrics.timeToInteractive?.inMilliseconds}ms');
-      }
       _appLaunchMetric?.recordLaunch(
         launchType: _mapLaunchType(metrics.launchType),
         totalLaunchMs: metrics.totalLaunchTime?.inMilliseconds,
@@ -193,9 +183,6 @@ class VooPerformancePlugin extends VooPlugin {
       );
     });
 
-    if (kDebugMode) {
-      debugPrint('[VooPerformance] Subscribed to monitor services for OTEL export');
-    }
   }
 
   /// Map AppLaunchService.LaunchType to OtelAppLaunchMetric.LaunchType
@@ -263,9 +250,6 @@ class VooPerformancePlugin extends VooPlugin {
   void _startTraceTimeout(PerformanceTrace trace) {
     _traceTimeouts[trace.id] = Timer(_traceTimeoutDuration, () {
       if (_activeTraces.containsKey(trace.id)) {
-        if (kDebugMode) {
-          debugPrint('[VooPerformance] Auto-stopping orphaned trace: ${trace.name}');
-        }
         trace.stop();
       }
       _traceTimeouts.remove(trace.id);
@@ -465,11 +449,7 @@ class VooPerformancePlugin extends VooPlugin {
 
   @override
   FutureOr<void> onAppInitialized(VooApp app) {
-    if (!_initialized && app.options.autoRegisterPlugins) {
-      if (kDebugMode) {
-        debugPrint('[VooPerformance] Plugin auto-registered');
-      }
-    }
+    // Auto-register handled by core
   }
 
   @override

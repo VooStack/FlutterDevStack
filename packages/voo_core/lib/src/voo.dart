@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:voo_core/src/voo_options.dart';
 import 'package:voo_core/src/voo_plugin.dart';
@@ -191,21 +190,13 @@ class Voo {
     if (_options!.autoCollectDeviceInfo) {
       try {
         _deviceInfo = await VooDeviceInfoService.initialize();
-        if (kDebugMode) {
-          debugPrint('Voo: Collected device info for ${_deviceInfo?.osName}');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('Voo: Failed to collect device info: $e');
-        }
+      } catch (_) {
+        // ignore
       }
     }
 
     // Initialize user context with auto-generated session
     _userContext = VooUserContext();
-    if (kDebugMode) {
-      debugPrint('Voo: Session started: ${_userContext?.sessionId}');
-    }
 
     // Auto-enable error tracking if config is valid
     if (_config != null && _config!.isValid) {
@@ -230,13 +221,6 @@ class Voo {
     // Notify all registered plugins about the new app
     for (final plugin in _plugins.values) {
       await plugin.onAppInitialized(app);
-    }
-
-    if (kDebugMode) {
-      debugPrint('Voo: Initialized app "$name"');
-      if (_config != null) {
-        debugPrint('Voo: Project: ${_config!.projectId}, Environment: ${_config!.environment}');
-      }
     }
 
     return app;
@@ -266,10 +250,6 @@ class Voo {
     for (final app in _apps.values) {
       await plugin.onAppInitialized(app);
     }
-
-    if (kDebugMode) {
-      debugPrint('Voo: Registered plugin "${plugin.name}"');
-    }
   }
 
   /// Unregister a plugin.
@@ -277,9 +257,6 @@ class Voo {
     final plugin = _plugins.remove(pluginName);
     if (plugin != null) {
       await plugin.dispose();
-      if (kDebugMode) {
-        debugPrint('Voo: Unregistered plugin "$pluginName"');
-      }
     }
   }
 

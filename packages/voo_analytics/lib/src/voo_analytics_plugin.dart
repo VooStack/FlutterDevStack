@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:voo_core/voo_core.dart';
 import 'package:voo_analytics/src/domain/repositories/analytics_repository.dart';
@@ -93,9 +92,6 @@ class VooAnalyticsPlugin extends VooPlugin {
       );
     }
 
-    if (kDebugMode) {
-      debugPrint('[VooAnalytics] Initialized with touch tracking: $enableTouchTracking (OTEL: ${plugin._otelEnabled})');
-    }
   }
 
   /// Internal method to enable OTEL (auto-called during initialize).
@@ -150,10 +146,6 @@ class VooAnalyticsPlugin extends VooPlugin {
     }
 
     _otelEnabled = true;
-
-    if (kDebugMode) {
-      debugPrint('[VooAnalytics] OTEL auto-enabled with endpoint: $endpoint');
-    }
   }
 
   /// Record a screen view as an OTEL span.
@@ -284,11 +276,7 @@ class VooAnalyticsPlugin extends VooPlugin {
 
   @override
   FutureOr<void> onAppInitialized(VooApp app) {
-    if (!_initialized && app.options.autoRegisterPlugins) {
-      if (kDebugMode) {
-        debugPrint('[VooAnalytics] Plugin auto-registered');
-      }
-    }
+    // Auto-registration handled by framework
   }
 
   @override

@@ -69,10 +69,8 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
         }
 
         _userId = data['user_id'] as String?;
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[VooAnalytics] Error loading data: $e');
-        }
+      } catch (_) {
+        // ignore
       }
     }
   }
@@ -82,10 +80,8 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       try {
         final data = {'touch_events': _touchEvents.map((e) => e.toMap()).toList(), 'events': _events, 'user_properties': _userProperties, 'user_id': _userId};
         await _storageFile!.writeAsString(jsonEncode(data));
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[VooAnalytics] Error saving data: $e');
-        }
+      } catch (_) {
+        // ignore
       }
     }
   }
@@ -113,9 +109,6 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       metadata: {'type': 'analytics_event', 'eventName': name, ...?parameters, 'timestamp': timestamp.toIso8601String()},
     );
 
-    if (kDebugMode) {
-      debugPrint('[VooAnalytics] Event logged: $name');
-    }
   }
 
   @override
@@ -151,9 +144,6 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       },
     );
 
-    if (kDebugMode) {
-      debugPrint('[VooAnalytics] Touch event tracked at (${event.x}, ${event.y})');
-    }
   }
 
   @override
@@ -162,20 +152,12 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
     _userProperties[name] = value;
     await _saveData();
-
-    if (kDebugMode) {
-      debugPrint('[VooAnalytics] User property set: $name = $value');
-    }
   }
 
   @override
   Future<void> setUserId(String userId) async {
     _userId = userId;
     await _saveData();
-
-    if (kDebugMode) {
-      debugPrint('[VooAnalytics] User ID set: $userId');
-    }
   }
 
   @override
@@ -226,10 +208,6 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     if (_storageFile != null && await _storageFile!.exists()) {
       await _storageFile!.delete();
     }
-
-    if (kDebugMode) {
-      debugPrint('[VooAnalytics] All data cleared');
-    }
   }
 
   @override
@@ -262,10 +240,6 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     _userProperties.clear();
     _userId = null;
     _storageFile = null;
-
-    if (kDebugMode) {
-      debugPrint('[VooAnalytics] Repository disposed');
-    }
   }
 
   void _sendToDevTools({required String category, required String message, Map<String, dynamic>? metadata}) {

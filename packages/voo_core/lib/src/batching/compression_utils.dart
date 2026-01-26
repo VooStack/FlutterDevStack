@@ -51,10 +51,8 @@ class CompressionUtils {
           compressedSize: compressed.length,
         );
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('CompressionUtils: Compression failed: $e');
-      }
+    } catch (_) {
+      // ignore
     }
 
     return CompressedPayload(

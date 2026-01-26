@@ -89,31 +89,18 @@ class DeepLinkService {
       instance._initialLink = await instance._appLinks.getInitialLink();
 
       if (instance._initialLink != null) {
-        if (kDebugMode) {
-          debugPrint(
-              'DeepLinkService: Cold start with link: ${instance._initialLink}');
-        }
         instance._handleIncomingLink(instance._initialLink!);
       }
 
       // Listen for links while app is running
       instance._linkSubscription =
           instance._appLinks.uriLinkStream.listen((uri) {
-        if (kDebugMode) {
-          debugPrint('DeepLinkService: Received link: $uri');
-        }
         instance._handleIncomingLink(uri);
       });
 
       _initialized = true;
-
-      if (kDebugMode) {
-        debugPrint('DeepLinkService: Initialized');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('DeepLinkService: Failed to initialize: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -173,10 +160,8 @@ class DeepLinkService {
       if (properties.isNotEmpty) {
         Voo.setUserProperties(properties);
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('DeepLinkService: Failed to update user context: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -190,10 +175,6 @@ class DeepLinkService {
     }
 
     instance._updateUserContext(attribution);
-
-    if (kDebugMode) {
-      debugPrint('DeepLinkService: Attribution set: $attribution');
-    }
   }
 
   /// Parse UTM parameters from a URL string.
@@ -216,7 +197,7 @@ class DeepLinkService {
       }
 
       return utmParams;
-    } catch (e) {
+    } catch (_) {
       return {};
     }
   }
@@ -234,10 +215,6 @@ class DeepLinkService {
   /// Clear current attribution (e.g., on logout).
   static void clearAttribution() {
     instance._currentAttribution = null;
-
-    if (kDebugMode) {
-      debugPrint('DeepLinkService: Attribution cleared');
-    }
   }
 
   /// Dispose resources.
@@ -246,10 +223,6 @@ class DeepLinkService {
     await instance._linkController.close();
     _initialized = false;
     _instance = null;
-
-    if (kDebugMode) {
-      debugPrint('DeepLinkService: Disposed');
-    }
   }
 
   /// Reset for testing.

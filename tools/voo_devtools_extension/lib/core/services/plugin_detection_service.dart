@@ -72,9 +72,6 @@ class PluginDetectionService {
           }
         } catch (e) {
           newStatus[pluginName] = false;
-          if (kDebugMode) {
-            print('Failed to check plugin $pluginName: $e');
-          }
         }
       }
 
@@ -84,9 +81,6 @@ class PluginDetectionService {
         _pluginStatusController.add(_pluginStatus);
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Error checking plugin status: $e');
-      }
       _updateAllStatus(false);
     }
   }

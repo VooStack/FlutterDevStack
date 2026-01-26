@@ -1,9 +1,9 @@
 {"version":1,"sembast":1}
 {"key":"created_at","store":"metadata","value":{"timestamp":"2025-09-24T11:22:33.711002"}}
 {"key":"schema_version","store":"metadata","value":{"version":1}}
-{"key":1769322827382204,"store":"logs","value":{"id":"1769322827382_39_711","timestamp":"2026-01-25T00:33:47.382204","message":"VooLogger initialized","level":"info","category":"System","tag":"Init","metadata":{"appName":"TestApp","timestamp":"2026-01-25T00:33:47.382208","minimumLevel":"verbose","userId":null,"sessionId":"1769322827382_872","appVersion":null,"prettyLogs":false,"maxLogs":null,"retentionDays":null,"autoCleanup":true,"otelEnabled":false,"otelViaVooTelemetry":false},"error":null,"stackTrace":null,"userId":null,"sessionId":"1769322827382_872"}}
-{"key":1769322827386378,"store":"logs","value":{"id":"1769322827386_40_503","timestamp":"2026-01-25T00:33:47.386378","message":"Log to be cleared","level":"info","category":null,"tag":null,"metadata":{"appName":"TestApp","timestamp":"2026-01-25T00:33:47.386383"},"error":null,"stackTrace":null,"userId":null,"sessionId":"1769322827382_872"}}
-{"key":1769322827387876,"store":"logs","value":{"id":"1769322827387_41_478","timestamp":"2026-01-25T00:33:47.387876","message":"Another log to be cleared","level":"warning","category":null,"tag":null,"metadata":{"appName":"TestApp","timestamp":"2026-01-25T00:33:47.387879"},"error":null,"stackTrace":null,"userId":null,"sessionId":"1769322827382_872"}}
-{"key":1769322827382204,"deleted":true,"store":"logs"}
-{"key":1769322827386378,"deleted":true,"store":"logs"}
-{"key":1769322827387876,"deleted":true,"store":"logs"}
+{"key":1769451674400174,"store":"logs","value":{"id":"1769451674400_39_663","timestamp":"2026-01-26T12:21:14.400174","message":"VooLogger initialized","level":"info","category":"System","tag":"Init","metadata":{"appName":"TestApp","timestamp":"2026-01-26T12:21:14.400175","minimumLevel":"verbose","userId":null,"sessionId":"1769451674400_866","appVersion":null,"prettyLogs":false,"maxLogs":null,"retentionDays":null,"autoCleanup":true,"otelEnabled":false,"otelViaVooTelemetry":false},"error":null,"stackTrace":null,"userId":null,"sessionId":"1769451674400_866"}}
+{"key":1769451674402184,"store":"logs","value":{"id":"1769451674402_40_317","timestamp":"2026-01-26T12:21:14.402184","message":"Log to be cleared","level":"info","category":null,"tag":null,"metadata":{"appName":"TestApp","timestamp":"2026-01-26T12:21:14.402188"},"error":null,"stackTrace":null,"userId":null,"sessionId":"1769451674400_866"}}
+{"key":1769451674403869,"store":"logs","value":{"id":"1769451674403_41_217","timestamp":"2026-01-26T12:21:14.403869","message":"Another log to be cleared","level":"warning","category":null,"tag":null,"metadata":{"appName":"TestApp","timestamp":"2026-01-26T12:21:14.403872"},"error":null,"stackTrace":null,"userId":null,"sessionId":"1769451674400_866"}}
+{"key":1769451674400174,"deleted":true,"store":"logs"}
+{"key":1769451674402184,"deleted":true,"store":"logs"}
+{"key":1769451674403869,"deleted":true,"store":"logs"}

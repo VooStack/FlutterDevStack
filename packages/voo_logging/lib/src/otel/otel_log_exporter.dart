@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:voo_logging/features/logging/domain/entities/log_entry.dart';
 import 'package:voo_logging/src/otel/otel_log_adapter.dart';
@@ -42,9 +41,6 @@ class OtelLogExporter {
   /// Initialize the exporter and start the flush timer.
   void initialize() {
     if (!config.isValid) {
-      if (kDebugMode) {
-        debugPrint('OtelLogExporter: Invalid config, skipping initialization');
-      }
       return;
     }
 
@@ -52,10 +48,6 @@ class OtelLogExporter {
       _flushTimer = Timer.periodic(config.batchInterval, (_) {
         flush();
       });
-    }
-
-    if (config.debug) {
-      debugPrint('OtelLogExporter initialized with endpoint: ${config.endpoint}');
     }
   }
 
@@ -122,11 +114,7 @@ class OtelLogExporter {
       }
 
       return success;
-    } catch (e) {
-      if (config.debug) {
-        debugPrint('OtelLogExporter flush error: $e');
-      }
-
+    } catch (_) {
       // Re-queue logs on error
       for (final log in logsToExport.reversed) {
         _pendingLogs.addFirst(log);
@@ -177,10 +165,7 @@ class OtelLogExporter {
       // Fallback to direct HTTP (VooTelemetry integration removed)
       final response = await _httpPost(uri, headers, payload);
       return response;
-    } catch (e) {
-      if (config.debug) {
-        debugPrint('OtelLogExporter HTTP error: $e');
-      }
+    } catch (_) {
       return false;
     }
   }
@@ -190,10 +175,7 @@ class OtelLogExporter {
       final client = _getHttpClient();
       final response = await client.post(uri, headers: headers, body: _encodeJson(payload));
       return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (e) {
-      if (config.debug) {
-        debugPrint('OtelLogExporter HTTP request failed: $e');
-      }
+    } catch (_) {
       return false;
     }
   }

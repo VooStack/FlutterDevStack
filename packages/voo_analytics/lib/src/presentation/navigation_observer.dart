@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:voo_analytics/src/presentation/models/screen_view_event.dart';
 import 'package:voo_analytics/src/replay/replay_capture_service.dart';
@@ -140,10 +139,6 @@ class VooNavigationObserver extends NavigatorObserver {
 
     // Notify callback
     onScreenView?.call(event);
-
-    if (kDebugMode) {
-      debugPrint('VooNavigationObserver: $action $previousScreenName -> $screenName');
-    }
   }
 
   /// Log a screen view analytics event.
@@ -177,10 +172,8 @@ class VooNavigationObserver extends NavigatorObserver {
           routePath: event.routeParams?['path'] as String?,
         );
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VooNavigationObserver: Failed to log screen view: $e');
-      }
+    } catch (_) {
+      // ignore
     }
   }
 

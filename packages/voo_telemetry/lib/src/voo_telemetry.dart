@@ -185,10 +185,6 @@ class VooTelemetry {
 
     // Start self-rescheduling flush timer (waits for flush to complete before rescheduling)
     _scheduleFlush();
-
-    if (config.debug) {
-      debugPrint('VooTelemetry initialized with endpoint: ${config.endpoint}');
-    }
   }
 
   /// Schedule the next flush after the configured interval.
@@ -238,16 +234,12 @@ class VooTelemetry {
       return;
     }
 
-    final result = await exporter.exportCombined(
+    await exporter.exportCombined(
       spans: spans,
       metrics: metrics,
       logRecords: logs,
       resource: resource,
     );
-
-    if (config.debug) {
-      debugPrint('Combined export: $result');
-    }
   }
 
   /// Shutdown VooTelemetry and flush remaining data
