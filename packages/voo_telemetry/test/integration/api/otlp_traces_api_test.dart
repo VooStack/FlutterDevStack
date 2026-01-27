@@ -226,7 +226,6 @@ void main() {
       test('should export internal span', () async {
         final span = SpanFactory.create(
           name: 'internal-span',
-          kind: SpanKind.internal,
         );
         span.end();
 

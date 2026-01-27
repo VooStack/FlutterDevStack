@@ -1,3 +1,17 @@
+## 2.1.0
+
+### Improvements
+- **REFACTOR**: Replace print statements with debugPrint across analytics repository and route-aware touch tracker
+- **REFACTOR**: Clean up debug statements across analytics services
+- **REFACTOR**: Update imports to use centralized voo_core package
+- **DEPS**: Requires `voo_core: ^1.2.0`, `voo_telemetry: ^1.1.0`
+
+### Tests
+- **TEST**: Enhance test cases for attribution, funnel, and user path models
+- **TEST**: Add tests for deep link service, funnel span tracker, screen view span manager, and touch event metrics
+
+---
+
 ## 2.0.0
 
 > **BREAKING CHANGE**: Full migration to OpenTelemetry (OTEL) as the default telemetry export mechanism.

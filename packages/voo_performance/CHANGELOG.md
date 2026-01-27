@@ -1,3 +1,21 @@
+## 2.1.0
+
+### New Features
+- **FEAT**: Enhanced FPS monitoring with web platform fallback and OTEL integration
+- **FEAT**: Add HTTP client metrics with OTEL integration (`OtelHttpMetric`)
+- **FEAT**: Add semantic conventions for HTTP performance traces
+- **FEAT**: Add API test configuration for performance Dio interceptor and trace context propagation
+
+### Improvements
+- **REFACTOR**: Clean up debugPrint statements from FPS and memory monitoring
+- **REFACTOR**: Update imports to use centralized voo_core package
+- **DEPS**: Requires `voo_core: ^1.2.0`, `voo_telemetry: ^1.1.0`
+
+### Tests
+- **TEST**: Add comprehensive unit tests for network timing, network metric, performance trace, OTEL metrics, and monitoring services
+
+---
+
 ## 2.0.1
 
 ### Performance

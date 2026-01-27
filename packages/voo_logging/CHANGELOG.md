@@ -1,3 +1,20 @@
+## 2.1.0
+
+### New Features
+- **FEAT**: Enhanced OTEL log adapter and trace context provider for improved telemetry correlation
+- **FEAT**: Add API test configuration for Dio interceptor integration tests
+
+### Improvements
+- **REFACTOR**: Clean up OTEL log exporter debug statements
+- **REFACTOR**: Update imports to use centralized voo_core package
+- **REFACTOR**: Improved log entries and cleanup for better clarity
+- **DEPS**: Requires `voo_core: ^1.2.0`, `voo_telemetry: ^1.1.0`
+
+### Tests
+- **TEST**: Add unit tests for OtelLogExporter functionality and log handling
+
+---
+
 ## 2.0.0
 
 > **BREAKING CHANGE**: Full migration to OpenTelemetry (OTEL) as the default telemetry export mechanism.

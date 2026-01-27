@@ -1,3 +1,24 @@
+## 1.1.0
+
+### New Features
+- **FEAT**: Implement combined telemetry export and configuration options
+- **FEAT**: Add telemetry worker for background processing and web compatibility
+- **FEAT**: Enhance asynchronous log, metric, and span handling to prevent deadlocks during export
+- **FEAT**: Update API key handling and maintain traceId/spanId as strings for OTLP export
+- **FEAT**: Enhanced OTLP HTTP exporter with improved meter and metrics support
+
+### Improvements
+- **REFACTOR**: Improve telemetry span management and serialization
+- **REFACTOR**: Update imports to use centralized voo_core package
+- **REFACTOR**: Clean up debug statements in exporters and workers
+- **DEPS**: Requires `voo_core: ^1.2.0`
+
+### Tests
+- **TEST**: Add comprehensive unit tests for TraceProvider, Tracer, LoggerProvider, Logger, MeterProvider, Meter, and instruments
+- **TEST**: Add integration tests for OTLP logs, metrics, traces, and retry behavior
+
+---
+
 ## 1.0.1
 
 ### Bug Fixes

@@ -1,3 +1,19 @@
+## 1.2.0
+
+### New Features
+- **FEAT**: Add API test configuration and mock server utilities for integration testing
+- **FEAT**: Enhanced batching infrastructure with improved adaptive batch manager, compression utils, network monitor, persistent queue, and retry policy
+- **FEAT**: Enhanced platform detection utilities
+
+### Improvements
+- **REFACTOR**: Replace print/debugPrint statements across batching, sync, and service classes for cleaner logging
+- **REFACTOR**: Update imports to use centralized voo_core package and improve code clarity
+
+### Tests
+- **TEST**: Add comprehensive unit tests for batching, circuit breaker, breadcrumb service, error tracking, feature config, and plugin systems
+
+---
+
 ## 1.1.1
 
 ### New Features
